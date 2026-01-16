@@ -1,0 +1,64 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Dancing Script", cursive;
+    list-style: none;
+    text-decoration: none;
+}
+
+
+:root {
+
+    /*---------------GESTION DES COULEURS-----------------------*/
+    --color_bg_main: rgba(31, 109, 106, 1);
+    --color_bg_second: #C68A3B;
+    --color_bg_second_soft: rgb(227, 171, 98);
+
+
+    /*------------------GESTION DES TEXTES----------------------*/
+    --color_w_text: #fff;
+    --color_bg_text: #5A3A1B;
+
+    --font_body: "Dancing Script", cursive;
+    --text_size_xs: 15px;
+    --text_size: 20px;
+    --text_size_xl: 30px;
+
+    --title_size: 50px;
+    --title_deco: underline;
+
+    --text_shadow: 0 0.5px 0 rgba(255,255,255,0.4);
+    --text_shadow_brown: 0 1px 0 #8E5A2A;
+
+    /*----------------GESTION DES RADIUS------------------------*/
+
+    --radius_xs: 10px;
+    --radius_m: 15px;
+    --radius_xl: 20px;
+
+    /*------------------Gestion des paddings -------------------*/
+
+    --padding_xs: 10px;
+    --padding_m: 20px;
+    --section_padding: 40px;
+
+}
+
+
+.CGVtitle{
+    display: flex;
+    justify-content: center;
+    align-content:center;
+    text-decoration: none;
+}
+
+p{
+    color: var(--color_bg_second);
+    font-weight: bold;
+}
+
+.paragraphe{
+    margin:20px 30px 20px 30px; 
+    font-size: var(--text_size);
+}

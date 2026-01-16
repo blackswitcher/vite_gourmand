@@ -1,0 +1,106 @@
+.apropos{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.aProposContainer{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+
+}
+
+.aproposStory{
+    grid-column: 1/2;
+    grid-row: 1/2;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    color: #FFF;
+    font-size: 25px;
+    padding: 20px;
+
+}
+
+.aproposImg{
+    grid-column: 2/3;
+    grid-row:1/2;
+    padding: 20px;
+
+}
+
+.aproposImg img{
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+
+}
+
+.valeurContainer{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+}
+
+.valeurStory{
+    padding: 20px;
+    grid-column: 2/3;
+    grid-row: 1/2;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    color: #FFF;
+    font-size: 25px;
+}
+
+.valeurImg{
+    grid-column: 1/2;
+    padding: 20px;
+    grid-row:1/2;
+}
+
+.valeurImg img{
+    width: 100%;
+    height: auto;
+    border-radius: 6px ;
+}
+
+
+.valeur{
+    list-style: none ;
+    display: block;
+}
+
+.valeur li{
+    margin: 10px;
+
+}
+
+.contact{
+        display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 10px;
+}
+
+.contact button{
+    width: 200px;
+    height: 50px;
+    border-radius: 6px;
+    border: 1px solid #8E5A2A;
+    font-weight: bold;
+    transition: 1s ease;
+    background-color: #FFF;
+    font-size: 15px;
+}
+
+.contact button:hover{
+    background-color: #C68A3B;
+    color: #fff;
+    box-shadow: 0px 0px 2px #8E5A2A;
+    letter-spacing: 1px;
+    
+}

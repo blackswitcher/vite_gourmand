@@ -1,0 +1,86 @@
+/* ===== CONTACT PAGE ===== */
+
+.contact-page {
+    width: min(1100px, 92%);
+    margin: 40px auto;
+    color: #fff;
+}
+
+/* Hero */
+.contact-hero {
+    padding: 18px 20px;
+    border-radius: 18px;
+    background: rgba(0, 0, 0, 0.12);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    margin-bottom: 18px;
+}
+
+.contact-hero h1 {
+    margin: 0 0 8px;
+    font-size: 2rem;
+}
+
+.contact-hero p {
+    margin: 0;
+    opacity: 0.9;
+}
+
+/* Grid */
+.contact-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 18px;
+}
+
+/* Form */
+.contact-form {
+    padding: 18px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.18);
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.field label {
+    font-weight: 700;
+    opacity: 0.95;
+}
+
+.field input,
+.field textarea {
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    background: rgba(0, 0, 0, 0.10);
+    color: #fff;
+    padding: 12px 14px;
+    outline: none;
+}
+
+.field input:focus,
+.field textarea:focus {
+    border-color: rgba(255, 255, 255, 0.55);
+}
+
+/* Button */
+.btn-contact {
+    border: none;
+    border-radius: 999px;
+    padding: 12px 18px;
+    font-weight: 800;
+    cursor: pointer;
+    background: #f15b7e;
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+    transition: transform 0.15s;
+    width: 100%;
+}
+
+.btn-contact:hover {
+    transform: scale(1.02);
+}

@@ -1,0 +1,15 @@
+{
+    "name": "mike/exam-studi-test",
+    "description": "Projet Studi",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "Mike",
+            "email": "m.courbesriviere@orange.fr"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "vlucas/phpdotenv": "^5.6"
+    }
+}

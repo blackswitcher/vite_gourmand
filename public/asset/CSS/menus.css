@@ -1,0 +1,456 @@
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400..700&family=Italianno&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
+/*----------------------------RESET------------------------------*/
+
+* {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    text-decoration: none;
+    box-sizing: border-box;
+}
+
+/*-----------------------CREATION DU ROOT-----------------------*/
+:root {
+
+    /*---------------GESTION DES COULEURS-----------------------*/
+    --color_bg_main: rgba(31, 109, 106, 1);
+    --color_bg_second: #C68A3B;
+    --color_bg_second_soft: rgb(227, 171, 98);
+
+
+    /*------------------GESTION DES TEXTES----------------------*/
+    --color_w_text: #fff;
+    --color_bg_text: #5A3A1B;
+
+    --font_body: "Dancing Script", cursive;
+    --text_size_xs: 15px;
+    --text_size: 20px;
+    --text_size_xl: 30px;
+
+    --title_size: 50px;
+    --title_deco: underline;
+
+    --text_shadow: 0 0.5px 0 rgba(255,255,255,0.4);
+    --text_shadow_brown: 0 1px 0 #8E5A2A;
+
+    /*----------------GESTION DES RADIUS------------------------*/
+
+    --radius_xs: 10px;
+    --radius_m: 15px;
+    --radius_xl: 20px;
+
+    /*------------------Gestion des paddings -------------------*/
+
+    --padding_xs: 10px;
+    --padding_m: 20px;
+    --section_padding: 40px;
+
+}
+
+/*--------------------GESTION DE L IMAGE D'ACCEUIL---------------*/
+
+body {
+    background-color: var(--color_bg_main);
+    width: 100%;
+    height: auto;
+    font-family: "Dancing Script", cursive;
+}
+
+/*-----------------CONTIENT TOUT MON ACCEUIL---------------------*/
+
+.container_acceuil {
+    position: relative;
+}
+
+.img_accueil {
+    display: block;
+    width: 100%;
+    height: auto;
+    box-sizing: content-box;
+    padding: 0;
+}
+
+.phrase_accueil {
+    position: absolute;
+    font-size: var(--text_size_xl);
+    color: var(--color_w_text);
+    z-index: 1;
+}
+
+.phrase_accueil span {
+    color: var(--color_bg_main);
+}
+
+.phrase1 {
+    margin-top: 5%;
+    margin-left: 5%;
+}
+
+.phrase2 {
+    margin-top: 10%;
+    margin-left: 10%;
+}
+
+/*--------------GESTION DE MON TITRE DE PAGE------------------------*/
+h1 {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--color_w_text);
+    font-size: var(--title_size);
+    text-decoration: var(--title_deco);
+    margin: 10px 0px 10px 0px;
+    font-weight: bold;
+    text-shadow: var(--text_shadow)
+}
+
+.accroche {
+    margin: 10px 0px 20px 5px;
+    color: var(--color_w_text);
+    font-size: var(--text_size_xl);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-shadow: var(--text_shadow)
+    
+
+
+}
+
+/*------------------A NE PAS OUBLIER LES CONTAINER ME FACILITE LA GESTION DES POSITIONNEMENT --------*/
+.container_card {
+    display: grid;
+    grid-template-columns: repeat(4,1fr);
+    justify-content: center;
+    align-items: center;
+    margin: 10px;
+}
+
+/*-------------------------GESTION IMG FORMULE-------------------*/
+.img_menu{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 5px;
+}
+.img_menu img{
+    width: 90%;
+    height: auto;
+    border: 2px solid var(--color_bg_text);
+    border-radius: var(--radius_xs);
+}
+
+/*----------- CARTE DE MENU A RÉPLIQUER POUR CHAQUE MENU AVEC LA BDD-------*/
+.menu_card {
+    color: #5A3A1B;
+    display: flex;
+    background-color: var(--color_bg_second_soft);
+    width: 70%;
+    height: auto;
+    border-radius: var(--radius_m);
+    border: 2px solid var(--color_bg_text);
+    flex-direction: column;
+    margin-bottom: 10px;
+}
+
+.menu_card H3 {
+    font-size: var(--text_size_xl);
+    margin-left: 20px;
+    margin-top: 10px;
+    text-shadow: var(--text_shadow_brown);
+}
+
+.menu_card p {
+    font-size: var(--text_size_xs);
+    padding: var(--padding_xs);
+    margin: 2%;
+}
+
+/*---------------gESTION DE LA BOX BUTTON---------------*/
+.menu_detail {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+
+}
+
+/*-------------GESTION DU BOUTON A METTRE EN LIEN AVEC LE MODAL------------*/
+.menu_detail button {
+    border: 2px solid #000;
+    border-radius: var(--radius_xs);
+    font-weight: bold;
+    font-size: var(--text_size);
+    background-color: var(--color_w_text);
+    width: 30px;
+    height: 30px;
+    margin-bottom: 5px;
+    transition: 0.5s ease;
+}
+
+/*------------ON VAS TENTER UN ANIMATION SUR MON HOVER J'AIMERAIS UN EFFET ZOOM */
+.menu_detail button:hover {
+    background-color: var(--color_bg_main);
+    color: var(--color_w_text);
+    border: none;
+    transform: scale(1.1);
+    box-shadow: 0px 0px 2px var(--color_bg_main);
+}
+
+/*---------------------SECTION FILTRE-------------------------------*/
+/*---------------------GESTION DE MA SECTION -----------------------*/
+.filtre{
+    width: 90%;
+    margin: 5%;
+    padding: var(--padding_m);
+    border-radius: var(--radius_xl);
+    height: auto;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--color_bg_second_soft);
+    border:2px solid #8E5A2A;
+}
+
+.filtre h3{
+    font-size: var(--title_size);
+    margin-top: 0px;
+    margin-left: 20px;
+    text-shadow: var(--text_shadow_brown);
+    color: #5A3A1B;
+
+}
+/*----------------------GESTION DE MON CONTAINER -------------------*/
+.container_filtre{
+    width: 100%;
+    display: flex;
+    justify-content:space-evenly;
+    align-items: center;
+    padding: var(--padding_xs);
+    color: var(--color_bg_text);
+    font-size: var(--text_size);
+    font-weight: bold;
+    margin-right: 8%;
+
+}
+
+
+/*------------------------GESTION DU SELECTEUR DE PRIX--------------*/
+
+
+.container_select select{
+    appearance: none;
+    background-color: var(--color_bg_second);
+    color: var(--color_bg_text);
+    border-radius: var(--radius_xs);
+    height: 30px;
+    color: #fff;    
+    width: 200px;
+    border: 1px solid var(--color_bg_text);
+    text-align: center;
+
+}
+.container_prix_max{
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+
+}
+.container_prix{
+    width: 20px;
+    height: auto;
+    font-weight: bold;
+    padding-top: 5px;
+    padding-right: 25px;
+}
+/*----------------------GESTION DU DEROULANT ---------------------------*/
+
+/*---------------------GESTION DE L'APPLICATION DES FILTRES-------------*/
+
+.bouton_appliquer{
+    display: flex;
+    justify-content: center;
+    height: 50px;
+    width: 100%;
+    margin-top:30px;
+
+}
+/*-------------------------GESTION DU BOUTON -------------------------*/
+.bouton_appliquer button{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid var(--color_bg_text);
+    border-radius: var(--radius_m);
+    appearance: none;
+    width: 200px;
+    background-color: #5A3A1B;
+    color: #fff;
+    font-weight: bold;
+    transition: 0.5s ease;
+    
+}
+
+.bouton_appliquer button:hover{
+    background-color: var(--color_bg_main);
+    color: var(--color_w_text);
+    border: none;
+    transform: scale(1.1);
+    box-shadow: 0px 0px 2px var(--color_bg_main);
+}
+/*-----------------------GESTION GLOBAL DU MODAL---------------*/
+.modal{
+    padding:15px;
+    display: block;
+    width: 70%;
+    height: auto;
+    background-color: var(--color_bg_second_soft);
+    border: 2px solid var(--color_bg_text);
+    border-radius: var(--radius_m);
+    margin-left: 15%;
+    color: var(--color_bg_text);
+
+}
+/*permet de sortir mon modal du flux normal de ma page */
+.modal_overlay{
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 9999;
+}
+.modal_overlay.hidden{ 
+    display: none;    /*le mode cacher deviens le comportement normal de mon modal*/
+}
+
+.modal_content{
+    width: min(1100px,92vw);
+    max-height: 90vh;
+    overflow: auto;
+    scrollbar-width: none;/*cache la slide bar*/
+    position: relative;
+}
+
+/*------------------------GESTION DE MON TITRE-------------------*/
+.modal h3{
+    font-weight: bold;
+    font-size: var(--title_size);
+}
+/*-------------------------SEPARATION DE MA DESCRIPTION ET LES ALLERGENES*/
+.containerDesc{
+    display: grid;
+    grid-template-columns: repeat(2,1fr);
+}
+
+.desc{
+    grid-column: 1fr;
+}
+/*------------------------GESTION DE MA LISTE ALLERGENES*/
+.allergene{
+    grid-column: 1fr;
+    font-weight: bold;
+    display: block;
+    justify-items: center;
+    margin-top: 0;
+}
+
+.titleAllergene{
+    font-weight: bold ;
+    font-size: var(--text_size_xl);
+    text-decoration: var(--title_deco);
+}
+
+.galerieTitle{
+    text-decoration: var(--title_deco);
+}
+
+.galerieModal{
+    position: relative;
+    height: 500px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.galerieModal .btnPrevious,
+.galerieModal .btnNext {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background-color: var(--color_bg_text);   /* ton marron */
+    color: #fff;
+    font-weight: bold;
+    font-size: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btnPrevious{
+    left: 5px;
+    margin-right: 5px;
+}
+
+.btnNext{
+    right: 15px;
+    margin-left: 5px;
+}
+
+.slideModal{
+    display: none;
+    width: 100%;
+    height: 500px;
+    position: relative;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.slideModal.active{
+    display: block;
+}
+.slideModal img{
+width: 100%;
+    height: 100%;
+    object-fit: cover; /* ou contain selon le rendu voulu */
+    border: 3px solid var(--color_bg_text);
+    border-radius: var(--radius_m);
+}
+
+.fermetureModal{
+    display: flex;
+    justify-content: center;
+    height: 30px;
+    width: 100%;
+    margin-top:30px;
+}
+
+.fermetureModal button{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid var(--color_bg_text);
+    border-radius: var(--radius_m);
+    appearance: none;
+    width: 30px;
+    background-color: var(--color_w_text);
+    color: #000;
+    font-weight: bold;
+    transition: 0.5s ease;
+}
+
+.fermetureModal button:hover{
+    background-color: var(--color_bg_main);
+    color: var(--color_w_text);
+    border: none;
+    transform: scale(1.1);
+    box-shadow: 0px 0px 2px var(--color_bg_main);
+}

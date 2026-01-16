@@ -1,0 +1,108 @@
+
+:root {
+
+    /*---------------GESTION DES COULEURS-----------------------*/
+    --color_bg_main: rgba(31, 109, 106, 1);
+    --color_bg_second: #C68A3B;
+    --color_bg_second_soft: rgb(227, 171, 98);
+
+
+    /*------------------GESTION DES TEXTES----------------------*/
+    --color_w_text: #fff;
+    --color_bg_text: #5A3A1B;
+
+    --font_body: "Dancing Script", cursive;
+    --text_size_xs: 15px;
+    --text_size: 20px;
+    --text_size_xl: 30px;
+
+    --title_size: 50px;
+    --title_deco: underline;
+
+    --text_shadow: 0 0.5px 0 rgba(255,255,255,0.4);
+    --text_shadow_brown: 0 1px 0 #8E5A2A;
+
+    /*----------------GESTION DES RADIUS------------------------*/
+
+    --radius_xs: 10px;
+    --radius_m: 15px;
+    --radius_xl: 20px;
+
+    /*------------------Gestion des paddings -------------------*/
+
+    --padding_xs: 10px;
+    --padding_m: 20px;
+    --section_padding: 40px;
+
+}
+
+
+/* ===== Page Avis : base ===== */
+.avis-form,
+.avis-list {
+    width: min(1000px, 92%);
+    margin: 40px auto;
+}
+
+.avis-title {
+    font-size: 2rem;
+    margin-bottom: 15px;
+}
+
+.avis-subtitle {
+    font-size: 1.6rem;
+    margin-bottom: 15px;
+}
+
+/* ===== Formulaire ===== */
+.avis-form-box {
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    border-radius: 18px;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.field label {
+    font-weight: 600;
+    opacity: 0.95;
+}
+
+.field input,
+.field textarea {
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    background: rgba(0, 0, 0, 0.1);
+    color: white;
+    padding: 12px 14px;
+    outline: none;
+}
+
+.field input:focus,
+.field textarea:focus {
+    border-color: rgba(255, 255, 255, 0.55);
+}
+
+/* ===== Bouton ===== */
+.btn-avis {
+    border: none;
+    border-radius: 999px;
+    padding: 12px 18px;
+    font-weight: 700;
+    cursor: pointer;
+    background: #f15b7e;
+    color: white;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    transition: transform 0.15s;
+}
+
+.btn-avis:hover {
+    transform: scale(1.03);
+}

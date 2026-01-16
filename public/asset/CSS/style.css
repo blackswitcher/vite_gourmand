@@ -1,0 +1,934 @@
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400..700&display=swap');
+
+/*-----------------reset----------------*/
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Dancing Script", cursive;
+    list-style: none;
+    text-decoration: none;
+}
+
+:root {
+    --header-h: 100px;
+}
+
+/*-------------------gestion du body-----------------*/
+body {
+    background-size: cover;
+    background-position: center -25%;
+}
+
+/*----------------------mise en place de mon header------------*/
+header {
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    box-shadow: rgba(0, 0, 0, 0.1) 0 0 10px;
+    background-color: #F5EEDC;
+    /* position:relative; */
+}
+
+/*------------------gestion du container de mon logo ------------*/
+.CaseLogo {
+    display: flex;
+    align-items: center;
+}
+
+/*---------------gestion du logo ------------------*/
+.logo {
+    height: 80px;
+    width: auto;
+    display: block;
+    border-radius: 8px;
+}
+
+/*-----------gestion de mon image ---------------*/
+.brand {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    line-height: 0;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    background: none;
+    appearance: none;
+}
+
+ul {
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+}
+
+ul li {
+    margin: 0 10px;
+}
+
+/*-------------gestion de mes boutons dans mon navigateur -----------------*/
+.navBouton {
+    color: black;
+    font-weight: bold;
+    padding: 10px 20px;
+    transition: 0.5s;
+    border-radius: 6px;
+}
+
+.navBouton:hover {
+    background-color: #000;
+    color: #fff
+}
+
+/*---------------gestion de mon accueil image +  les phrases d'accorche */
+.container_accueil {
+    position: relative;
+}
+
+.img_accueil {
+    display: block;
+    width: 100%;
+    height: auto;
+    box-sizing: content-box;
+    padding: 0;
+    margin: 0;
+}
+
+.phrase_accueil {
+    font-size: 35px;
+    color: #fff;
+}
+
+.first_sentence {
+    position: absolute;
+    margin-top: 15%;
+    margin-left: 10%;
+}
+
+.second_sentence {
+    margin-top: 20%;
+    margin-left: 15%;
+    position: absolute;
+
+}
+
+/*-----------me permet de mettre le debut de la phrase en bleu ------*/
+.clr_word {
+    color: rgba(31, 109, 106, 1);
+}
+
+/*---------------gere la premiere partie image + texte ---------------*/
+h1 {
+    display: flex;
+    width: 100%;
+    height: auto;
+    font-size: 60px;
+    justify-content: center;
+    font-family: "Dancing Script", cursive;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+.container_story {
+    margin-top: 15px;
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+}
+
+.story {
+    margin-left: 15px;
+    font-size: 25px;
+    flex: 1 1 420px;
+    line-height: 1.6;
+}
+
+/* maniere differente de gerer une image "1" capacité a grandir "1" capacité a retrecir et "420" taille de base */
+.img_story {
+    flex: 1 1 420px;
+}
+
+/*cette facon d'ecrire me permet de selectionner la classe et de descendre a l'element que je veux cibler */
+.img_story img {
+    margin-right: 15px;
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+}
+
+.story_section {
+    background-color: rgba(31, 109, 106, 1);
+    color: #F5EEDC;
+    padding: 0 24px;
+}
+
+/* gere la section qui donne les attouts de la societe */
+
+/*j'ai simplifier ce decoupage de colonne en fragment ( j'aurai pu mettre un repeat 1fr fois 2 pour travail mon code condenser) */
+.container_atout {
+    padding-top: 30px;
+    color: #F5EEDC;
+    background-color: rgba(31, 109, 106, 1);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: center
+}
+
+/* permet de mettre l'image sur un seul coté de ma page */
+.container_image_atout {
+    grid-column: 1/2;
+}
+
+/* on cible mon image pour mieux la controler */
+.container_image_atout img {
+    padding: 20px;
+    width: 100%;
+    height: 100%;
+    max-height: 420px;
+    object-fit: cover;
+    border-radius: 30px;
+}
+
+/* gestion de la partie gauche  et des attouts j'ai besoin d'un decoupage correct 
+afin de gerer les attouts et les logos */
+.box_atout {
+    font-size: 20px;
+    grid-column: 2/3;
+    display: flex;
+    gap: 12px;
+    padding-left: 150px;
+    flex-direction: column;
+    height: 100%;
+    justify-content: space-around;
+}
+
+.text_atout {
+    margin-top: 5%;
+    display: block;
+    justify-content: center;
+    align-items: center;
+}
+
+.logo_atout {
+    padding: 30px;
+    font-size: 40px;
+}
+
+.atout {
+    display: flex;
+}
+
+/*mise en place de mes avis j'en ai mis qu'un pour faire les duplications en fonction des nouveaux avis */
+.section_avis {
+    width: 100%;
+    background-color: rgba(31, 109, 106, 1);
+    color: #F5EEDC;
+
+
+}
+
+/* gestion de mon titre */
+
+.h2_avis {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 50px;
+    text-decoration: underline;
+}
+
+
+
+.text_avis {
+    padding-top: 10px;
+    display: flex;
+    font-size: 30px;
+    justify-content: center;
+
+}
+
+
+.container_avis {
+    height: auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    grid-template-rows: 1fr;
+}
+
+.avis {
+    margin: 10%;
+    padding: 30px;
+    grid-column: 1/2;
+    height: 500px;
+    border: 5px solid #FFF;
+    border-radius: 10px;
+
+}
+
+.utilisateur_avis {
+    height: 20%;
+    display: flex;
+    justify-content: space-between;
+}
+
+.image_utilisateur {
+    width: 40%;
+    border: 4px solid #ffffff;
+    border-radius: 50%;
+}
+
+.image_utilisateur img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.initial-utilisateur {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 20px;
+}
+
+.commentaire {
+    border: 3px solid #fff;
+    height: 60%;
+    margin-top: 10px;
+    border-radius: 10px;
+    padding: 5px;
+}
+
+.note {
+    display: flex;
+    height: 20%;
+    justify-content: center;
+    align-items: center;
+    font-size: 30px;
+}
+
+
+.ajout_avis {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 15px;
+
+}
+
+.ajout_avis button:hover {
+    background-color: #C68A3B;
+    color: #fff;
+    box-shadow: 0px 0px 2px #8E5A2A;
+}
+
+.ajout_avis button {
+    width: 12%;
+    height: 25px;
+    background-color: #fff;
+    border-radius: 10px;
+    font-weight: bold;
+    box-shadow: 2px 2px 2px #000;
+}
+
+/* GESTION DE LA PARTIE  PRESENTATION DE JULIE 1 JOSÉ */
+.section_pro {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+    color: #fff;
+    background-color: rgba(31, 109, 106, 1);
+}
+
+.equipe_pro {
+    padding: 20px;
+    grid-column: 1/2;
+    color: #F5EEDC;
+
+}
+
+/* GESTION DU PARAGRAPHE DE L'ÉQUIPE */
+.para_equipe {
+    padding: 2%;
+}
+
+.equipe_pro h2 {
+    font-weight: bold;
+    padding-bottom: 20px;
+    text-decoration: underline;
+    font-size: 50px;
+}
+
+.equipe_pro p {
+    font-size: 25px;
+    line-height: 1.5;
+}
+
+.img_equipe {
+    grid-column: 2/3;
+    padding: 20px;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.img_equipe img {
+    border-radius: 10px;
+    width: 70%;
+    height: auto;
+
+}
+
+/* GESTION DE MON FOOTER */
+.footer_bloc1 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.footer_background {
+    background-color: rgba(31, 109, 106, 1);
+
+}
+
+/* C'EST LA PARTIE MARRON QUI ME SERT DE BG-COLOR SEPARER EN 3 FRAGMENT */
+.marque {
+    width: 90%;
+    background-color: #8E5A2A;
+    padding: 20px;
+    border-radius: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    height: auto;
+    justify-content: center;
+    align-items: center;
+
+}
+
+.horaire {
+    padding: 10px;
+    display: flex;
+    color: #FFF;
+    font-weight: bold;
+    flex-direction: column;
+    line-height: 1.4;
+
+}
+
+/* C EST MA NAVIGATION DU FOOTER AU DESSUS DE MA PARTIE MARRON APRES QUE J4AI REDUIT MES COLONNES DE 4 A 3 FLEMME DE RENOMMER TOUT ^^ */
+.footer_bloc2 {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-bottom: 15px;
+
+}
+
+.footer_bloc2 li {
+    padding-right: 5px;
+    padding-left: 5px;
+}
+
+.menu_footer {
+    font-size: 20px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+
+.navBouton_footer {
+    text-decoration: none;
+    color: #fff;
+    padding: 20px;
+    display: flex;
+    justify-content: space-around;
+    font-weight: bold;
+}
+
+.navBouton_footer:hover {
+    background-color: #000;
+    color: #fff;
+    border-radius: 6px;
+}
+
+
+
+/*-------------------------------centrage de mon cadre marron du footer -----------*/
+.footer {
+    display: flex;
+    justify-content: center;
+    padding-bottom: 10px;
+}
+
+.footer_bloc3 {
+    color: #fff;
+    line-height: 1.5;
+    display: block;
+}
+
+.footer_titre {
+    margin-top: 0;
+    padding-bottom: 50px;
+    font-weight: bold;
+
+}
+
+
+.contact {
+    padding-bottom: 10px;
+}
+
+/*gestion du bouton pour ouvrir la map */
+
+.OuvrirMap {
+    margin-top: 20px;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: none;
+    background-color: #000;
+    color: #fff;
+    font-family: "Your Script Font", cursive;
+    cursor: pointer;
+}
+
+.OuvrirMap:hover {
+    transform: translateY(-1px);
+    box-shadow: 3px 3px 0 #333;
+    color: #8E5A2A;
+
+}
+
+.span_contact:hover {
+    color: #000;
+    font-weight: bold;
+}
+
+
+/*---------------------------mise en place du modal --------------------------------*/
+
+/*---------------------------Maitrise de l'overlay ---------------------------------*/
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background-color: #000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+/*--------------------------ajoute de la classe open-------------------------------- */
+.modal.open { 
+    display: flex;
+}
+
+/*-------------------------gestion de la boite du modal--------------------------------*/
+.modal_content {
+    background-color: #fdf7ea;
+    padding: 20px;
+    border-radius: 6px;
+    width: min(90vw, 900px);
+    height: auto;
+    box-shadow: 0px 10px 30px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+
+/*-------------------------gestion du bouton de fermeture---------------------------- */
+.modal_close {
+    float: right;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+
+/*--------------------------responsive de la map ------------------------------------*/
+
+.map_container {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    margin-top: 10px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.map_container iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+
+}
+
+/*--------------------Gestion du dernier bloc du footer--------------------------*/
+
+.footer_bloc4 {
+    color: #fff;
+    margin: 0;
+    padding: 0;
+    display: block;
+    justify-content: start;
+    width: 100%;
+    height: 100%;
+
+}
+
+/* ------------------gestion de mes boutons pour les reseaux---------------------*/
+.list_reseaux {
+    display: flex;
+    justify-content: space-around;
+
+}
+
+/*-----------ciblage des chaque element de la list pour les separer proprement-----*/
+.list_reseaux li {
+    margin-bottom: 10%;
+    font-size: 35px;
+    border: 2px solid #fff;
+    border-radius: 6px;
+
+}
+
+.fa-brands {
+    padding: 10px;
+
+}
+
+.reseaux {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    list-style: none;
+    color: #FFF;
+    width: 100%;
+    height: 100%;
+
+
+}
+
+/*-----------------mise en place du bouton menant au condition de vente ------------*/
+
+.CGV {
+    background-color: none;
+    list-style: none;
+    text-decoration: none;
+    color: #fff;
+    border: none;
+    background-color: transparent;
+    padding-top: 20px;
+}
+
+.CGV:hover {
+    color: #000;
+}
+
+.suivez_nous {
+    padding-bottom: 20%;
+}
+
+
+/*---------------------GESTION DU MODAL CONNEXION-----------------------*/
+.section_formulaire {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+}
+
+.container_formulaire {
+    width: 500px;
+    height: auto;
+    color: #000;
+    background-color: rgba(31, 109, 106, 1);
+    border: 2px solid #000;
+    border-radius: 6px;
+
+}
+
+/*-----------------GESTION DES BOUTONS DE CONNEXION---------------*/
+.container_bouton {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.container_bouton button {
+    margin: 10px 30px 10px 30px;
+    color: #000;
+    border-radius: 6px;
+    background-color: rgba(31, 109, 106, 1);
+    transition: 1s ease;
+    font-weight: bold;
+    border: none;
+    font-size: 20px;
+}
+
+.container_bouton button:hover {
+    background-color: #fff;
+    color: #000;
+    transform: scale(1.1);
+}
+
+.container_bouton button:focus {
+    background-color: #fff;
+    color: #000;
+    transform: scale(1.1);
+    border: 1px solid #8E5A2A;
+
+}
+
+/*-------------------------------GESTION DE MES FORMULAIRES---------------*/
+
+.formulaire {
+    display: flex;
+    flex-direction: column;
+}
+
+.formulaire input {
+    margin: 5px 10px 5px 10px;
+    border-radius: 6px;
+    border: 1px solid #8E5A2A;
+    background-color: #C68A3B;
+}
+
+.formulaire label {
+    margin-left: 10%;
+    font-weight: bold;
+
+}
+
+.formulaire input:focus {
+    border: 2px solid #000;
+    outline: none;
+    /* fait disparaitre le border blanc de selection*/
+    background-color: #C68A3B;
+    color: #fff;
+
+}
+
+.submitBtn {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 10px;
+}
+
+.submitBtn button {
+    width: 150px;
+    height: 30px;
+    border-radius: 6px;
+    border: 1px solid #8E5A2A;
+    font-weight: bold;
+    transition: 1s ease;
+    background-color: #FFF;
+    font-size: 15px;
+}
+
+.submitBtn button:hover {
+    letter-spacing: 1px;
+}
+
+
+.inscription {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-6px);
+    pointer-events: none;
+    transition: opacity .25s ease, transform .25s ease, max-height .25s ease;
+}
+
+
+.inscription.is-active {
+    max-height: 500px;
+    /* assez grand pour contenir tes champs */
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+
+.modal_overlay.hidden{
+    display:none;
+}
+
+
+.modal_overlay {
+    position: fixed;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.modal_content {
+    overflow: auto;
+    width: 600px;
+}
+
+
+.fermetureOverlay {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.fermetureOverlay button {
+    border: none;
+    background-color: #8E5A2A;
+    margin: 10px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+}
+
+.modal_close {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+
+/* GESTION DES MEDIAS QUERY */
+
+@media screen and (max-width:1300px) {
+
+
+    header {
+        padding: 10px 20px;
+    }
+
+    ul {
+        flex-direction: column;
+        position: absolute;
+        top: 0;
+        left: -1500px;
+        ;
+        width: 100%;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(10px);
+        transition: 0.5s;
+        z-index: 100 !important;
+
+    }
+
+    ul li {
+        margin: 20px 0;
+    }
+
+    ul li a {
+        text-transform: uppercase;
+    }
+
+    .bouton {
+        width: 50px;
+        height: 50px;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        z-index: 101;
+    }
+
+    .bouton::after {
+        content: "";
+        position: absolute;
+        width: 35px;
+        height: 2px;
+        background-color: #000;
+        box-shadow: 0 20px 0 #000;
+        transform: translateY(-10px);
+        transition: 0.5s;
+
+    }
+
+    .bouton.active::after {
+        box-shadow: 0 0 0 #000;
+        transform: rotate(45deg)
+    }
+
+    .bouton::before {
+        content: "";
+        position: absolute;
+        width: 35px;
+        height: 2px;
+        background-color: #000;
+        transition: 0.5s;
+
+    }
+
+    .bouton.active::before {
+        transform: rotate(-45deg)
+    }
+
+    ul.active {
+        left: 0;
+    }
+
+    .story {
+        font-size: 20px;
+        line-height: 1.4;
+
+    }
+
+    .phrase_accueil {
+        font-size: 20PX;
+        font-weight: bold;
+        border: 2px solid #000;
+    }
+}
+
+@media screen and (max-width: 1024px) {
+    .navBouton_footer {
+        padding: 12px 24px;
+        font-size: 0.9rem;
+    }
+}
+
+@media screen and (max-width: 768px) {
+    .menu_footer {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .navBouton_footer {
+        padding: 8px 16px;
+        font-size: 0.8rem;
+        width: 100%;
+        max-width: 200px;
+        text-align: center;
+        display: inline-block;
+        justify-content: space-between;
+    }
+}
+
+/*-------------------------MODAL DE CONNEXION---------------------------------*/
