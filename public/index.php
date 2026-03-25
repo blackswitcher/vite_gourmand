@@ -10,6 +10,10 @@
 </head>
 
 <body>
+<?php require_once __DIR__ . '/../src/configs/session.php';
+    $_SESSION['test'] = 'ca marche';
+    echo $SESSION['test'];
+    ?>
 <?php require_once 'include/header.php';?>
     <section>
         <div class="container_accueil">

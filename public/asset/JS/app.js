@@ -1,3 +1,6 @@
+//------------------------------------ GESTION MODAL MAP ---------------------
+function initMapModal(){
+
 var bouton = document.querySelector(".bouton");
 var menu = document.querySelector(".menu");
 
@@ -31,8 +34,10 @@ if (openMapBtn && mapModal && closeMapBtn) {
     }
   });
 }
+}
 
 // gestion de la fonction Prix
+function initPrix(){
 
 const prixMaxInput = document.getElementById("prixMax");
 const prixMaxValue = document.getElementById("prixMaxValue");
@@ -45,6 +50,7 @@ prixMaxValue.textContent = prixMaxInput.value;
 prixMaxInput.addEventListener("input", () => {
   prixMaxValue.textContent = prixMaxInput.value;
 });
+}
 
 // gestion du carroussel
 
