@@ -42,7 +42,7 @@
                             <div class="inscription hidden">
                                 <div class="formulaire">
                                     <label for="MDPVerif">Vérification mot de passe</label>
-                                    <input id="MDPVerif" type="password" name="MDPVerif" required autocomplete="motDePasse">
+                                    <input id="MDPVerif" type="password" name="MDPVerif">
                                     <!--adresse-->
                                     <label for="adresse">Adresse</label>
                                     <input id="adresse" type="text" name="adresse">

@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,10 +9,36 @@
 </head>
 
 <body>
-<?php require_once __DIR__ . '/../src/configs/session.php';
-    $_SESSION['test'] = 'ca marche';
-    echo $SESSION['test'];
-    ?>
+<?php
+require_once __DIR__ . '/../src/configs/session.php';
+require_once __DIR__ . '/../src/configs/db.php'; 
+
+
+// recuperation du formulaire connexion et nettoyage de l'entrée 
+if ($_SERVER['REQUEST_METHOD'] === 'POST'){
+    $email = trim($_POST['email']?? '');
+    $mdp = trim($_POST['MDP']?? '');
+
+
+// mise en place de ma requete 
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE email = :email");
+    $stmt->execute(['email'=> $email]);
+    $users=$stmt->fetch(PDO::FETCH_ASSOC);
+
+
+// verification des données entre users et la BDD 
+if ($users && $users['password_hash'] === $mdp) {
+    echo 'Connecter';
+} else {
+    echo ' identifiant incorrects';
+}
+    echo '<pre>';
+    var_dump($email,$mdp);
+    echo'</pre>';
+}
+?>
+
+
 <?php require_once 'include/header.php';?>
     <section>
         <div class="container_accueil">
