@@ -13,7 +13,11 @@
 require_once __DIR__ . '/../src/configs/session.php';
 require_once __DIR__ . '/../src/configs/db.php'; 
 
-
+// gerer la deconnexion automatique 
+if (isset($_GET['logout'])){
+    unset($_SESSION['users']);
+    header('Location: /public/index.php');
+}
 // recuperation du formulaire connexion et nettoyage de l'entrée 
 if ($_SERVER['REQUEST_METHOD'] === 'POST'){
     $email = trim($_POST['email']?? '');

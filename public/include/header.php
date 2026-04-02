@@ -17,7 +17,7 @@
                 <li><a class="navBouton" href="../public/pages/menus.php">Tous les menus</a></li>
                 
                 <li>  <?php if(isset($_SESSION['user'])): ?>
-                    <a class="navBouton" id="modalConnexion">Déconnexion</a>
+                    <a href="/public/index.php?logout=1"class="navBouton" id="modalConnexion">Déconnexion</a>
                     <?php else:?>
                     <a class="navBouton" id="modalConnexion">Connexion</a>
                     <?php endif; ?>
