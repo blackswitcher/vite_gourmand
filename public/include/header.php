@@ -15,7 +15,13 @@
             <ul class="menu">
                 <li><a class="navBouton" href="../index.php">Accueil</a></li>
                 <li><a class="navBouton" href="../public/pages/menus.php">Tous les menus</a></li>
-                <li><a class="navBouton" id="modalConnexion">Connexion</a></li>
+                
+                <li>  <?php if(isset($_SESSION['user'])): ?>
+                    <a class="navBouton" id="modalConnexion">Déconnexion</a>
+                    <?php else:?>
+                    <a class="navBouton" id="modalConnexion">Connexion</a>
+                    <?php endif; ?>
+                </li>
                 <li><a class="navBouton" href="">Contact</a></li>
             </ul>
         </nav>

@@ -22,19 +22,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'){
 
 // mise en place de ma requete 
     $stmt = $pdo->prepare("SELECT * FROM users WHERE email = :email");
-    $stmt->execute(['email'=> $email]);
+    $stmt ->execute(['email'=> $email]);
     $users=$stmt->fetch(PDO::FETCH_ASSOC);
 
 
 // verification des données entre users et la BDD 
 if ($users && $users['password_hash'] === $mdp) {
-    echo 'Connecter';
+    echo $users;
 } else {
-    echo ' identifiant incorrects';
+    echo 'identifiant incorrects';
 }
-    echo '<pre>';
-    var_dump($email,$mdp);
-    echo'</pre>';
+
 }
 ?>
 
