@@ -17,7 +17,7 @@
                 <li><a class="navBouton" href="../public/pages/menus.php">Tous les menus</a></li>
                 
                 <li>  <?php if(isset($_SESSION['user'])): ?>
-                    <a href="/public/index.php?logout=1"class="navBouton" id="modalConnexion">Déconnexion</a>
+                    <a href="/public/index.php?logout=1"class="navBouton">Déconnexion</a>
                     <?php else:?>
                     <a class="navBouton" id="modalConnexion">Connexion</a>
                     <?php endif; ?>
@@ -35,7 +35,8 @@
                         <button id="btnInscription" type="button">Inscription</button>
                     </div>
                     <div>
-                        <form method="POST" action="">
+                        <form method="POST" action="/public/index.php">
+                            <input type="hidden" name="action" id="actionForm" value="connexion">
                             <!--email -->
                                 <div class="formulaire">
                                     <label for="email">Mail</label>
@@ -48,16 +49,19 @@
                             <div class="inscription hidden">
                                 <div class="formulaire">
                                     <label for="MDPVerif">Vérification mot de passe</label>
-                                    <input id="MDPVerif" type="password" name="MDPVerif">
+                                    <input id="MDPVerif" type="password" name="MDPVerif" required autocomplete="MDPVerif">
                                     <!--adresse-->
                                     <label for="adresse">Adresse</label>
-                                    <input id="adresse" type="text" name="adresse">
+                                    <input id="adresse" type="text" name="rue">
                                     <!--code postal-->
                                     <label for="codePostal">Code postale</label>
-                                    <input id="codePostal" type="number" name="codePostale">
+                                    <input id="codePostal" type="number" name="code_postale">
+                                    <!--ville-->
+                                    <label for="adresse">Ville</label>
+                                    <input id="ville" type="text" name="ville">
                                     <!--téléphone-->
                                     <label for="telephone">Téléphone</label>
-                                    <input id="telephone" type="number" name="téléphone">
+                                    <input id="telephone" type="number" name="telephone">
                                 </div>
                             </div>
                             <div class="submitBtn">

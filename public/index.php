@@ -1,5 +1,114 @@
+<?php
+
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
+require_once __DIR__ . '/../src/configs/session.php';
+require_once __DIR__ . '/../src/configs/db.php';
+
+
+
+
+// gerer la deconnexion automatique 
+if (isset($_GET['logout'])) {
+    unset($_SESSION['user']);
+    header('Location: /public/index.php');
+    exit();
+}
+
+
+// recuperation du formulaire connexion et nettoyage de l'entrée 
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    $action = $_POST['action'] ?? '';
+
+    if ($action === 'connexion') {
+
+        $email = trim($_POST['email'] ?? '');
+        $mdp = trim($_POST['MDP'] ?? '');
+
+
+        // mise en place de ma requete 
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE email = :email");
+        $stmt->execute(['email' => $email]);
+        $users = $stmt->fetch(PDO::FETCH_ASSOC);
+
+
+        // verification des données entre users et la BDD 
+        if ($users && password_verify($mdp, $users['password_hash'])) {
+            $_SESSION['user'] = $users;
+            header('Location: /public/index.php');
+            exit();
+        } else {
+            $error = 'identifiant incorrects';
+        }
+    }
+    if ($action === 'inscription') {
+        $email = trim($_POST['email'] ?? '');
+        $mdp = trim($_POST['MDP'] ?? '');
+        $mdpVerif = trim($_POST['MDPVerif'] ?? '');
+        $rue = trim($_POST['rue'] ?? '');
+        $code_postal = trim($_POST['code_postal'] ?? '');
+        $ville = trim($_POST['ville'] ?? '');
+        $telephone = trim($_POST['telephone'] ?? '');
+
+        if (
+            empty($email) ||
+            empty($mdp) ||
+            empty($mdpVerif) ||
+            empty($rue) ||
+            empty($code_postal) ||
+            empty($ville) ||
+            empty($telephone)
+        ) {
+            $error = 'Tous les champs sont obligatoire.';
+        } elseif ($mdp !== $mdpVerif) {
+            $error = 'Les mots de passes ne correspondent pas.';
+        } else {
+            $stmt = $pdo->prepare("SELECT * FROM users WHERE email = :email");
+            $stmt->execute(['email' => $email]);
+            $usersExist = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($usersExist) {
+                $error = 'cet email est déjà utilisé.';
+            } else {
+                $passwordHash = password_hash($mdp, PASSWORD_DEFAULT);
+            }
+        }
+    } else {
+        $stmt = $pdo->prepare(
+            "INSERT INTO users( email, password_hash, rue, code_postal, ville, telephone, role)
+    VALUES(:email, :password_hash, :rue, :code_postal, :ville, :telephone, :role)"
+        );
+
+        $stmt->execute(["
+    'email' => $email,
+    'password_hash' => $passwordHash,
+    'rue' => $rue,
+    'code_postal' => $code_postal,
+    'ville' => $ville,
+    'telephone => $telephone,
+    'role' => 'client'
+    "]);
+    }
+    $stmt = $pdo->prepare("SELECT * FROM users WHERE email= :email");
+    $stmt->execute(['email' => $email]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    $_SESSION['user'] = $user;
+    header('Location: /public/index.php');
+    exit();
+}
+
+
+
+?>
+
+
+<?php require_once 'include/header.php'; ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,39 +118,7 @@
 </head>
 
 <body>
-<?php
-require_once __DIR__ . '/../src/configs/session.php';
-require_once __DIR__ . '/../src/configs/db.php'; 
 
-// gerer la deconnexion automatique 
-if (isset($_GET['logout'])){
-    unset($_SESSION['users']);
-    header('Location: /public/index.php');
-}
-// recuperation du formulaire connexion et nettoyage de l'entrée 
-if ($_SERVER['REQUEST_METHOD'] === 'POST'){
-    $email = trim($_POST['email']?? '');
-    $mdp = trim($_POST['MDP']?? '');
-
-
-// mise en place de ma requete 
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE email = :email");
-    $stmt ->execute(['email'=> $email]);
-    $users=$stmt->fetch(PDO::FETCH_ASSOC);
-
-
-// verification des données entre users et la BDD 
-if ($users && $users['password_hash'] === $mdp) {
-    echo $users;
-} else {
-    echo 'identifiant incorrects';
-}
-
-}
-?>
-
-
-<?php require_once 'include/header.php';?>
     <section>
         <div class="container_accueil">
             <p class="phrase_accueil first_sentence"><span class="clr_word">Authenticité,</span> douceur et rapidité.</p>
@@ -160,8 +237,9 @@ if ($users && $users['password_hash'] === $mdp) {
             </div>
         </section>
         <footer>
-    <?php require_once 'include/footer.php';?>
+            <?php require_once 'include/footer.php'; ?>
         </footer>
         <script src="asset/JS/app.js"></script>
 </body>
+
 </html>

@@ -145,16 +145,26 @@ function ongletConnexion() {
   const btnConnexion = document.getElementById("btnConnexion");
   const btnInscription = document.getElementById("btnInscription");
   const ongletInscription = document.querySelector(".inscription");
+  const actionForm = document.getElementById("actionForm");
 
   if (btnConnexion && btnInscription && ongletInscription) {
     btnInscription.addEventListener("click", () => {
       ongletInscription.classList.remove("hidden");
       ongletInscription.classList.add("is-active");
+
+      if(actionForm) {
+        actionForm.value="inscription";
+      }
     });
 
     btnConnexion.addEventListener("click", () => {
       ongletInscription.classList.remove("is-active");
       ongletInscription.classList.add("hidden");
+
+      if(actionForm) {
+        actionForm.value="connexion";
+      }
+
     });
   }
 }
@@ -207,62 +217,39 @@ function verifNewMDP() {
       submitBtn.disabled = false;
     }
   }
-
-  // vérification live des mots de passe
-  function checkMDP() {
-
+}
+  // vérification des mots de passe + confirmation
+  function checkMDP(){
     const isInscription = blocInscription.classList.contains("is-active");
+    const mdpValue = MDP.value.trim();
+    const mdpVerifValue = MDPVerif.value.trim();
 
     if(!isInscription){
       MDPVerif.setCustomValidity("");
-      submitBtn.disabled = false;
+      submitBtn.disabled=false;
       return;
     }
-
-// antispam
-
-if (MDPVerif.VALUE.length === 0){
-  MDPVerif.setCustomValidity("");
-  submitBtn.disabled =false; 
-  return;
-} 
-
-if (MDP !== MDPVerif){
-  MDPVerif.setCustomValidity("Les mots de passe sont différents")
-  submitBtn.disabled = true;
-
-  MDPVerif.reportValidity();
-} else {
-  submitBtn.disabled = false ;
-}
+    if(mdpVerifValue.length === 0) {
+      MDPVerif.setCustomValidity("");
+      submitBtn.disabled =false;
+      return;
+    }
+    if(mdpValue !==mdpVerifValue){
+      MDPVerif.setCustomValidity("les mots de passe ne sont pas identiques");
+      submitBtn.disabled = true;
+    } else {
+      MDPVerif.setCustomValidity("");
+      submitBtn.disabled = false;
+    }
   }
-  // écoute en temps réel
-  MDP.addEventListener("input", checkMDP);
-  MDPVerif.addEventListener("input", checkMDP);
-
-  // switch des onglets
-  btnInscription.addEventListener("click", () => {
-    setMode("inscription");
-    checkMDP();
-  });
-
-  btnConnexion.addEventListener("click", () => {
-    setMode("connexion");
-  });
-
-  // init au chargement
-  setMode(blocInscription.classList.contains("is-active") ? "inscription" : "connexion");
-}
-
-verifNewMDP();
-
+checkMDP();
 
 // Gestion des cupcakes notes 
 
 const cupcakes = document.querySelectorAll(".cupcake");
 const noteInput = document.getElementById("note");
 const ratingText = document.getElementById("ratingText");
-
+const rating = document.querySelector(".rating");
 let current = 0;
 
 function paint(value) {

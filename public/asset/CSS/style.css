@@ -761,7 +761,7 @@ afin de gerer les attouts et les logos */
     /* assez grand pour contenir tes champs */
     opacity: 1;
     transform: translateY(0);
-    pointer-events: none;
+    pointer-events: auto;
 }
 
 
