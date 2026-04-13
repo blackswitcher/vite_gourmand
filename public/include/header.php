@@ -49,16 +49,22 @@
                             <div class="inscription hidden">
                                 <div class="formulaire">
                                     <label for="MDPVerif">Vérification mot de passe</label>
-                                    <input id="MDPVerif" type="password" name="MDPVerif" required autocomplete="MDPVerif">
+                                    <input id="MDPVerif" type="password" name="MDPVerif" >
                                     <!--adresse-->
                                     <label for="adresse">Adresse</label>
                                     <input id="adresse" type="text" name="rue">
                                     <!--code postal-->
                                     <label for="codePostal">Code postale</label>
-                                    <input id="codePostal" type="number" name="code_postale">
+                                    <input id="codePostal" type="number" name="code_postal">
                                     <!--ville-->
                                     <label for="adresse">Ville</label>
                                     <input id="ville" type="text" name="ville">
+                                    <!--nom-->
+                                    <label for="nom">Nom</label>
+                                    <input id="nom" type="text" name="nom">
+                                    <!--prenom-->
+                                    <label for="prenom">Prenom</label>
+                                    <input id="prenom" type="text" name="prenom">
                                     <!--téléphone-->
                                     <label for="telephone">Téléphone</label>
                                     <input id="telephone" type="number" name="telephone">

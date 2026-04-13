@@ -50,6 +50,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $rue = trim($_POST['rue'] ?? '');
         $code_postal = trim($_POST['code_postal'] ?? '');
         $ville = trim($_POST['ville'] ?? '');
+        $nom = trim($_POST['nom'] ?? '');
+        $prenom = trim($_POST['prenom'] ?? '');
         $telephone = trim($_POST['telephone'] ?? '');
 
         if (
@@ -59,6 +61,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             empty($rue) ||
             empty($code_postal) ||
             empty($ville) ||
+            empty($nom) ||
+            empty($prenom) ||
             empty($telephone)
         ) {
             $error = 'Tous les champs sont obligatoire.';
@@ -73,31 +77,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'cet email est déjà utilisé.';
             } else {
                 $passwordHash = password_hash($mdp, PASSWORD_DEFAULT);
+
+                $stmt = $pdo->prepare("
+                    INSERT INTO users( email, password_hash, rue, code_postal, ville, nom, prenom, telephone, role)
+                    VALUES(:email, :password_hash, :rue, :code_postal, :ville, :nom, :prenom, :telephone, :role)
+                    ");
+
+    $stmt->execute([
+    "email" => $email,
+    "password_hash" => $passwordHash,
+    "rue" => $rue,
+    "code_postal" => $code_postal,
+    "ville" => $ville,
+    "nom" => $nom,
+    "prenom" => $prenom,
+    "telephone" => $telephone,
+    "role" => 'client'
+    ]);
             }
+            $stmt = $pdo->prepare("SELECT * FROM users WHERE email= :email");
+            $stmt->execute(['email' => $email]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            $_SESSION['user'] = $user;
+            header('Location: /public/index.php');
+            exit();
         }
-    } else {
-        $stmt = $pdo->prepare(
-            "INSERT INTO users( email, password_hash, rue, code_postal, ville, telephone, role)
-    VALUES(:email, :password_hash, :rue, :code_postal, :ville, :telephone, :role)"
-        );
-
-        $stmt->execute(["
-    'email' => $email,
-    'password_hash' => $passwordHash,
-    'rue' => $rue,
-    'code_postal' => $code_postal,
-    'ville' => $ville,
-    'telephone => $telephone,
-    'role' => 'client'
-    "]);
     }
-    $stmt = $pdo->prepare("SELECT * FROM users WHERE email= :email");
-    $stmt->execute(['email' => $email]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    $_SESSION['user'] = $user;
-    header('Location: /public/index.php');
-    exit();
 }
 
 
