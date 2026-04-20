@@ -1,5 +1,8 @@
-<!--mon header a integré-->
+<?php
+require_once __DIR__ . '/../../src/configs/session.php';
+?>
 
+<!--mon header a integré-->
 <header>
     <div class="CaseLogo">
         <div>
@@ -13,16 +16,15 @@
     <div>
         <nav>
             <ul class="menu">
-                <li><a class="navBouton" href="../index.php">Accueil</a></li>
-                <li><a class="navBouton" href="../public/pages/menus.php">Tous les menus</a></li>
-                
+                <li><a class="navBouton" href="/public/index.php">Accueil</a></li>
+                <li><a class="navBouton" href="/public/pages/menus.php">Tous les menus</a></li>
                 <li>  <?php if(isset($_SESSION['user'])): ?>
                     <a href="/public/index.php?logout=1"class="navBouton">Déconnexion</a>
                     <?php else:?>
                     <a class="navBouton" id="modalConnexion">Connexion</a>
                     <?php endif; ?>
                 </li>
-                <li><a class="navBouton" href="">Contact</a></li>
+                <li><a class="navBouton" href="/public/pages/contact.php">Contact</a></li>
             </ul>
         </nav>
     </div>

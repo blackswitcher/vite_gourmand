@@ -1,10 +1,3 @@
-<?php 
-require_once __DIR__ . '/.../src/configs/session.php';
-require_once __DIR__ . '/.../src/configs/db.php';
-?>
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 
@@ -16,9 +9,10 @@ require_once __DIR__ . '/.../src/configs/db.php';
     <script src="https://kit.fontawesome.com/80a2176e9c.js" crossorigin="anonymous"></script>
     <title>Nos Menus</title>
 </head>
-<?php require_once '../include/header.php';?>
 
 <body>
+<?php require_once '../include/header.php';?>
+
     <section>
         <div class="container_accueil">
             <div>
