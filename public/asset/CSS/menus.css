@@ -188,9 +188,27 @@ h1 {
     margin-bottom: 5px;
     transition: 0.5s ease;
 }
+.menu_detail a {
+    border: 2px solid #000;
+    border-radius: var(--radius_xs);
+    font-weight: bold;
+    font-size: var(--text_size);
+    background-color: var(--color_w_text);
+    width: 30px;
+    height: 30px;
+    margin-bottom: 5px;
+    transition: 0.5s ease;
+}
 
 /*------------ON VAS TENTER UN ANIMATION SUR MON HOVER J'AIMERAIS UN EFFET ZOOM */
 .menu_detail button:hover {
+    background-color: var(--color_bg_main);
+    color: var(--color_w_text);
+    border: none;
+    transform: scale(1.1);
+    box-shadow: 0px 0px 2px var(--color_bg_main);
+}
+.menu_detail a:hover {
     background-color: var(--color_bg_main);
     color: var(--color_w_text);
     border: none;
@@ -277,7 +295,8 @@ h1 {
 
 }
 /*-------------------------GESTION DU BOUTON -------------------------*/
-.bouton_appliquer button{
+.bouton_appliquer button,
+.bouton_appliquer a{
     display: flex;
     justify-content: center;
     align-items: center;
@@ -292,7 +311,8 @@ h1 {
     
 }
 
-.bouton_appliquer button:hover{
+.bouton_appliquer button:hover,
+.bouton_appliquer a:hover{
     background-color: var(--color_bg_main);
     color: var(--color_w_text);
     border: none;
@@ -300,7 +320,7 @@ h1 {
     box-shadow: 0px 0px 2px var(--color_bg_main);
 }
 /*-----------------------GESTION GLOBAL DU MODAL---------------*/
-.modal{
+.menu_modal{
     padding:15px;
     display: block;
     width: 70%;
@@ -313,7 +333,7 @@ h1 {
 
 }
 /*permet de sortir mon modal du flux normal de ma page */
-.modal_overlay{
+.menu_modal_overlay{
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,.55);
@@ -323,11 +343,11 @@ h1 {
     padding: 24px;
     z-index: 9999;
 }
-.modal_overlay.hidden{ 
+.menu_modal_overlay.hidden{ 
     display: none;    /*le mode cacher deviens le comportement normal de mon modal*/
 }
 
-.modal_content{
+.menu_modal_content{
     width: min(1100px,92vw);
     max-height: 90vh;
     overflow: auto;
@@ -336,7 +356,7 @@ h1 {
 }
 
 /*------------------------GESTION DE MON TITRE-------------------*/
-.modal h3{
+.menu_modal h3{
     font-weight: bold;
     font-size: var(--title_size);
 }

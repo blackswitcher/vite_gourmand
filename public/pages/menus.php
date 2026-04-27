@@ -1,3 +1,23 @@
+<?php
+
+// on charge la connexion a la base de données pour pouvoir faire 
+require_once __DIR__ . '/../../src/configs/db.php';
+
+//on prepare une requete pour recup mes menus actif 
+// on trie les colonnes pour afficher ce dont j'ai besoin 
+$stmt = $pdo->prepare("
+SELECT ID, titre, description, prix, nb_personne,img_cover
+FROM menus
+WHERE actif = 1 
+ORDER BY ID ASC
+");
+
+// on execute la requete
+$stmt -> execute();
+
+$menus = $stmt -> fetchAll();
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -93,24 +113,41 @@
             </button>
         </div>
     </section>
-    <section>
+<section>
         <div class="container_card">
+        <?php foreach ($menus as $menu): ?>
             <div class="menu_card">
-                <h3>Formules: Traditions </h3>
-                <p>Assortiment de viennoiserie (pains au chocolat, croissants, pain aux raisins, chouquettes ), 3 jus de fruits au choix parmis la liste </p>
-                <div class="img_menu">
-                    <img src="../asset/IMG/formule_tradition.png" alt="plein de viennoiserie avec des verres de jus de fruit ">
-                </div>
+                <h3><?php echo htmlspecialchars($menu['titre']); ?> </h3>
+                <p>
+                    <?php echo htmlspecialchars($menu['description']); ?>
+                </p>
 
-                <div class="menu_detail">
-                    <button id="menuModal" onclick="afficherMenu()"> + </button>
-                </div>
-            </div>
+                <p>
+                Minimum :<?php echo (int) $menu ['nb_personne']; ?> personnes 
+                </p>
+                <p>
+                    prix : <?php echo number_format((float)$menu['prix'], 2, ',',' ');?>
+                </p>
+                <div class="img_menu">
+                    <img 
+                    src="../<?php echo htmlspecialchars(str_replace('\\','/', $menu['img_cover'])); ?>"
+                    alt="<?php echo htmlspecialchars($menu['titre']); ?>"
+                    >
         </div>
-    </section>
+        <div class="menu_detail">
+        <!-- 
+        on passe l'ID du menu dans l'url pour savoir quelle menu afficher -->
+            <a href="menu.php?id=<?php echo (int) $menu['ID']; ?>" 
+            >+</a>
+        </div>
+            </div>
+            <?php endforeach;?>
+        </div>
+
+</section>
     <section class="modal_overlay hidden">
         <div class="modal_content">
-            <div class="modal">
+            <div class="menu_modal">
                 <h3>Traditions</h3>
                 <!----------------------------CONTAINER DE DESCIPTION + ALLERGENE------------------->
                 <div class="containerDesc">
