@@ -9,6 +9,12 @@ require_once __DIR__ . '/../../src/configs/session.php';
 $menusPanier = [];
 $totalGlobal = 0;
 
+// on verifie que l'utilisateur est connecter 
+$userConnecte = isset($_SESSION['user']);
+$user = $_SESSION['user'] ?? null;
+$commandeValidee = $_SESSION['commande_validee'] ?? false;
+unset($_SESSION['commande_validee']);
+
 
 //si le panier est vide ou n'existe pas on arrete proprement 
 if (!isset($_SESSION['panier']) || empty($_SESSION['panier'])) {
@@ -53,8 +59,57 @@ if (!isset($_SESSION['panier']) || empty($_SESSION['panier'])) {
         }
     }
 }
+foreach($menusPanier as $menu){
+    $quantité = $_SESSION['panier'][$menu['ID']];
+    $prixUnitaire = (float) $menu['prix'];
+    $sousTotal = $prixUnitaire * $quantité;
+    $totalGlobal += $sousTotal;
+}
+// validation d'une commande
+if(
+    $_SERVER['REQUEST_METHOD']==='POST' &&
+    isset($_POST['valider_commande']) &&
+    $userConnecte &&
+    !$panierVide
+){
+    // on insere d'abord la commande principale
+    $stmt =$pdo-> prepare("
+    INSERT INTO commande (user_id, statut, total)
+    VALUES( :user_id, :statut, :total)
+    ");
 
+    $stmt->execute([
+        'user_id' => $user['ID'],
+        'statut' => 0,
+        'total' => $totalGlobal
+    ]);
 
+    // on recupere l'ID de la commande cree 
+    $commandeId = $pdo->lastInsertId();
+    
+    //, on ajoute chaque menu dans commande_item
+    foreach ($menusPanier as $menu){
+        $quantite = $_SESSION['panier'][$menu['ID']];
+        $prixUnitaire = (float) $menu['prix'];
+
+        $stmt = $pdo-> prepare("
+        INSERT INTO commande_items(commande_id, menu_id, quantite, prix_unitaire)
+        VALUES (:commande_id, :menu_id, :quantite, :prix_unitaire)
+        ");
+        $stmt -> execute([
+            'commande_id'=> $commandeId,
+            'menu_id' => $menu['ID'],
+            'quantite' => $quantite,
+            'prix_unitaire' => $prixUnitaire
+        ]);
+    }
+
+    // on a plus qu'a vider le panier une fois la commande enregistrer
+    unset($_SESSION['panier']);
+    $_SESSION['commande_validee'] = true ;
+    header('Location: commande.php');
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -73,6 +128,9 @@ if (!isset($_SESSION['panier']) || empty($_SESSION['panier'])) {
 
     <section class="section_menu">
         <h1>Mon Panier</h1>
+        <?php if(!empty($commandeValidee)): ?>
+            <p>Votre commande a bien été enregistrée</p>
+            <?php endif; ?>
 
         <?php if ($panierVide):   ?>
             <p>Votre panier est vide.</p>
@@ -104,7 +162,7 @@ if (!isset($_SESSION['panier']) || empty($_SESSION['panier'])) {
                         $sousTotal = $prixUnitaire * $quantite;
 
                         // le total qu'on a initialisé a 0 
-                        $totalGlobal += $sousTotal; ?>
+                        ?>
                         <tr>
                             <td><?php echo htmlspecialchars($menu['titre']); ?></td>
                             <td><?php echo number_format($prixUnitaire, 2, ',', ' '); ?> €</td>
@@ -117,7 +175,44 @@ if (!isset($_SESSION['panier']) || empty($_SESSION['panier'])) {
                 </tbody>
             </table>
             <h2>Total: <?php echo number_format($totalGlobal, '2', ',', ''); ?> €</h2>
+                <?php 
+                if($userConnecte):
+                ?>
+                <h2>informations du client</h2>
+                                <div>
+                    <p> Nom: <?php echo htmlspecialchars($user['nom']); ?></p>
+                </div>
+                <div>
+                    <p> Prenom <?php echo htmlspecialchars($user['prenom']); ?></p>
+                </div>
+                <div>
+                    <p> email <?php echo htmlspecialchars($user['email']); ?></p>
+                </div>
+                <div>
+                    <p> Téléphone <?php echo htmlspecialchars($user['telephone']); ?></p>
+                </div>
+                <div>
+                    <p> Adresse <?php echo htmlspecialchars($user['rue']); ?></p>
+                </div>
+                <div>
+                    <p> Code Postale: <?php echo htmlspecialchars($user['code_postal']); ?></p>
+                </div>
+                <div>
+                    <p> Ville: <?php echo htmlspecialchars($user['ville']); ?></p>
+                </div>
+            </div>
 
+            <div class="cmdForm">
+                <form method="POST" action="">
+                    <p><button type="submit" name="valider_commande"> Valider ma commande</button></p>
+                </form>
+            </div>
+
+            <?php else: ?>
+                <h2>informations du client</h2>
+                <p>vous devrez etre connecter pour finaliser votre commande.</p>
+                <p><a href="/public/index.php">Se connecter</a></p>
+                <?php endif; ?>
             <p><a href="menus.php">Continuer mes achats</a></p>
         <?php endif; ?>
     </section>
