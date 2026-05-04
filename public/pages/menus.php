@@ -140,10 +140,13 @@ $menus = $stmt -> fetchAll();
             <a href="menu.php?id=<?php echo (int) $menu['ID']; ?>" 
             >+</a>
         </div>
+        
             </div>
             <?php endforeach;?>
         </div>
-
+            <div class="menu_detail">
+                <a href="commande.php">Commander</a>
+            </div>
 </section>
     <section class="modal_overlay hidden">
         <div class="modal_content">

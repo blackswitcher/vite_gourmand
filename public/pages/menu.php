@@ -107,7 +107,9 @@ if(!isset($_SESSION['panier'])){
 <pre>
 <?php print_r($_SESSION['panier'] ?? []); ?>
 </pre>
-
+            <div class="menu_detail">
+                <a href="commande.php">Commander</a>
+            </div>
     </section>
     <?php require_once '../include/footer.php'; ?>
 </body>
