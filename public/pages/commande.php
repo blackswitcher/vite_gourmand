@@ -8,6 +8,7 @@ require_once __DIR__ . '/../../src/configs/session.php';
 //on vas preparer des variable par default
 $menusPanier = [];
 $totalGlobal = 0;
+$messageErreurCommande = '';
 
 // on verifie que l'utilisateur est connecter 
 $userConnecte = isset($_SESSION['user']);
@@ -15,6 +16,29 @@ $user = $_SESSION['user'] ?? null;
 $commandeValidee = $_SESSION['commande_validee'] ?? false;
 unset($_SESSION['commande_validee']);
 
+// on vas verifier que les infos du client sont bien toute renseigner pour valider une commande 
+$champsObligatoireCommande = [
+    'nom',
+    'prenom',
+    'email',
+    'telephone',
+    'rue',
+    'code_postal',
+    'ville'
+];
+
+// par defaut on vas mettre le profil complet car les infos sont en require a l'inscription
+$profilComplet = true;
+
+// j'ai besoin de verifeir chaque champs l'un apres l'autre 
+if($userConnecte){
+    foreach($champsObligatoireCommande as $champ){
+        if(empty(trim((string) ($user[$champ] ?? '')))){
+            $profilComplet = false;
+            break;
+        }
+    }
+}
 
 //si le panier est vide ou n'existe pas on arrete proprement 
 if (!isset($_SESSION['panier']) || empty($_SESSION['panier'])) {
@@ -70,8 +94,9 @@ if(
     $_SERVER['REQUEST_METHOD']==='POST' &&
     isset($_POST['valider_commande']) &&
     $userConnecte &&
-    !$panierVide
-){
+    !$panierVide &&
+    $profilComplet
+    ){                       
     // on insere d'abord la commande principale
     $stmt =$pdo-> prepare("
     INSERT INTO commande (user_id, statut, total)
@@ -109,6 +134,11 @@ if(
     $_SESSION['commande_validee'] = true ;
     header('Location: commande.php');
     exit();
+
+    
+}
+if($userConnecte && !$profilComplet) {
+    $messageErreurCommande = 'Merci de completer vos information avant de pouvoir valider votre commande.';
 }
 ?>
 
@@ -131,7 +161,9 @@ if(
         <?php if(!empty($commandeValidee)): ?>
             <p>Votre commande a bien été enregistrée</p>
             <?php endif; ?>
-
+            <?php if (!empty($messageErreurCommande)): ?>
+                <p><?php echo htmlspecialchars($messageErreurCommande); ?></p>
+                <?php endif; ?>
         <?php if ($panierVide):   ?>
             <p>Votre panier est vide.</p>
             <p><a href="menus.php">Remplir mon panier</a></p>
@@ -204,7 +236,10 @@ if(
 
             <div class="cmdForm">
                 <form method="POST" action="">
-                    <p><button type="submit" name="valider_commande"> Valider ma commande</button></p>
+                    <p><button type="submit" name="valider_commande"
+                    <?php 
+                    // desactiver le bouton si les infos du profil ne sont pas a jour 
+                    echo !$profilComplet ? 'disabled' : ''; ?>> Valider ma commande</button></p>
                 </form>
             </div>
 
