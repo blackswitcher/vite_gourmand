@@ -13,6 +13,36 @@ if (!isset($_SESSION['user'])) {
 //on recupere les données de l'utilisateur
 $user = $_SESSION['user'];
 
+// je prepare un tableau vide pour recuperer l'historique de commande 
+
+$commandeUtilisateur = [];
+
+// pour la recuperation on vas utiliser une requete
+$stmt = $pdo ->prepare("
+    SELECT ID , date_creation, statut, total
+    FROM commande
+    WHERE user_id = :user_id
+    ORDER BY date_creation DESC
+");
+
+//on vas executer la requete avec l'id connecté
+$stmt ->execute([
+    'user_id'=> $user['ID']
+]);
+
+// on les places dans le tableau fait plus haut 
+$commandeUtilisateur = $stmt->fetchAll();
+
+//il faut que je traduit le chiffre des statut pour l'utilisateur
+//il me faut un tableau pour gerer les different etat 
+$libellesStatuts = [
+    0 => 'En attente',
+    1 => 'Validee',
+    2 => 'En Preparation',
+    3 => ' Terminee',
+    4 => 'Annulee'
+];
+
 //si le formulaire de modif est envoyé 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_profil'])) {
     $nom = trim($_POST['nom'] ?? '');
@@ -117,6 +147,34 @@ $modeEdition = isset($_GET['edit']) && $_GET['edit'] == 1;
                     <p> Ville: <?php echo htmlspecialchars($user['ville']); ?></p>
                 </div>
             </div>
+
+            <section class="historiqueCMD">
+                <h2 class="commandes">Mes commandes</h2>
+                <?php if (empty($commandeUtilisateur)): ?>
+                <p>Vous n'avez pas encore passer de commande chez nous </p>
+                <?php else: ?>
+                    <table border="1" cellpadding="10" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Numero</th>
+                            <th>Date</th>
+                            <th>Statut</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach($commandeUtilisateur as $commande): ?>
+                            <tr>
+                                <td><?php echo (int) $commande['ID']; ?></td>
+                                <td><?php echo date('d/m/Y à H:i' , strtotime($commande['date_creation'])); ?></td>
+                                <td><?php echo htmlspecialchars($libellesStatuts[$commande['statut']] ?? 'Statut Inconnu'); ?></td> <!-- si le statut existe on le met sinon on place statut inconnu--->
+                                <td><?php echo number_format((float) $commande['total'],2,',',' '); ?> € </td>
+                            </tr>
+                            <?php endforeach; ?>
+                    </tbody>
+                    </table>
+                    <?php endif; ?>
+            </section>
             <p><a href="user.php?edit=1">Modifier mes informations</a></p>
         <?php else: ?>
             <form method="POST" action="">
