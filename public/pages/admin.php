@@ -196,6 +196,117 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajout_employe'])) {
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////////
+//                          SUPPRIMER UN EMPLOYER                                //
+///////////////////////////////////////////////////////////////////////////////////
+
+
+// Le but est que le bloc ce lance si:
+// → j'ai envoye un fromulaire POST
+// → Le bouton "supprimer_employe" a été activer
+// → la personne connecter est un admin 
+
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    isset($_POST['supprimer_employer']) &&
+    $user['role'] === 'admin'
+) {
+    // je recupere ID envoyé par le formulaire
+    // (int) force un entier pour eviter de devoir manipuler un texte 
+
+    $utilisateurId = (int) ($_POST['utilisateur_id'] ?? 0);
+
+    // j'ai besoin de recuperer l'utilisateur qui sera cibler 
+    // mais je dois verifier son existance et le role qui lui ai assigner
+
+    $stmt = $pdo->prepare(("
+    SELECT ID, role
+    FROM users
+    WHERE ID = :id
+    "));
+
+    // on execute la requete
+
+    $stmt-> execute([
+        'id' => $utilisateurId
+    ]);
+
+    // on recupere la ligne avec la vraie valeur de :id
+    $utilisateurCible = $stmt->fetch();
+
+    //j'ai besoin de verifier:
+    //si l'utilisateur existe 
+    // si son role fait par des role gerable pour cette page puisque ici on gere pas les clients
+    // array key ($roleAutorises) recuepre les clés du tableau
+    // ici [employer et admin]
+    // et un admin connecter ne peux pas se supprimer tout seul
+
+    if(
+        $utilisateurCible && 
+        in_array($utilisateurCible['role'], array_keys($roleAutorises), true) &&
+        $utilisateurId !== (int) $user['ID']
+    ){
+    // IMPORTANT 
+    // si la personne cibler est un admin je dois etre sur qu'il s'agissent pas du dernier
+    
+        if($utilisateurCible['role'] === 'admin') {
+            // je passe par un requete pour compter mes admins
+
+            $stmt = $pdo->prepare("
+            SELECT COUNT(*) AS total_admins
+            FROM users
+            WHERE role = 'admin'
+            ");
+
+            $stmt->execute();
+
+            //on recupere le resultat de la requete 
+            $resultat = $stmt->fetch();
+
+            // puis on le transforme en entier 
+            $totalAdmins = (int) $resultat['total_admins'];
+
+
+            // et je bloque si j'ai un seul admin
+            if($totalAdmins <= 1) {
+                $ajoutEmploye = 'Impossible de supprimer le dernier administrateur';
+            } else{
+
+            // sinon on peux supprimer l'admin ciblé
+                $stmt = $pdo-> prepare("
+                DELETE FROM users
+                WHERE ID = :id
+                ");
+
+
+                $stmt -> execute([
+                    'id' => $utilisateurId
+                ]);
+    // Apres la suppression je dois recharger ma page 
+    // et mettre a jour ma liste affiché
+                header('Location: admin.php');
+                exit();
+            }
+        }else{
+
+
+        //si la cible n'est pas un admin
+        // on peux supprimer sans probleme
+            $stmt = $pdo->prepare("
+            DELETE FROM users
+            WHERE ID = :id
+            ");
+
+            $stmt-> execute([
+                'id' => $utilisateurId
+            ]);
+            // puis comme pour au dessus on recharge la liste 
+            header('Location: admin.php');
+            exit();
+        }
+    }
+}
+
 
 ?>
 <!DOCTYPE html>
@@ -295,6 +406,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajout_employe'])) {
                                                 </option>
                                                 <?php endforeach ?>
                                             </select>
+                                            <button type="submit" name="modifier_role" >Modifier</button>
+                                        </form>
+                                    </td>
+                                    <td>
+                                        <form method="POST" action="">
+                                            <input type="hidden" name="utilisateur_id" value="<?php echo (int) $utilisateur['ID']; ?>">
+                                            <button type="submit" name="supprimer_employer">Supprimer</button>
                                         </form>
                                     </td>
                                 </tr>
@@ -368,7 +486,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajout_employe'])) {
     <script src="../asset/JS/app.js"></script>
 
 </body>
-
-</html>
 
 </html>
