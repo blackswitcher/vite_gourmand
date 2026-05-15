@@ -18,10 +18,22 @@ require_once __DIR__ . '/../../src/configs/session.php';
             <ul class="menu">
                 <li><a class="navBouton" href="/public/index.php">Accueil</a></li>
                 <li><a class="navBouton" href="/public/pages/menus.php">Tous les menus</a></li>
-                <li>  <?php if(isset($_SESSION['user'])): ?>
-                    <a href="/public/index.php?logout=1"class="navBouton">Déconnexion</a>
-                    <?php else:?>
-                    <a class="navBouton" id="modalConnexion">Connexion</a>
+                <?php if (isset($_SESSION['user'])): ?>
+                    <?php if ($_SESSION['user']['role'] === 'client'): ?>
+                        <li><a class="navBouton" href="/public/pages/user.php">Mon Profil</a></li>
+                    <?php elseif (
+                        // pas obligatoire mais par precaution dans l'hypothese ou on rajoute un role car pour l'instant si c'est pas client c'est forcement un employe ou un admin 
+                        //simple verification supplementaire 
+                        $_SESSION['user']['role'] === 'admin' ||
+                        $_SESSION['user']['role'] === 'employe'
+                    ): ?>
+                        <li><a class="navBouton" href="/public/pages/admin.php">Administration</a></li>
+                    <?php endif; ?>
+                <?php endif; ?>
+                <li> <?php if (isset($_SESSION['user'])): ?>
+                        <a href="/public/index.php?logout=1" class="navBouton">Déconnexion</a>
+                    <?php else: ?>
+                        <a class="navBouton" id="modalConnexion">Connexion</a>
                     <?php endif; ?>
                 </li>
                 <li><a class="navBouton" href="/public/pages/contact.php">Contact</a></li>
@@ -40,18 +52,18 @@ require_once __DIR__ . '/../../src/configs/session.php';
                         <form method="POST" action="/public/index.php">
                             <input type="hidden" name="action" id="actionForm" value="connexion">
                             <!--email -->
-                                <div class="formulaire">
-                                    <label for="email">Mail</label>
-                                    <input id="email" type="email" name="email" required autocomplete="email">
-                                    <!--mot de passe -->
-                                    <label for="MDP">Mot de passe</label>
-                                    <input id="MDP" type="password" name="MDP" required autocomplete="motDePasse">
-                                </div>
+                            <div class="formulaire">
+                                <label for="email">Mail</label>
+                                <input id="email" type="email" name="email" required autocomplete="email">
+                                <!--mot de passe -->
+                                <label for="MDP">Mot de passe</label>
+                                <input id="MDP" type="password" name="MDP" required autocomplete="motDePasse">
+                            </div>
                             <!------------------------------FORMULAIRE D INSCRIPTION CACHER AU DERPART-------------------->
                             <div class="inscription hidden">
                                 <div class="formulaire">
                                     <label for="MDPVerif">Vérification mot de passe</label>
-                                    <input id="MDPVerif" type="password" name="MDPVerif" >
+                                    <input id="MDPVerif" type="password" name="MDPVerif">
                                     <!--adresse-->
                                     <label for="adresse">Adresse</label>
                                     <input id="adresse" type="text" name="rue">

@@ -1,0 +1,98 @@
+.hidden{
+    display: none;
+}
+
+
+#modalEmploye {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+#modalEmploye.hidden{
+    display: none;
+}
+/* c'est une maniere que j'ai vu qui appel toutes les div enfants direct se trouvant dans ID selectionner */
+#modalEmploye > div{
+    width: min(90%, 520px);
+    background: #f6ead4;
+    border: 2px solid #9c6b2f;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+    color: #1f3f3d;
+}
+
+#modalEmploye h2{
+    margin-top: 0;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+#modalEmploye form{
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+#modalEmploye label{
+    display: block;
+    margin-bottom: 4px;
+
+}
+
+#fermerModalEmploye{
+    display: block;
+    margin-left: auto;
+    margin-bottom: 12px;
+    background: #2b7a78;
+    color:white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px ;
+    cursor: pointer;
+}
+
+/*on selection tout les types de bouton de mon modal pour faire un seul appel pour tous  */
+#modalEmploye button[type="submit"]:hover,
+#fermerModalEmploye :hover{
+    opacity: 0.9;
+}
+
+
+
+/* GESTION DE L AFFICAGE DE MES UTILISATEURS EXISTANT */
+
+.table-utilisateurs{
+    width: 100%;
+    max-width: 1100px;
+    border-collapse: collapse;
+    margin-top:  20px
+}
+
+.table-utilisateurs th,
+.table-utilisateurs td {
+    padding:10px;
+    vertical-align: middle;
+    text-align: left;
+}
+
+.table-utilisateurs form{
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.table-utilisateurs select,
+.table-utilisateurs button{
+    padding: 6px 8px;
+}
+
+.table-utilisateurs td{
+    word-break: break-word;
+}

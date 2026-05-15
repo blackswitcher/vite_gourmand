@@ -1,3 +1,28 @@
+//////////////////////////////////////////////////////////////////////////////
+//                              MODAL EMPLOYER                              //
+//////////////////////////////////////////////////////////////////////////////
+
+
+const boutonOuvrir = document.getElementById('ouvrirModalEmploye');
+const boutonFermer = document.getElementById('fermerModalEmploye');
+const modalEmploye = document.getElementById('modalEmploye');
+
+
+if (boutonOuvrir && boutonFermer && modalEmploye){
+  boutonOuvrir.addEventListener('click', function(){
+    modalEmploye.classList.remove('hidden');
+  });
+
+  boutonFermer.addEventListener('click', function() {
+    modalEmploye.classList.add('hidden');
+  });
+}
+
+
+
+
+
+
 //------------------------------------ GESTION MODAL MAP ---------------------
 function initMapModal(){
 
@@ -272,6 +297,12 @@ cupcakes.forEach((cupcake) => {
   });
 });
 
-document.querySelector(".rating").addEventListener("mouseleave", () => {
-  paint(current);
-});
+const ratingElement = document.querySelector(".rating");
+
+if (ratingElement){
+  ratingElement.addEventListener("mouseleave", () => {
+    paint(current);
+  });
+}
+
+
