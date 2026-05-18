@@ -1,3 +1,32 @@
+/////////////////////////////////////////////////////////////////////////////
+//                              MODAL AVIS                                 //
+/////////////////////////////////////////////////////////////////////////////
+
+const boutonAvis = document.querySelectorAll('.btnAvis');
+const modalAvis = document.getElementById('modalAvis');
+const fermerModalAvis = document.getElementById('fermerModalAvis');
+const commandeIdAvis = document.getElementById('commande_id_avis');
+
+// je parcourt les boutons avis 
+boutonAvis.forEach((bouton) => {
+  bouton.addEventListener('click', () =>{
+    // je vais lire l'id de la commande que j'ai stocker ds data-commande
+    const commandeId = bouton.dataset.commandeId;
+
+    commandeIdAvis.value = commandeId;
+
+    // j'affiche mon modal 
+    modalAvis.classList.remove('hidden');
+  });
+});
+
+// je gere ma fermeture du modal ici 
+if (fermerModalAvis && modalAvis) {
+  fermerModalAvis.addEventListener('click', () => {
+    modalAvis.classList.add('hidden');
+  });
+}
+
 //////////////////////////////////////////////////////////////////////////////
 //                              MODAL EMPLOYER                              //
 //////////////////////////////////////////////////////////////////////////////
