@@ -1,0 +1,252 @@
+.hidden{
+    display: none;
+}
+
+
+/*GESTION GLOBAL DE LA PAGE PROFIL*/
+
+.section_menu{
+    width: min(1100px, 92%);
+    margin:30px auto;
+    padding:24px;
+    background: rgba(255,248,235,0.94);
+    border: 3px solid var(--color_bg_second);
+    box-shadow: 0 16px 35px rgba(0,0,0,0.12);
+    color: var(--color_bg_text);
+}
+
+/*GESTION DES TITRES DE LA PAGE */
+
+.section_menu h1,
+.section_menu h2,
+.section_menu h3{
+    text-align: center;
+    color: var(--color_bg_text);
+    text-shadow: var(--text_shadow_brown);
+    margin-bottom: 18px;
+}
+
+.section_menu h1{
+    font-size: var(--title_size);
+}
+
+.section_menu h2{
+    font-size: var(--text_size_xl);
+}
+
+.section_menu p,
+.section_menu li,
+.section_menu label{
+    color: var(--color_bg_text);
+}
+
+/* GESTION DU BLOC D4INFO PROFIL*/
+.user_infos,
+.user_profile,
+.user_card,
+.profil_card,
+.commande_card,
+.avis_card{
+    background: #fffdf8;
+    border: 2px solid rgba(90,58,27,0.18);
+    border-radius: var(--radius_m);
+    padding: 18px;
+    margin-bottom: 18px;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.06);
+}
+
+/*gestion des lignes d'info */
+
+.user_infos p,
+.user_profile p,
+.profil_card p, 
+.commande_card p, 
+.avis_card p{
+    margin-bottom: 8px;
+    font-size: var(--text_size);
+}
+
+/*formulaire*/
+
+.section_menu form{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    margin-top: 12px;
+}
+
+.section_menu form div{
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    /*raccourci de flexbox se forme 
+    flex: flex-grow(grandi si la place y est)  flex-shrink(retreci si ya pas de place ) flex-basis(taille de depart) */
+    flex: 1 1 220px;
+}
+
+.section_menu input,
+.section_menu select,
+.section_menu textarea{
+    width: 100%;
+    padding: 10px 12px;
+    border: 2px solid rgba(90,58,27,0.22);
+    border-radius: var(--radius_xs);
+    background: #fffdf8;
+    color: var(--color_bg_text);
+    font-family: inherit;
+    font-size: var(--text_size_xs);
+}
+
+.section_menu textarea{
+    min-height: 120px;
+    resize: vertical;
+}
+
+/*GESTION DES BOUTONS*/
+
+.section_menu button,
+.section_menu a.button-link,
+.btnAvis,
+.btnModifierProfil{
+    border: none;
+    border-radius: 999px;
+    padding: 10px 26px;
+    background: var(--color_bg_main);
+    color: var(--color_w_text);
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.15 ease, opacity 0.15s ease, background 0.15s ease;
+    text-decoration: none;
+}
+
+.section_menu button:hover,
+.section_menu a.button-link:hover,
+.btnAvis:hover,
+.btnModifierProfil:hover{
+    opacity: 0.94;
+    transform: translateY(-1px);
+    background: var(--color_bg_second);
+}
+
+/*gestion du tableau d'historique de commande */
+
+.section_menu table{
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: white;
+    overflow: hidden;
+    border-radius: var(--radius_m);
+}
+
+.section_menu thead{
+    background: var(--color_bg_second);
+    color: var(--color_w_text);
+}
+
+.section_menu th,
+.section_menu td{
+    padding: 12px 14px;
+    border:1px solid rgba(90,58,27,0.18);
+    text-align:left;
+    vertical-align: middle;
+}
+
+.section_menu tbody tr:nth-child(even){
+    background: rgba(198, 109, 106,0.08);
+}
+
+.section_menu tbody tr:hover{
+    background: rgba(31,109,106,0.08);
+}
+
+#modalAvis{
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 999px;
+}
+
+#modalAvis.hidden{
+    display: none;
+}
+
+#modalAvis > div{
+    width: min(90%, 720px);
+    background: #f6ead4;
+    border:2px solid #9c6b2f;
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+    color: #1f3f3d;
+
+}
+
+#modalAvis h2{
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#ModalAvis form{
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 18px;
+}
+
+#modalAvis form > div{
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: unset;
+}
+
+#ModalAvis textarea{
+    width: 100%;
+    min-height: 160px;
+    padding: 14px 16px;
+    font-size: 18px;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+#modalAvis select{
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 17px;
+}
+
+
+#modalAvis h2{
+    text-align: center;
+    margin-bottom: 24px;
+    font-size: 42px;
+}
+#modalAvis label{
+    font-size: 24px;
+    font-weight: 600px;
+    color: var(--color_bg_text);
+}
+
+#modalAvis button[type="submit"]{
+    align-self: flex-end;
+    padding: 12px 20px;
+    font-size: 16px;
+    margin-top: 20px;
+}
+
+#fermerModalAvis{
+    display: block;
+    margin-left: auto;
+    margin-bottom: 12px;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    background: var(--color_bg_main);
+    color: white;
+    cursor: pointer;
+}

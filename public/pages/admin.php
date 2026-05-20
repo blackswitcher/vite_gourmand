@@ -77,10 +77,10 @@ $libellesStatuts = [
 //                      AFFICHER AL LISTYE DES EMPLOYES                         //
 //////////////////////////////////////////////////////////////////////////////////
 
-    $roleAutorises = [
-        'employe'=>'Employe',
-        'admin'=>'Admin'
-        ];
+$roleAutorises = [
+    'employe' => 'Employe',
+    'admin' => 'Admin'
+];
 if (
     $_SERVER['REQUEST_METHOD'] === 'POST' &&
     isset($_POST['modifier_role']) &&
@@ -117,7 +117,74 @@ ORDER BY role ASC, nom ASC, prenom ASC
 $stmt->execute();
 $utilisateurs = $stmt->fetchAll();
 
+/////////////////////////////////////////////////////////////////////////////////
+//                          GESTION DES AVIS                                   //
+/////////////////////////////////////////////////////////////////////////////////
 
+// recuperation des avis 'en attente' 
+// si mon statut = 0 avis non traité par le staff
+
+$stmt = $pdo->prepare("
+    SELECT
+        avis.ID,
+        avis.note,
+        avis.commentaire,
+        avis.date_creation,
+        avis.commande_id,
+        users.nom,
+        users.prenom
+    FROM avis
+    INNER JOIN users ON avis.user_id = users.ID
+    WHERE avis.statut = 0
+    ORDER BY avis.date_creation DESC
+");
+
+$stmt->execute();
+
+$avisAttente = $stmt->fetchAll();
+
+// MODERER UN AVIS 
+// si on clique sur "valider" 
+
+if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['valider_avis'])){
+    $avisId = (int) ($_POST['avis_id'] ?? 0);
+
+    // on verifier que l'id est valide avant de faire la mise a jour
+    if($avisId > 0){
+        $stmt = $pdo -> prepare("
+        UPDATE avis
+        SET statut = 1 
+        WHERE ID = :id
+        ");
+
+    $stmt->execute([
+        'id' => $avisId
+    ]);
+
+    header('Location: admin.php');
+    exit();
+    }
+}
+
+// si on clique sur "refuser"*
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['refuser_avis'])){
+    $avisId = (int) ($_POST['avis_id'] ?? 0);
+
+if($avisId > 0){
+    $stmt = $pdo -> prepare("
+    UPDATE avis
+    SET statut = 2
+    WHERE ID = :id
+    ");
+
+    $stmt -> execute([
+    'id' => $avisId
+    ]);
+
+    header('Location: admin.php');
+    exit();
+    }
+}   
 
 //////////////////////////////////////////////////////////////////////////////////
 //                          AJOUT EMPLOYER                                      //
@@ -227,7 +294,7 @@ if (
 
     // on execute la requete
 
-    $stmt-> execute([
+    $stmt->execute([
         'id' => $utilisateurId
     ]);
 
@@ -241,15 +308,15 @@ if (
     // ici [employer et admin]
     // et un admin connecter ne peux pas se supprimer tout seul
 
-    if(
-        $utilisateurCible && 
+    if (
+        $utilisateurCible &&
         in_array($utilisateurCible['role'], array_keys($roleAutorises), true) &&
         $utilisateurId !== (int) $user['ID']
-    ){
-    // IMPORTANT 
-    // si la personne cibler est un admin je dois etre sur qu'il s'agissent pas du dernier
-    
-        if($utilisateurCible['role'] === 'admin') {
+    ) {
+        // IMPORTANT 
+        // si la personne cibler est un admin je dois etre sur qu'il s'agissent pas du dernier
+
+        if ($utilisateurCible['role'] === 'admin') {
             // je passe par un requete pour compter mes admins
 
             $stmt = $pdo->prepare("
@@ -268,36 +335,36 @@ if (
 
 
             // et je bloque si j'ai un seul admin
-            if($totalAdmins <= 1) {
+            if ($totalAdmins <= 1) {
                 $ajoutEmploye = 'Impossible de supprimer le dernier administrateur';
-            } else{
+            } else {
 
-            // sinon on peux supprimer l'admin ciblé
-                $stmt = $pdo-> prepare("
+                // sinon on peux supprimer l'admin ciblé
+                $stmt = $pdo->prepare("
                 DELETE FROM users
                 WHERE ID = :id
                 ");
 
 
-                $stmt -> execute([
+                $stmt->execute([
                     'id' => $utilisateurId
                 ]);
-    // Apres la suppression je dois recharger ma page 
-    // et mettre a jour ma liste affiché
+                // Apres la suppression je dois recharger ma page 
+                // et mettre a jour ma liste affiché
                 header('Location: admin.php');
                 exit();
             }
-        }else{
+        } else {
 
 
-        //si la cible n'est pas un admin
-        // on peux supprimer sans probleme
+            //si la cible n'est pas un admin
+            // on peux supprimer sans probleme
             $stmt = $pdo->prepare("
             DELETE FROM users
             WHERE ID = :id
             ");
 
-            $stmt-> execute([
+            $stmt->execute([
                 'id' => $utilisateurId
             ]);
             // puis comme pour au dessus on recharge la liste 
@@ -371,6 +438,66 @@ if (
             </table>
         <?php endif; ?>
         <?php if ($user['role'] === 'admin'): ?>
+
+            <section class="section_menu">
+                <h2>Gestion des avis</h2>
+
+                <?php if (empty($avisAttente)): ?>
+                    <p>Aucune avis en attente.</p>
+                <?php else: ?>
+                    <table border="1" cellpadding="10" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>ID avis</th>
+                                <th>Commande</th>
+                                <th>Client</th>
+                                <th>Note</th>
+                                <th>Commentaire</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($avisAttente as $avis): ?>
+                                <tr>
+                                    <!--Id de l'avis -->
+                                    <td><?php echo (int) $avis['ID']; ?></td>
+
+                                    <!--numero de commande lié a l'avis-->
+                                    <td><?php echo (int) $avis['commande_id']; ?></td>
+
+                                    <!--client -->
+                                    <td><?php echo htmlspecialchars($avis['prenom'] . ' ' . $avis['nom']); ?></td>
+
+                                    <!--La Note-->
+                                    <td><?php echo (int) $avis['note']; ?>/5</td>
+
+                                    <!---commentaire -->
+                                    <td><?php echo htmlspecialchars($avis['commentaire']); ?></td>
+
+                                    <!--date de creation-->
+                                    <td><?php echo date('d/m/Y à H:i', strtotime($avis['date_creation'])); ?></td>
+                                    
+                                    <td>
+                                    <!-- FROMULAIRE POUR ACCEPTER OU REJETER UN COMMENTAIRE -->
+                                    <form method="POST" action="">
+                            <!-- je dois savoir quelle avis je traite-->
+                                        <input type="hidden" name="avis_id" value="<?php echo (int) $avis['ID']; ?>">
+
+                            <!-- bouton pour valider l'avis-->
+                            <button type="submit" name="valider_avis"> Valider </button>
+
+                            <!--bouton pour refuser l'avis -->
+                            <button type="submit" name="refuser_avis"> Refuser </button>
+
+                                    </form>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
+            </section>
             <section class="section_menu">
                 <h2>Gestion des utilisateurs</h2>
                 <?php if (empty($utilisateurs)): ?>
@@ -401,12 +528,12 @@ if (
                                         <form type="hidden" name="utilisateur_id" value="<?php echo (int) $utilisateur['ID']; ?>">
                                             <select name="role">
                                                 <?php foreach ($roleAutorises as $valeurRole => $libelleRole): ?>
-                                                <option value="<?php echo htmlspecialchars($valeurRole); ?>" <?php echo ($utilisateur['role'] === $valeurRole) ? 'selected' : ''; ?>>
-                                                    <?php echo htmlspecialchars($libelleRole); ?>
-                                                </option>
+                                                    <option value="<?php echo htmlspecialchars($valeurRole); ?>" <?php echo ($utilisateur['role'] === $valeurRole) ? 'selected' : ''; ?>>
+                                                        <?php echo htmlspecialchars($libelleRole); ?>
+                                                    </option>
                                                 <?php endforeach ?>
                                             </select>
-                                            <button type="submit" name="modifier_role" >Modifier</button>
+                                            <button type="submit" name="modifier_role">Modifier</button>
                                         </form>
                                     </td>
                                     <td>

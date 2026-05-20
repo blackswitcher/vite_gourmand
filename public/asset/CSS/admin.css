@@ -2,6 +2,114 @@
     display: none;
 }
 
+/* fond general de la page admin */
+
+.section_menu{
+    width: min(1200px, 92%);
+    margin: 30px auto;
+    padding: 24px;
+    background: rgba(255,248,235,0.92);
+    border: 3px solid var(--color_bg_second);
+    border-radius: var(--radius_xl);
+    box-shadow: 0 16px 35px rgba(0,0,0,0.12);
+    color: var(--color_bg_text);
+}
+
+/* GESTION DES TITRES*/
+.section_menu h1,
+.section_menu h2{
+    text-align: center;
+    margin-bottom: 20px;
+    color: var(--color_bg_text);
+    text-shadow: var(--text_shadow_brown);
+}
+
+.section_menu h1{
+    font-size: var(--size_title);
+}
+
+.section_menu h2{
+    font-size: var(--text_size_xl);
+}
+/**GESTION DES TABLEAUX */
+.section_menu table{
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: white;
+    overflow: hidden;
+    border-radius: var(--radius_m);
+}
+
+.section_menu thead{
+    background: var(--color_bg_second);
+    color:var(--color_w_text);
+}
+
+.section_menu th,
+.section_menu td{
+    padding: 12px 14px;
+    border: 1px solid rgba(90, 58, 27, 0.18);
+    text-align: left;
+    vertical-align: middle;
+}
+/*pour une meilleure visibilité je vais separer les lignes paire et impair
+ca piquera moins les yeux ↓↓↓↓↓ c'est cette partie qui gere ca */
+.section_menu tbody tr:nth-child(even){
+    background: rgba(198, 109, 106, 0.08);
+}
+
+.section_menu tbody tr:hover{
+    background: rgba(31, 109, 106, 0.08);
+}
+
+/*GESTION DES FORMULAIRES*/
+
+.section_menu form{
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.section_menu select,
+.section_menu input,
+.section_menu textarea{
+    padding: 8px 10px;
+    border: 2px solid rgba(90,58,27,0.22);
+    border-radius: var(--radius_xs);
+    background: #fffdf8;
+    color: var(--color_bg_text);
+}
+
+.section_menu button,
+.ajouterEmployer button,
+#fermerModalEmployer{
+    border: none;
+    border-radius: 999px;
+    padding: 8px 14px;
+    background: var(--color_bg_main);
+    color: var(--color_w_text);
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.section_menu button:hover,
+.ajouterEmployer button:hover,
+#fermerModalEmployer:hover {
+    opacity: 0.92;
+    transform: translateY(-1px);
+}
+
+/*gestion du bouton "ajouter un employe" */
+
+.ajouterEmployer{
+    display: flex;
+    justify-content: center;
+    margin: 20px 0 30px;
+}
+
 
 #modalEmploye {
     position: fixed;

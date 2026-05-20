@@ -7,7 +7,9 @@ require_once __DIR__ . '/../src/configs/session.php';
 require_once __DIR__ . '/../src/configs/db.php';
 
 
-
+///////////////////////////////////////////////////////////////////////////////////
+//                          GESTION DE LA CONNEXION                              //
+///////////////////////////////////////////////////////////////////////////////////
 
 // gerer la deconnexion automatique 
 if (isset($_GET['logout'])) {
@@ -83,17 +85,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     VALUES(:email, :password_hash, :rue, :code_postal, :ville, :nom, :prenom, :telephone, :role)
                     ");
 
-    $stmt->execute([
-    "email" => $email,
-    "password_hash" => $passwordHash,
-    "rue" => $rue,
-    "code_postal" => $code_postal,
-    "ville" => $ville,
-    "nom" => $nom,
-    "prenom" => $prenom,
-    "telephone" => $telephone,
-    "role" => 'client'
-    ]);
+                $stmt->execute([
+                    "email" => $email,
+                    "password_hash" => $passwordHash,
+                    "rue" => $rue,
+                    "code_postal" => $code_postal,
+                    "ville" => $ville,
+                    "nom" => $nom,
+                    "prenom" => $prenom,
+                    "telephone" => $telephone,
+                    "role" => 'client'
+                ]);
             }
             $stmt = $pdo->prepare("SELECT * FROM users WHERE email= :email");
             $stmt->execute(['email' => $email]);
@@ -105,7 +107,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
+///////////////////////////////////////////////////////////////////////////////////
+//                              RECUPERER LES DERNIERS AVIS VALIDER              // 
+/////////////////////////////////////////////////////////////////////////////////// 
 
+// separation des avis valider et des autres
+$stmt = $pdo->prepare("
+    SELECT
+    avis.note,
+    avis.commentaire,
+    avis.date_creation,
+    users.nom,
+    users.prenom
+    FROM avis
+    INNER JOIN users ON avis.user_id = users.ID
+    WHERE avis.statut = 1 
+    ORDER BY avis.date_creation DESC
+    LIMIT 10
+");
+
+$stmt->execute();
+
+$avisValides = $stmt->fetchAll();
 
 
 ?>
@@ -220,22 +243,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h2 class="h2_avis">Nos Derniers Avis </h2>
             <p class="text_avis">ils ont testés pour vous, ils racontent</p>
             <div class="container_avis">
-                <div class="avis">
-                    <div class="utilisateur_avis">
-                        <div class="image_utilisateur">
-                            <img src="asset/IMG/E.marshalprofil.jpg" alt="photo de profil d'un utilisateur">
+                <?php if (empty($avisValides)): ?>
+                    <p>Aucun avis validé pour le moment </p>
+                <?php else: ?>
+                    <?php foreach ($avisValides as $avis): ?>
+                        <div class="avis">
+                            <div class="utilisateur_avis">
+                                <div class="initial_utilisateur">
+                                    <!---on affiche le prenom + initial -->
+                                    <p>
+                                        <?php echo htmlspecialchars($avis['prenom'] . ' ' . strtoupper(substr($avis['nom'], 0, 1)) . '.'); ?>
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="commentaire">
+                                <!--on affiche le commentaire du client-->
+                                <p><?php echo htmlspecialchars($avis['commentaire']); ?></p>
+                            </div>
+                            <div class="note">
+                                <!--affichage de la note -->
+                                <?php echo str_repeat('🧁', (int) $avis['note']); ?>
+                            </div>
                         </div>
-                        <div class="initial-utilisateur">
-                            <p> E. Marshal </p>
-                        </div>
-                    </div>
-                    <div class="commentaire">
-                        <p>super piece livrée a temps</p>
-                    </div>
-                    <div class="note">
-                        🧁🧁🧁🧁🧁
-                    </div>
-                </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
             <!-- IL FAUDRAS QUE JE LE FASSE DISPARAITRE EN HORS CONNEXION OU QUE JE DEMANDE LA CONNEXION SI ON CLIQUE DESSUS SANS SESSION OUVERTE -->
             <div class="ajout_avis">
