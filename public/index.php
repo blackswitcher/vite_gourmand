@@ -3,9 +3,10 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-require_once __DIR__ . '/../src/configs/session.php';
-require_once __DIR__ . '/../src/configs/db.php';
+$projectRoot = dirname($_SERVER['DOCUMENT_ROOT']);
 
+require_once $projectRoot . '/src/configs/session.php';
+require_once $projectRoot . '/src/configs/db.php';
 
 ///////////////////////////////////////////////////////////////////////////////////
 //                          GESTION DE LA CONNEXION                              //
@@ -14,7 +15,7 @@ require_once __DIR__ . '/../src/configs/db.php';
 // gerer la deconnexion automatique 
 if (isset($_GET['logout'])) {
     unset($_SESSION['user']);
-    header('Location: /public/index.php');
+    header('Location: /index.php');
     exit();
 }
 
@@ -39,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // verification des données entre users et la BDD 
         if ($users && password_verify($mdp, $users['password_hash'])) {
             $_SESSION['user'] = $users;
-            header('Location: /public/index.php');
+            header('Location: /index.php');
             exit();
         } else {
             $error = 'identifiant incorrects';
@@ -102,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
             $_SESSION['user'] = $user;
-            header('Location: /public/index.php');
+            header('Location: /index.php');
             exit();
         }
     }

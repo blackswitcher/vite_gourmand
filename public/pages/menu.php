@@ -100,7 +100,7 @@ if(!isset($_SESSION['panier'])){
 </div>
 <div class="menu_detail">
 <!-- lien de retour au menu-->
-<a href="menus.php">Retour au menus</a>
+<a href="menus.php">Retour</a>
 </div>
 </div>
 

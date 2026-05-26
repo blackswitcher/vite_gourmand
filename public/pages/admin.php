@@ -5,7 +5,7 @@ require_once __DIR__ . '/../../src/configs/db.php';
 
 // on verifie que user est connecte
 if (!isset($_SESSION['user'])) {
-    header('location: /public/index.php');
+    header('location: /index.php');
     exit();
 }
 
@@ -13,7 +13,7 @@ $user = $_SESSION['user'];
 
 // on limite maintenant l'acces au role concerner 
 if ($user['role'] !== 'admin' && $user['role'] !== 'employe') {
-    header('Location: /public/index.php');
+    header('Location: /index.php');
     exit();
 }
 ///////////////////////////////////////////////////////////////////////////////////

@@ -7,7 +7,7 @@ require_once __DIR__ . '/../../src/configs/db.php';
 require_once __DIR__ . '/../../src/configs/session.php';
 
 if (!isset($_SESSION['user'])) {
-    header('location:/public/index.php');
+    header('location: /index.php');
     exit();
 }
 //on recupere les données de l'utilisateur
@@ -247,7 +247,7 @@ $modeEdition = isset($_GET['edit']) && $_GET['edit'] == 1;
                     <p> Adresse <?php echo htmlspecialchars($user['rue']); ?></p>
                 </div>
                 <div>
-                    <p> Code Postale: <?php echo htmlspecialchars($user['code_postal']); ?></p>
+                    <p> Code Postal: <?php echo htmlspecialchars($user['code_postal']); ?></p>
                 </div>
                 <div>
                     <p> Ville: <?php echo htmlspecialchars($user['ville']); ?></p>
@@ -307,7 +307,7 @@ $modeEdition = isset($_GET['edit']) && $_GET['edit'] == 1;
                         <label for="adresse">Adresse</label>
                         <input id="adresse" type="text" name="rue" value="<?php echo htmlspecialchars($user['rue']); ?>">
                         <!--code postal-->
-                        <label for="codePostal">Code postale</label>
+                        <label for="codePostal">Code postal</label>
                         <input id="codePostal" type="number" name="code_postal" value="<?php echo htmlspecialchars($user['code_postal']); ?>">
                         <!--ville-->
                         <label for="ville">Ville</label>

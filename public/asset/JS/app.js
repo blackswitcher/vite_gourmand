@@ -90,6 +90,8 @@ if (openMapBtn && mapModal && closeMapBtn) {
 }
 }
 
+initMapModal();
+
 // gestion de la fonction Prix
 function initPrix(){
 
@@ -105,6 +107,7 @@ prixMaxInput.addEventListener("input", () => {
   prixMaxValue.textContent = prixMaxInput.value;
 });
 }
+initMapModal();
 
 // gestion du carroussel
 

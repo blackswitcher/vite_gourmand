@@ -246,7 +246,7 @@ if($userConnecte && !$profilComplet) {
             <?php else: ?>
                 <h2>informations du client</h2>
                 <p>vous devrez etre connecter pour finaliser votre commande.</p>
-                <p><a href="/public/index.php">Se connecter</a></p>
+                <p><a href="/index.php">Se connecter</a></p>
                 <?php endif; ?>
             <p><a href="menus.php">Continuer mes achats</a></p>
         <?php endif; ?>

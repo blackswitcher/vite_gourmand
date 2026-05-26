@@ -4,7 +4,7 @@
                 <div class="footer_bloc2">
                     <ul class="menu_footer">
                         <li><a class="navBouton_footer" href="index.php">Accueil</a></li>
-                        <li><a class="navBouton_footer" href="../public/pages/menus.php">Nos Menus</a></li>
+                        <li><a class="navBouton_footer" href="../pages/menus.php">Nos Menus</a></li>
                         <li><a class="navBouton_footer" href="">Avis</a></li>
                         <li><a class="navBouton_footer" href="">Contact</a></li>
                     </ul>

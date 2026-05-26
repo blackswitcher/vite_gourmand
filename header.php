@@ -17,7 +17,7 @@ require_once __DIR__ . '/../../src/configs/session.php';
         <nav>
             <ul class="menu">
                 <li><a class="navBouton" href="/index.php">Accueil</a></li>
-                <li><a class="navBouton" href="/pages/menus.php">Services</a></li>
+                <li><a class="navBouton" href="/pages/menus.php">Tous les menus</a></li>
                 <?php if (isset($_SESSION['user'])): ?>
                     <?php if ($_SESSION['user']['role'] === 'client'): ?>
                         <li><a class="navBouton" href="/pages/user.php">Mon Profil</a></li>
@@ -68,7 +68,7 @@ require_once __DIR__ . '/../../src/configs/session.php';
                                     <label for="adresse">Adresse</label>
                                     <input id="adresse" type="text" name="rue">
                                     <!--code postal-->
-                                    <label for="codePostal">Code postal</label>
+                                    <label for="codePostal">Code postale</label>
                                     <input id="codePostal" type="number" name="code_postal">
                                     <!--ville-->
                                     <label for="adresse">Ville</label>
