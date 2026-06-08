@@ -8,6 +8,8 @@ $projectRoot = dirname($_SERVER['DOCUMENT_ROOT']);
 require_once $projectRoot . '/src/configs/session.php';
 require_once $projectRoot . '/src/configs/db.php';
 
+
+
 ///////////////////////////////////////////////////////////////////////////////////
 //                          GESTION DE LA CONNEXION                              //
 ///////////////////////////////////////////////////////////////////////////////////

@@ -1,22 +1,29 @@
-<?php
+﻿<?php
+
+// charge l'autoload de composer pour pouvoir utiliser phpdotenv
+require_once __DIR__ . '/../../vendor/autoload.php';
+
+// va chercher le fichier .env a la racine du projet 
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../' );
+
+//charge les variable du .env dans php 
+$dotenv -> load();
+
 try {
-    // connexion PDO a la base mySQL locale
-    //Port 3307
-    // a deplacer en dans un .env
+    //on creer la connexion avce les variables venant du .env
     $pdo = new PDO(
-        'mysql:host=127.0.0.1;port=3307;dbname=vite_gourmand;charset=utf8mb4', 
-        'root', 
-        'root'
-        );
+        'mysql:host=' . $_ENV['DB_HOST'] . ';port=' . $_ENV['DB_PORT'] . ';dbname=' . $_ENV['DB_NAME'] . ';charset=' . $_ENV['DB_CHARSET'],
+        $_ENV['DB_USER'],
+        $_ENV['DB_PASSWORD']
+    );
 
-        // PDO lance une exception en cas d'erreur SQL
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // on force PDO a remonter les erreurs sous forme d'exception
+    $pdo ->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        // Les resultats SQL seront recuperer sous forme de tableaux associatif 
-
+    // on recupere dans un tableau associatif 
     $pdo ->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-    
-} catch (PDOException $e) {
-    die('Erreur : ' . $e->getMessage());
+} catch (PDOException $e){
+    //stoppe le script si la connexion echoue et affiche l'erreur 
+    die('erreur : ' . $e->getMessage());
 }
 ?>
