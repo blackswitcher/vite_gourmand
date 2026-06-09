@@ -40,7 +40,7 @@ docker compose down
 Si des fichiers Docker ont ete modifies, reconstruire avec :
 
 ```powershell
-docker compose up --build
+docker compose up -dgit --build
 ```
 
 ## Base de donnees
@@ -54,3 +54,13 @@ docker compose up --build
 - le fichier `.env` sert a la configuration locale
 - le fichier `.env.example` sert de modele
 - en cas de probleme reseau avec Docker, tester temporairement avec un autre reseau
+
+## Regle simple de configuration
+
+- en local classique, `DB_HOST=127.0.0.1`
+- avec Docker, `DB_HOST=db`
+
+## Verification rapide
+
+- site : `http://localhost:8080`
+- base MySQL Docker : port `3307` depuis la machine
