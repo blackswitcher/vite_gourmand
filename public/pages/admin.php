@@ -417,11 +417,11 @@ if (
                                     <input type="hidden" name="commande_id" value="<?php echo (int) $commande['ID']; ?>">
 
                                     <select name="statut">
-                                        <option value="0" <?php echo ((int) $commande['statut'] === 0) ? 'selected' : ''; ?>>En attente</option>
-                                        <option value="1" <?php echo ((int) $commande['statut'] === 1) ? 'selected' : ''; ?>>Validee</option>
-                                        <option value="2" <?php echo ((int) $commande['statut'] === 2) ? 'selected' : ''; ?>>En Preparation</option>
-                                        <option value="3" <?php echo ((int) $commande['statut'] === 3) ? 'selected' : ''; ?>>Terminer</option>
-                                        <option value="4" <?php echo ((int) $commande['statut'] === 4) ? 'selected' : ''; ?>>Annulee</option>
+                                        <?php foreach ($libellesStatuts as $valeurStatut => $libelleStatut):?>
+                                            <option value="<?php echo (int) $valeurStatut;?>"<?php echo ((int) $commande['statut'] === (int) $valeurStatut) ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($libelleStatut); ?>
+                                            </option>
+                                        <?php endforeach; ?>
                                     </select>
 
                                     <button type="submit" name="modifier_statut"> Mettre a jour </button>

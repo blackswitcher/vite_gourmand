@@ -275,7 +275,7 @@ $modeEdition = isset($_GET['edit']) && $_GET['edit'] == 1;
                                     <td><?php
                                         // gestion de la colonnes 'avis' et un seul avis peux etre poser par commande
                                         //l'avis peut etre poser que si mon client a recu sa commande donc statut terminer        
-                                        if ((int) $commande['statut'] === 3 && empty($commande['avis_id'])): ?>
+                                        if (in_array((int) $commande['statut'],[3, 4, 5], true) && empty($commande['avis_id'])): ?>
                                             <!--je vais integrer l'id de la commande a mon bouton -->
                                             <button type="button" class="btnAvis" data-commande-id="<?php echo (int) $commande['ID']; ?>">Laisser un avis </button>
                                             <!-- si un avis a deja etait deposer on informe l'utilisateur  -->
