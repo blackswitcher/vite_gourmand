@@ -43,7 +43,7 @@ $stmt->execute([
 $commandeUtilisateur = $stmt->fetchAll();
 
 //il me faut un tableau pour gerer les different etat qui se trouve dans functions
-$libellesStatuts = getLibellesStautsCommande();
+$libellesStatuts = getLibellesStatutsCommande();
 
 ////////////////////////////////////////////////////////////////////////////////////
 //                             AJOUT D'UN AVIS                                    //
@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_avis'])) {
         $commandeCible = $stmt->fetch();
 
         // controle de la commande et du statut
-        if ($commandeCible && (int) $commandeCible['statut'] === 3) {
+        if ($commandeCible && in_array((int) $commandeCible['statut'],[3, 4, 5], true)){
             // on verifie qu'aucun avis n'existe pas deja pour cette commande 
             $stmt = $pdo->prepare("
         SELECT ID 
@@ -133,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_avis'])) {
                 $error = 'un avis existe deja pour cette commmande';
             }
         } else {
-            $error = 'Cette commande en peux pas recevoir d\'avis';
+            $error = 'Cette commande en peux pas encore recevoir d\'avis';
         }
     } else {
         $error = 'Merci de remplir correctement la note et le commentaire ';

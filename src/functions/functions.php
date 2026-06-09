@@ -1,11 +1,12 @@
 <?php
 
-function getLibellesStautsCommande(): array{
+function getLibellesStatutsCommande(): array{
     return[
-        0 => 'En attente',
-        1 => 'Validee',
-        2 => 'En livraison',
-        3 => 'Terminée',
-        4 => 'Annulee'
+        0 => 'Accepté',
+        1 => 'En preparation',
+        2 => 'En cours de livraison',
+        3 => 'Livré',
+        4 => 'En attente du retour de materiel',
+        5 => 'Terminée'
     ];
 }

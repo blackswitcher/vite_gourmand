@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_statut'])) {
 
 
     // on prepare la liste des statuts autorisée
-    $statutsAutorisee = [0, 1, 2, 3, 4];
+    $statutsAutorisee = [0, 1, 2, 3, 4, 5];
 
     if ($commandeId > 0 && in_array($newStatut, $statutsAutorisee, true)) {
         $stmt = $pdo->prepare("
@@ -67,7 +67,7 @@ $stmt = $pdo->prepare("
 $stmt->execute();
 $commandes = $stmt->fetchAll();
 
-$libellesStatuts = getLibellesStautsCommande();
+$libellesStatuts = getLibellesStatutsCommande();
 
 //////////////////////////////////////////////////////////////////////////////////
 //                      AFFICHER AL LISTYE DES EMPLOYES                         //
