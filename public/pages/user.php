@@ -6,6 +6,9 @@ require_once __DIR__ . '/../../src/configs/db.php';
 // on charge la session ^^ 
 require_once __DIR__ . '/../../src/configs/session.php';
 
+// on charge les functions 
+require_once __DIR__ . '/../../src/functions/functions.php';
+
 if (!isset($_SESSION['user'])) {
     header('location: /index.php');
     exit();
@@ -39,15 +42,8 @@ $stmt->execute([
 // on les places dans le tableau fait plus haut 
 $commandeUtilisateur = $stmt->fetchAll();
 
-//il faut que je traduit le chiffre des statut pour l'utilisateur
-//il me faut un tableau pour gerer les different etat 
-$libellesStatuts = [
-    0 => 'En attente',
-    1 => 'Validee',
-    2 => 'En Preparation',
-    3 => ' Terminee',
-    4 => 'Annulee'
-];
+//il me faut un tableau pour gerer les different etat qui se trouve dans functions
+$libellesStatuts = getLibellesStautsCommande();
 
 ////////////////////////////////////////////////////////////////////////////////////
 //                             AJOUT D'UN AVIS                                    //

@@ -89,54 +89,65 @@ foreach($menusPanier as $menu){
     $sousTotal = $prixUnitaire * $quantité;
     $totalGlobal += $sousTotal;
 }
-// validation d'une commande
 if(
-    $_SERVER['REQUEST_METHOD']==='POST' &&
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
     isset($_POST['valider_commande']) &&
     $userConnecte &&
     !$panierVide &&
     $profilComplet
-    ){                       
+){
+// validation d'une commande
+try{
+    // on demarre une transaction pour que la commande et ses lignes soient enregistrees ensemble 
+    $pdo->beginTransaction();
+    
     // on insere d'abord la commande principale
-    $stmt =$pdo-> prepare("
-    INSERT INTO commande (user_id, statut, total)
-    VALUES( :user_id, :statut, :total)
+    $stmt = $pdo->prepare("
+    INSERT into commande (user_id, statut, total)
+    Values (:user_id, :statut, :total)
     ");
 
-    $stmt->execute([
+    $stmt -> execute([
         'user_id' => $user['ID'],
         'statut' => 0,
         'total' => $totalGlobal
     ]);
 
-    // on recupere l'ID de la commande cree 
+    // on recupere l'id de la commande qui vient d'etre creee
     $commandeId = $pdo->lastInsertId();
-    
-    //, on ajoute chaque menu dans commande_item
+
+    // puis on ajoute chaque menu du panier dans commande_items
     foreach ($menusPanier as $menu){
         $quantite = $_SESSION['panier'][$menu['ID']];
         $prixUnitaire = (float) $menu['prix'];
 
-        $stmt = $pdo-> prepare("
-        INSERT INTO commande_items(commande_id, menu_id, quantite, prix_unitaire)
+        $stmt = $pdo->prepare("
+        INSERT INTO commande_items (commande_id, menu_id, quantite, prix_unitaire)
         VALUES (:commande_id, :menu_id, :quantite, :prix_unitaire)
         ");
-        $stmt -> execute([
-            'commande_id'=> $commandeId,
+
+        $stmt->execute([
+            'commande_id' => $commandeId,
             'menu_id' => $menu['ID'],
             'quantite' => $quantite,
             'prix_unitaire' => $prixUnitaire
-        ]);
-    }
-
-    // on a plus qu'a vider le panier une fois la commande enregistrer
+            ]);
+        }
+    // si tout s'est bien passe, on valide la transaction
+    $pdo->commit();
+    //une fois la commande enregistree, on vide le panier 
     unset($_SESSION['panier']);
-    $_SESSION['commande_validee'] = true ;
+    $_SESSION['commande_validee'] = true;
+
     header('Location: commande.php');
     exit();
-
-    
+    } catch (PDOException $e) {
+        // si une erreur arrive, on annule tout ce qui a ete commence
+        $pdo->rollBack();
+        $messageErreurCommande = 'Une erreur est survenue pendant l enregistrement de la commande ';
+    }
 }
+
 if($userConnecte && !$profilComplet) {
     $messageErreurCommande = 'Merci de completer vos information avant de pouvoir valider votre commande.';
 }
@@ -164,7 +175,7 @@ if($userConnecte && !$profilComplet) {
             <?php if (!empty($messageErreurCommande)): ?>
                 <p><?php echo htmlspecialchars($messageErreurCommande); ?></p>
                 <?php endif; ?>
-        <?php if ($panierVide):   ?>
+        <?php if ($panierVide): ?>
             <p>Votre panier est vide.</p>
             <p><a href="menus.php">Remplir mon panier</a></p>
 

@@ -2,6 +2,8 @@
 
 require_once __DIR__ . '/../../src/configs/session.php';
 require_once __DIR__ . '/../../src/configs/db.php';
+// on charge les functions 
+require_once __DIR__ . '/../../src/functions/functions.php';
 
 // on verifie que user est connecte
 if (!isset($_SESSION['user'])) {
@@ -65,13 +67,7 @@ $stmt = $pdo->prepare("
 $stmt->execute();
 $commandes = $stmt->fetchAll();
 
-$libellesStatuts = [
-    0 => 'En attente',
-    1 => 'Validee',
-    2 => 'En preparation',
-    3 => 'Terminee',
-    4 => 'Annulee'
-];
+$libellesStatuts = getLibellesStautsCommande();
 
 //////////////////////////////////////////////////////////////////////////////////
 //                      AFFICHER AL LISTYE DES EMPLOYES                         //
@@ -525,7 +521,8 @@ if (
                                     <td><?php echo htmlspecialchars($utilisateur['telephone']); ?></td>
                                     <td><?php echo htmlspecialchars($utilisateur['ville']); ?></td>
                                     <td>
-                                        <form type="hidden" name="utilisateur_id" value="<?php echo (int) $utilisateur['ID']; ?>">
+                                        <form method="POST" action="" >
+                                            <input type="hidden" name="utilisateur_id" value="<?php echo (int) $utilisateur['ID']; ?>">
                                             <select name="role">
                                                 <?php foreach ($roleAutorises as $valeurRole => $libelleRole): ?>
                                                     <option value="<?php echo htmlspecialchars($valeurRole); ?>" <?php echo ($utilisateur['role'] === $valeurRole) ? 'selected' : ''; ?>>
