@@ -1,1 +1,15 @@
 ﻿
+# fichier a cacher 
+
+.env
+# dossier a cacher 
+/vendor/
+
+#fichier de config de l'IDE  (logiciel de developpemen)
+/.idea/ 
+#reglage locaux de vs code 
+/.vscode/
+# fichier caché creer par macOS
+.DS_STORE
+# fichier cacher creer par windows
+Thumbs.db
