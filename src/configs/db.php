@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 // charge l'autoload de composer pour pouvoir utiliser phpdotenv
 require_once __DIR__ . '/../../vendor/autoload.php';
