@@ -40,7 +40,7 @@ docker compose down
 Si des fichiers Docker ont ete modifies, reconstruire avec :
 
 ```powershell
-docker compose up --build
+docker compose up  --build
 ```
 
 ## Base de donnees
