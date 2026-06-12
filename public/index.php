@@ -41,7 +41,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // verification des données entre users et la BDD 
         if ($users && password_verify($mdp, $users['password_hash'])) {
-            $_SESSION['user'] = $users;
+        //on ouvre la session utilisateur en gardant les info SQL    
+        $_SESSION['user'] = $users;
+
+        // on veux enregistrer un log MongoDB seulement si la personne connectée
+        // est un admin ou employé
+        if($users['role'] === 'admin' || $users['role'] === 'employe'){
+            // on insere un doc dans la collection des log admin
+            $mongoCollection->insertOne([
+                //type d'evenement: ici connexion
+                'action' => 'connexion',
+
+                // role de la personne connectée 
+                'role' => $users['role'],
+
+                //ID SQL de l'utilisateur
+                'adminId' => (int) $users['ID'],
+
+                // email connecté 
+                'adminEmail'  => $users ['email'],
+
+                // on gere la date et heure de la connection
+                'createdAt' => new MongoDB\BSON\UTCDateTime(),
+
+                //message de connexion
+                'details' =>[
+                    'message' => 'connexion reussie'
+                ]
+            ]);
+        }
             header('Location: /index.php');
             exit();
         } else {
