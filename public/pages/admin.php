@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../../src/configs/session.php';
 require_once __DIR__ . '/../../src/configs/db.php';
+/** @var \MongoDB\Collection $mongoCollection */
 // on charge les functions 
 require_once __DIR__ . '/../../src/functions/functions.php';
 
@@ -33,17 +34,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_statut'])) {
     $statutsAutorisee = [0, 1, 2, 3, 4, 5];
 
     if ($commandeId > 0 && in_array($newStatut, $statutsAutorisee, true)) {
+        // on prepare la requete SQL pour modifier un satut de commande cible 
         $stmt = $pdo->prepare("
         UPDATE commande 
         SET statut = :statut
         WHERE ID = :id
     ");
 
+        // on execute la mise a jour SQL avec 
+        // - le nouveau statut choisi 
+        //- l'ID de la commande 
         $stmt->execute([
             'statut' => $newStatut,
             'id' => $commandeId
         ]);
 
+        // une fois la modif SQL faite, 
+        // on enregistre aussi un log dans MONGODB 
+        $mongoCollection->insertOne([
+            //type d action faite dans l'admin
+            'action' => 'Modification_statut_commande',
+
+            // role de la personne connectée 
+            'role' => $user['role'],
+
+            //identifiant SQL de user ID 
+            'adminId' => (int) $user['ID'],
+
+            //email de personne connectée
+            'adminEmail' => $user['email'],
+
+            //type d'element touche par l'action 
+            'targetType' => 'commande',
+
+            // id de la cible 
+            'targetId' => $commandeId,
+
+            // date du log format MONGODB 
+            'createdAt' => new \MongoDB\BSON\UTCDateTime(),
+
+            //detail utiles pour comprendre rapidement d'action
+            'details' => [
+                'message' => 'statut de la commande modifier',
+                'nouveauStatut' => $newStatut
+            ]
+        ]);
         header('Location: admin.php');
         exit();
     }
@@ -69,8 +104,23 @@ $commandes = $stmt->fetchAll();
 
 $libellesStatuts = getLibellesStatutsCommande();
 
+/////////////////////////////////////////////////////////////////////////////////
+//                      GERER LES HISTORIQUE DE LOG                            //
+/////////////////////////////////////////////////////////////////////////////////
+
+$adminLogs = $mongoCollection->find(
+    [],
+    [
+        // on vas les trier du plus recent au plus ancien
+        'sort' => ['createdAt' => -1],
+
+        // on limite a 10 resultats pour garder un affichage simple 
+        'limit' => 10
+    ]
+)->toArray();
+
 //////////////////////////////////////////////////////////////////////////////////
-//                      AFFICHER AL LISTYE DES EMPLOYES                         //
+//                      AFFICHER AL LISTE DES EMPLOYES                         //
 //////////////////////////////////////////////////////////////////////////////////
 
 $roleAutorises = [
@@ -142,45 +192,111 @@ $avisAttente = $stmt->fetchAll();
 // MODERER UN AVIS 
 // si on clique sur "valider" 
 
-if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['valider_avis'])){
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['valider_avis'])) {
+    // on recupere l'identifiant de l'avis envoye par le formulaire 
     $avisId = (int) ($_POST['avis_id'] ?? 0);
 
     // on verifier que l'id est valide avant de faire la mise a jour
-    if($avisId > 0){
-        $stmt = $pdo -> prepare("
+    if ($avisId > 0) {
+        // on prepare la requete SQL qui passe l'avis en statut "valider"
+        $stmt = $pdo->prepare("
         UPDATE avis
         SET statut = 1 
         WHERE ID = :id
         ");
 
-    $stmt->execute([
-        'id' => $avisId
-    ]);
+        // on execute la mise a jour SQL sur l'avis cible 
+        $stmt->execute([
+            'id' => $avisId
+        ]);
 
-    header('Location: admin.php');
-    exit();
+        // une fois l'avis valide en SQL 
+        //on enregistre aussi l'action dans MongoDB 
+        $mongoCollection->insertOne([
+            //typed'action admin efectuee
+            'action' => 'validation d\'avis',
+
+            //role de la personne 
+            'role' => $user['role'],
+
+            // identifiant SQL de l'utilisateur connecte
+            'adminId' => (int) $user['ID'],
+
+            //email de la personne
+            'adminEmail' => $user['email'],
+
+            //type d'element  
+            'targetType' => 'avis',
+
+            //Id de l'avis modifier
+            'targetId'  => $avisId,
+
+            //date du log 
+            'createdAt' => new \MongoDB\BSON\UTCDateTime(),
+
+            //detail utilse pour comprendre rapidement 
+            'details' => [
+                'message' => 'avis validé'
+            ]
+        ]);
+
+        header('Location: admin.php');
+        exit();
     }
 }
 
 // si on clique sur "refuser"*
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['refuser_avis'])){
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['refuser_avis'])) {
+    // on recupere l'identifiant de l'avis envoyé par le formulaire
     $avisId = (int) ($_POST['avis_id'] ?? 0);
-
-if($avisId > 0){
-    $stmt = $pdo -> prepare("
+    // on verifier que l'id est valide avant de modifier l'avis 
+    if ($avisId > 0) {
+        // on prepare la requete qui passe l'avis en "reusé"
+        $stmt = $pdo->prepare("
     UPDATE avis
     SET statut = 2
     WHERE ID = :id
     ");
 
-    $stmt -> execute([
-    'id' => $avisId
-    ]);
+        //on execute la mise a jour SQL de l'avis cible
+        $stmt->execute([
+            'id' => $avisId
+        ]);
 
-    header('Location: admin.php');
-    exit();
+        // une fois l'avis refusé sur SQL 
+        // on enregistre l'action dans mongo db 
+        $mongoCollection->insertOne([
+            //type d'action 
+            'action' => 'refus d\'avis',
+
+            //role de la personne 
+            'role' => $user['role'],
+
+            // ID SQL du user
+            'adminId' => (int) $user['ID'],
+
+            //email de user 
+            'adminEmail' => $user['email'],
+
+            //type d'element
+            'targetType' => 'avis',
+
+            //Id avis cible 
+            'targetId' => $avisId,
+
+            // affichage de date + heure 
+            'createdAt' => new \MongoDB\BSON\UTCDateTime(),
+
+            // message de detail 
+            'details' => [
+                'message' => 'avis refusé'
+            ]
+        ]);
+
+        header('Location: admin.php');
+        exit();
     }
-}   
+}
 
 //////////////////////////////////////////////////////////////////////////////////
 //                          AJOUT EMPLOYER                                      //
@@ -252,6 +368,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajout_employe'])) {
                 'code_postal' => $code_postal,
                 'password_hash' => $passwordHash,
                 'role' => 'employe'
+            ]);
+
+            // une fois employe ajout en SQL 
+            // on enregistre l'action dans MongoDB 
+            $mongoCollection-> insertOne([
+                //type d'action
+                'action' => 'ajout_employe',
+
+                // role de l'actionneur
+                'role' => $user['role'],
+
+                //Id de l'actionneur 
+                'adminId' => $user['ID'],
+
+                //email de l'actionneur
+                'AdminEmail' => $user['email'],
+
+                //type d'element visé 
+                'targetType' => 'employe',
+
+                //on stocke mail du nouvelle employe 
+                // car on a pas encore son ID SQL a ce niveau 
+                'targetId' => $email,
+
+                //on ajoute l'heure et la date 
+                'createdAt' => new \MongoDB\BSON\UTCDateTime(),
+
+                // details utile pour comprendre rapidement l'action
+                'details' => [
+                    'message' => 'employé ajouté',
+                    'nom' => $nom,
+                    'prenom' => $prenom,
+                    'email' => $email
+                ]
             ]);
 
             $ajoutEmploye = ' vous avez ajoutée ' . $prenom . ' ' . $nom . ' a la liste des employés';
@@ -345,6 +495,37 @@ if (
                 $stmt->execute([
                     'id' => $utilisateurId
                 ]);
+
+                // une fois l'utilisateur supprimer en SQL 
+                // on enregistre l'action dans mMongoDB 
+            $mongoCollection-> insertOne([ 
+                //type d'action 
+                'action' => 'suppression_employe',
+
+                //role de l'actionneur
+                'role' => $user['role'],
+
+                //identifiant SQL de l'utilisateur
+                'adminId' => (int) $user['ID'],
+
+                //email actionneur 
+                'adminEmail' => $user['email'],
+
+                //role de la cible 
+                'targetType' => 'employe',
+
+                //ID de la cible 
+                'targetId' => $utilisateurId,
+
+                // date et heure d'action 
+                'createdAt' => new \MongoDB\BSON\UTCDateTime(),
+
+                // detail utile a afficher 
+                'details' => [
+                    'message' => 'employé supprimé'
+                ]
+            ]);
+
                 // Apres la suppression je dois recharger ma page 
                 // et mettre a jour ma liste affiché
                 header('Location: admin.php');
@@ -417,8 +598,8 @@ if (
                                     <input type="hidden" name="commande_id" value="<?php echo (int) $commande['ID']; ?>">
 
                                     <select name="statut">
-                                        <?php foreach ($libellesStatuts as $valeurStatut => $libelleStatut):?>
-                                            <option value="<?php echo (int) $valeurStatut;?>"<?php echo ((int) $commande['statut'] === (int) $valeurStatut) ? 'selected' : ''; ?>>
+                                        <?php foreach ($libellesStatuts as $valeurStatut => $libelleStatut): ?>
+                                            <option value="<?php echo (int) $valeurStatut; ?>" <?php echo ((int) $commande['statut'] === (int) $valeurStatut) ? 'selected' : ''; ?>>
                                                 <?php echo htmlspecialchars($libelleStatut); ?>
                                             </option>
                                         <?php endforeach; ?>
@@ -473,20 +654,20 @@ if (
 
                                     <!--date de creation-->
                                     <td><?php echo date('d/m/Y à H:i', strtotime($avis['date_creation'])); ?></td>
-                                    
+
                                     <td>
-                                    <!-- FROMULAIRE POUR ACCEPTER OU REJETER UN COMMENTAIRE -->
-                                    <form method="POST" action="">
-                            <!-- je dois savoir quelle avis je traite-->
-                                        <input type="hidden" name="avis_id" value="<?php echo (int) $avis['ID']; ?>">
+                                        <!-- FROMULAIRE POUR ACCEPTER OU REJETER UN COMMENTAIRE -->
+                                        <form method="POST" action="">
+                                            <!-- je dois savoir quelle avis je traite-->
+                                            <input type="hidden" name="avis_id" value="<?php echo (int) $avis['ID']; ?>">
 
-                            <!-- bouton pour valider l'avis-->
-                            <button type="submit" name="valider_avis"> Valider </button>
+                                            <!-- bouton pour valider l'avis-->
+                                            <button type="submit" name="valider_avis"> Valider </button>
 
-                            <!--bouton pour refuser l'avis -->
-                            <button type="submit" name="refuser_avis"> Refuser </button>
+                                            <!--bouton pour refuser l'avis -->
+                                            <button type="submit" name="refuser_avis"> Refuser </button>
 
-                                    </form>
+                                        </form>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
@@ -521,7 +702,7 @@ if (
                                     <td><?php echo htmlspecialchars($utilisateur['telephone']); ?></td>
                                     <td><?php echo htmlspecialchars($utilisateur['ville']); ?></td>
                                     <td>
-                                        <form method="POST" action="" >
+                                        <form method="POST" action="">
                                             <input type="hidden" name="utilisateur_id" value="<?php echo (int) $utilisateur['ID']; ?>">
                                             <select name="role">
                                                 <?php foreach ($roleAutorises as $valeurRole => $libelleRole): ?>
@@ -606,6 +787,57 @@ if (
             </form>
         </div>
     </div>
+    <section class="section_menu">
+        <h2>historique des actions admins</h2>
+
+        <?php if (empty($adminLogs)): ?>
+            <p>Aucun log admin disponible pour le moment.</p>
+        <?php else: ?>
+            <table border="1" cellpadding="10" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        <th>Role</th>
+                        <th>email</th>
+                        <th>Cible</th>
+                        <th>ID cible</th>
+                        <th>Message</th>
+                        <th>Date & heure</th>
+
+                    </tr>
+                </thead>
+                <tbody>
+
+                    <?php /** @var \MongoDB\Model\BSONDocument[] $adminLogs */ ?>
+                    <?php foreach ($adminLogs as $log): ?>
+                        <?php /** @var \MongoDB\Model\BSONDocument $log */ ?>
+                        <tr>
+
+                        <tr>
+                            <!-- type d'action enregistrer dans MongoDB -->
+                            <td><?php echo htmlspecialchars($log['action'] ?? ''); ?></td>
+                            <!--role de la personne qui a fait l'action-->
+                            <td><?php echo htmlspecialchars($log['role'] ?? ''); ?></td>
+                            <!--email de ladmin ou employe connecte -->
+                            <td><?php echo htmlspecialchars($log['adminEmail'] ?? ''); ?></td>
+                            <!--type d'element viser par l'action-->
+                            <td><?php echo htmlspecialchars($log['targetType'] ?? '-'); ?></td>
+                            <!--identifiant de la cible si present-->
+                            <td><?php echo htmlspecialchars((string) ($log['targetId'] ?? '* ')); ?></td>
+                            <!--message stocke dans le bloc details-->
+                            <td><?php echo htmlspecialchars($log['details']['message'] ?? ''); ?></td>
+                            <!--on affiche la date et l'heure du changement -->
+                            <td><?php
+                                echo isset($log['createdAt'])
+                                    ? htmlspecialchars($log['createdAt']->ToDateTime()->format('d\m\Y H:i'))
+                                    : '-';
+                                ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+    </section>
     <?php require_once '../include/footer.php'; ?>
     <script src="../asset/JS/app.js"></script>
 

@@ -7,6 +7,7 @@ $projectRoot = dirname($_SERVER['DOCUMENT_ROOT']);
 
 require_once $projectRoot . '/src/configs/session.php';
 require_once $projectRoot . '/src/configs/db.php';
+/** @var \MongoDB\Collection $mongoCollection */
 
 
 
@@ -49,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if($users['role'] === 'admin' || $users['role'] === 'employe'){
             // on insere un doc dans la collection des log admin
             $mongoCollection->insertOne([
+
                 //type d'evenement: ici connexion
                 'action' => 'connexion',
 
@@ -62,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'adminEmail'  => $users ['email'],
 
                 // on gere la date et heure de la connection
-                'createdAt' => new MongoDB\BSON\UTCDateTime(),
+                'createdAt' => new \MongoDB\BSON\UTCDateTime(),
 
                 //message de connexion
                 'details' =>[
