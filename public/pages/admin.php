@@ -372,7 +372,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajout_employe'])) {
 
             // une fois employe ajout en SQL 
             // on enregistre l'action dans MongoDB 
-            $mongoCollection-> insertOne([
+            $mongoCollection->insertOne([
                 //type d'action
                 'action' => 'ajout_employe',
 
@@ -498,7 +498,55 @@ if (
 
                 // une fois l'utilisateur supprimer en SQL 
                 // on enregistre l'action dans mMongoDB 
-            $mongoCollection-> insertOne([ 
+                $mongoCollection->insertOne([
+                    //type d'action 
+                    'action' => 'suppression_employe',
+
+                    //role de l'actionneur
+                    'role' => $user['role'],
+
+                    //identifiant SQL de l'utilisateur
+                    'adminId' => (int) $user['ID'],
+
+                    //email actionneur 
+                    'adminEmail' => $user['email'],
+
+                    //role de la cible 
+                    'targetType' => 'admin',
+
+                    //ID de la cible 
+                    'targetId' => $utilisateurId,
+
+                    // date et heure d'action 
+                    'createdAt' => new \MongoDB\BSON\UTCDateTime(),
+
+                    // detail utile a afficher 
+                    'details' => [
+                        'message' => 'employé supprimé'
+                    ]
+                ]);
+
+                // Apres la suppression je dois recharger ma page 
+                // et mettre a jour ma liste affiché
+                header('Location: admin.php');
+                exit();
+            }
+        } else {
+
+
+            //si la cible n'est pas un admin
+            // on peux supprimer sans probleme
+            $stmt = $pdo->prepare("
+            DELETE FROM users
+            WHERE ID = :id
+            ");
+
+            $stmt->execute([
+                'id' => $utilisateurId
+            ]);
+            // une fois l'utilisateur supprimer en SQL 
+            // on enregistre l'action dans mMongoDB 
+            $mongoCollection->insertOne([
                 //type d'action 
                 'action' => 'suppression_employe',
 
@@ -525,33 +573,63 @@ if (
                     'message' => 'employé supprimé'
                 ]
             ]);
-
-                // Apres la suppression je dois recharger ma page 
-                // et mettre a jour ma liste affiché
-                header('Location: admin.php');
-                exit();
-            }
-        } else {
-
-
-            //si la cible n'est pas un admin
-            // on peux supprimer sans probleme
-            $stmt = $pdo->prepare("
-            DELETE FROM users
-            WHERE ID = :id
-            ");
-
-            $stmt->execute([
-                'id' => $utilisateurId
-            ]);
             // puis comme pour au dessus on recharge la liste 
             header('Location: admin.php');
             exit();
         }
     }
 }
+////////////////////////////////////////////////////////////////////////
+//                  GESTION DES MENUS                                 //
+////////////////////////////////////////////////////////////////////////
+
+$stmt = $pdo->prepare("
+SELECT ID, titre, description, prix, nb_personne, img_cover, actif, created_at, theme_id
+FROM menus
+ORDER BY ID ASC
+");
+$stmt->execute();
+
+$menusAdmin = $stmt->fetchAll();
 
 
+//////////////////////////////////////////////////////////////////////////////////
+//                               AJOUTER UN MENU                                //
+//////////////////////////////////////////////////////////////////////////////////
+
+
+
+//////////////////////////////////////////////////////////////////////////////////
+//                      SUPPRIMER UN MENU                                       //
+//////////////////////////////////////////////////////////////////////////////////
+
+// si on clique sur le bouton supprimer d'un menu 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['supprimer_menu'])){
+    // on doit recuperer l'idée du menu envoyé par le formulaire 
+    $menuId = (int) ($_POST['menu_id'] ?? 0);
+
+    //on verifie que l'id est bien valide avant de suuprimer 
+    if($menuId > 0 ){
+
+    // on prepare la requete SQL pour supprimer le menu choisi
+    $stmt = $pdo->prepare("
+    DELETE FROM menus
+    WHERE ID = :id
+    ");
+
+    // on execute la requete
+    $stmt-> execute([
+        'id' => $menuId
+    ]);
+
+
+
+
+
+    header('Location: admin.php');
+    exit();
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -838,6 +916,125 @@ if (
             </table>
         <?php endif; ?>
     </section>
+    <section class="section_menu">
+        <h2>gestion des menus</h2>
+
+        <?php if (empty($menusAdmin)): ?>
+            <p>Aucun menu trouvé.</p>
+        <?php else: ?>
+            <table border="1" cellpadding="10" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Titre</th>
+                        <th>Description</th>
+                        <th>Prix</th>
+                        <th>Nb personne</th>
+                        <th>Actif</th>
+                        <th>Supprimer</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($menusAdmin as $menuAdmin): ?>
+                        <tr>
+                            <!--ID du menu -->
+                            <td><?php echo (int) $menuAdmin['ID']; ?></td>
+
+                            <!--TITRE DU MENU --->
+                            <td><?php echo htmlspecialchars($menuAdmin['titre']); ?></td>
+
+                            <!-- description -->
+                            <td><?php echo htmlspecialchars($menuAdmin['description']); ?></td>
+
+                            <!-- prix menu -->
+                            <td><?php echo number_format((float) $menuAdmin['prix'], 2, ',', ' '); ?> €</td>
+
+                            <!--Nombre de personne-->
+                            <td><?php echo (int) $menuAdmin['nb_personne']; ?></td>
+
+                            <!--statut actif ou non -->*
+                            <td><?php echo ((int) $menuAdmin['actif'] === 1) ? 'oui' : 'non'; ?></td>
+
+                            <!--Supprimer un menu -->
+                            <td>
+                                <form methodd="POST" action="">
+                                <!-- on envoie l'identifiant du menu caché au moment du clic -->
+                                <input type="hidden" name="menu_id" value="<?php echo (int) $menuAdmin['ID']; ?>">
+
+                    <!-- ca permettra a PHP de savoir qu'on cliqué sur supprimer menu-->
+                                <button type="submit" name="supprimer_menu">Supprimer</button>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+        <div class="ajouterMenu">
+        <button type="button" id="ouvrirModalMenu"> Ajouter un menu </button>
+        </div>
+    </section>
+        <div id="modalMenu" class="modal_overlay hidden">
+        <div>
+            <button type="button" id="fermerModalMenu">X</button>
+
+            <h2>Ajouter un Menu</h2>
+
+            <?php if (!empty($ajoutEmploye)): ?>
+                <p><?php echo htmlspecialchars($ajoutEmploye); ?></p>
+            <?php endif; ?>
+
+            <form method="POST" action="">
+    <!-- titre du menu -->
+    <div>
+        <label for="titre_menu">Titre</label>
+        <input type="text" name="titre_menu" id="titre_menu" required>
+    </div>
+
+    <!-- description du menu -->
+    <div>
+        <label for="description_menu">Description</label>
+        <textarea name="description_menu" id="description_menu" required></textarea>
+    </div>
+
+    <!-- prix du menu -->
+    <div>
+        <label for="prix_menu">Prix</label>
+        <input type="number" step="0.01" name="prix_menu" id="prix_menu" required>
+    </div>
+
+    <!-- nombre de personnes -->
+    <div>
+        <label for="nb_personne_menu">Nombre de personnes</label>
+        <input type="number" name="nb_personne_menu" id="nb_personne_menu" required>
+    </div>
+
+    <!-- image de couverture -->
+    <div>
+        <label for="img_cover_menu">Image cover</label>
+        <input type="text" name="img_cover_menu" id="img_cover_menu" required>
+    </div>
+
+    <!-- theme associé -->
+    <div>
+        <label for="theme_id_menu">Theme ID</label>
+        <input type="number" name="theme_id_menu" id="theme_id_menu" required>
+    </div>
+
+    <!-- actif ou non -->
+    <div>
+        <label for="actif_menu">Actif</label>
+        <select name="actif_menu" id="actif_menu" required>
+            <option value="1">Oui</option>
+            <option value="0">Non</option>
+        </select>
+    </div>
+
+    <!-- bouton d'envoi du formulaire -->
+    <button type="submit" name="ajouter_menu">Ajouter le menu</button>
+</form>
+        </div>
+    </div>
     <?php require_once '../include/footer.php'; ?>
     <script src="../asset/JS/app.js"></script>
 
