@@ -2,6 +2,7 @@
 
 // on charge la connexion a la base de données pour pouvoir faire 
 require_once __DIR__ . '/../../src/configs/db.php';
+require_once __DIR__ . '/../../src/models/Menu.php';
 
 //on prepare une requete pour recup mes menus actif 
 // on trie les colonnes pour afficher ce dont j'ai besoin 

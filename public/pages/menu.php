@@ -3,7 +3,8 @@
 
 require_once __DIR__ . '/../../src/configs/db.php';
 require_once __DIR__ . '/../../src/configs/session.php';
-
+// ajout des models
+require_once __DIR__ . '/../../src/models/Menu.php';
 
 
 // on recuper l'id envoyer dans l URL
@@ -30,6 +31,21 @@ $stmt->execute([
 // on recupere le menu trouvé 
 $menu = $stmt->fetch();
 
+//affichage tu tableau en menu objet Menu
+if($menu){
+    $menu = new Menu(
+        (int) $menu['ID'],
+        (string) $menu['titre'],
+        (string) $menu['description'],
+        (float) $menu['prix'],
+        (int) $menu['nb_personne'],
+        (string) $menu['img_cover'],
+        1,
+        null
+    );
+}
+
+
 // si aucun menu est trouvé on arrete 
 if (!$menu) {
     die('Ce menu n\'existe pas ou n\'est plus disponible.');
@@ -41,11 +57,11 @@ if(!isset($_SESSION['panier'])){
         $_SESSION['panier'] =[];
     }
     //si le menu est deja present, on augmente la quantité de 1
-    if(isset($_SESSION['panier'][$menu['ID']])){
-        $_SESSION['panier'][$menu['ID']]++;
+    if(isset($_SESSION['panier'][$menu->id])){
+        $_SESSION['panier'][$menu->id]++;
     }else{
         //sinon, quantite c'est 1
-        $_SESSION['panier'][$menu['ID']] =1;
+        $_SESSION['panier'][$menu->id] =1;
     }
 }
 //le mode de fonctionnement dans ma page on recupere id dans l'url
@@ -59,7 +75,7 @@ if(!isset($_SESSION['panier'])){
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>
-        <?php echo htmlspecialchars($menu['titre']); ?></title>
+        <?php echo htmlspecialchars($menu->titre); ?></title>
     <link rel="stylesheet" href="../asset/CSS/style.css">
     <link rel="stylesheet" href="../asset/CSS/menus.css">
 </head>
@@ -70,26 +86,26 @@ if(!isset($_SESSION['panier'])){
     <section class="section_menu">
 
         <!--- On affiche le titre du menu -->
-        <h1><?php echo htmlspecialchars($menu['titre']); ?></h1>
+        <h1><?php echo htmlspecialchars($menu->titre); ?></h1>
 
         <!-- on affiche la description du menu -->
-        <p class="accroche"><?php echo htmlspecialchars($menu['description']); ?></p>
+        <p class="accroche"><?php echo htmlspecialchars($menu->description); ?></p>
         <div class="menu_card">
 
             <!--on affiche le nombre minimum de personnes-->
-            <p>Minimum: <?php echo (int) ($menu['nb_personne']); ?> personnes</p>
+            <p>Minimum: <?php echo htmlspecialchars($menu->getMinimumPersonnesTexte()); ?> personnes</p>
             <!-- on affiche le prix -->
             <p>
                 Prix:
-                <?php echo number_format((float) ($menu['prix'])); ?> €
+                <?php echo htmlspecialchars($menu->getPrixFormate());?> 
             </p>
 
             <div class="img_menu">
                 <!-- on mettra plusieur image par la suite -->
 
                 <img
-                    src="../<?php echo htmlspecialchars(str_replace('\\', '/', $menu['img_cover'])); ?>"
-                    alt="<?php echo htmlspecialchars($menu['titre']); ?>">
+                src="../<?php echo htmlspecialchars($menu->getImagePath()); ?>"
+                    alt="<?php echo htmlspecialchars($menu->titre); ?>">
         </div>
 
         <div class="bouton_appliquer">
