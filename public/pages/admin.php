@@ -600,33 +600,33 @@ $menusAdmin = $stmt->fetchAll();
 //si on a cliqué sur le bouton "ajouter un menu"
 if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST['ajouter_menu'])) {
 
-        // on recupere chaque valeur envoyée par le formulaire
-        $titreMenu = trim($POST['titre_menu'] ?? '');
-        $descriptionMenu = trim($POST['description_menu'] ?? '');
-        $prixMenu = (float) ($_POST['prix_menu'] ?? '');
-        $nbPersonneMenu = (int) ($_POST['nb_personne_menu'] ?? '');
-        $imgCoverMenu = trim($_POST['img_cover_menu'] ?? '');
-        $themeIdMenu = (int) ($_POST['theme_mennu_id'] ?? '');
-        $actifMenu = (int) ($_POST['actif_menu'] ?? '');
-        
+    // on recupere chaque valeur envoyée par le formulaire
+    $titreMenu = trim($_POST['titre_menu'] ?? '');
+    $descriptionMenu = trim($_POST['description_menu'] ?? '');
+    $prixMenu = (float) ($_POST['prix_menu'] ?? '');
+    $nbPersonneMenu = (int) ($_POST['nb_personne_menu'] ?? '');
+    $imgCoverMenu = trim($_POST['img_cover_menu'] ?? '');
+    $themeIdMenu = (int) ($_POST['theme_id_menu'] ?? 0);
+    $actifMenu = (int) ($_POST['actif_menu'] ?? '');
 
-        // on verifie que les données minimales sont correctes
-        if(
-            $titreMenu !== '' &&
-            $descriptionMenu !== '' &&
-            $prixMenu > 0 &&
-            $nbPersonneMenu > 0 &&
-            $imgCoverMenu!== "" &&
-            $themeIdMenu > 0
-        ) {
-            // on prepare la requete SQL pour insere le menu 
-            $stmt = $pdo->prepare("
+
+    // on verifie que les données minimales sont correctes
+    if (
+        $titreMenu !== '' &&
+        $descriptionMenu !== '' &&
+        $prixMenu > 0 &&
+        $nbPersonneMenu > 0 &&
+        $imgCoverMenu !== "" &&
+        $themeIdMenu > 0
+    ) {
+        // on prepare la requete SQL pour insere le menu 
+        $stmt = $pdo->prepare("
             INSERT INTO menus (titre, description, prix, nb_personne, img_cover, actif, created_at, theme_id)
             VALUES (:titre, :description, :prix, :nb_personne, :img_cover, :actif, NOW(), :theme_id)
 
             ");
 
-            $stmt-> execute([
+        $stmt->execute([
 
             'titre' => $titreMenu,
             'description' => $descriptionMenu,
@@ -635,14 +635,42 @@ if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST['ajouter_menu'])) {
             'img_cover' => $imgCoverMenu,
             'actif' => $actifMenu,
             'theme_id' => $themeIdMenu
-            ]);
+        ]);
+        
 
+        $mongoCollection->insertOne([
+        //type d'action 
+        'action' => 'menu ajouter',
 
+        // role de l'actionneur
+        'role' => $user['role'],
 
-            //une fois ajouter on recharge la page
-            header('Location: admin.php');
-            exit();
-        }
+        //ID SQL de l'actionneur 
+        'adminId' => (int) $user['ID'],
+
+        // email de l'actionneur 
+        'adminEmail' => $user['email'],
+
+        //type de cibel 
+        'targetType' => 'menu',
+
+        // ID de la cible 
+        'targetId' => $titreMenu,
+
+        //date 
+        'createdAt' => new \MongoDB\BSON\UTCDateTime(),
+
+        //detail de l'action 
+        'details'=>[
+            'message' => 'menu ajouté'
+        ]
+
+        ]);
+
+        //une fois ajouter on recharge la page
+        header('Location: admin.php');
+        exit();
+    }
 }
 
 
@@ -651,30 +679,73 @@ if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST['ajouter_menu'])) {
 //////////////////////////////////////////////////////////////////////////////////
 
 // si on clique sur le bouton supprimer d'un menu 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['supprimer_menu'])){
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['supprimer_menu'])) {
     // on doit recuperer l'idée du menu envoyé par le formulaire 
     $menuId = (int) ($_POST['menu_id'] ?? 0);
 
     //on verifie que l'id est bien valide avant de suuprimer 
-    if($menuId > 0 ){
+    if ($menuId > 0) {
 
-    // on prepare la requete SQL pour supprimer le menu choisi
-    $stmt = $pdo->prepare("
-    DELETE FROM menus
-    WHERE ID = :id
+        // on prepare la requete SQL pour supprimer le menu choisi
+        $stmt = $pdo->prepare("
+SELECT titre
+FROM menus
+WHERE ID = :id
     ");
 
-    // on execute la requete
-    $stmt-> execute([
-        'id' => $menuId
-    ]);
+        // on execute la requete
+        $stmt->execute([
+            'id' => $menuId
+        ]);
+
+$menuASupprimer = $stmt->fetch();
+
+$titreMenuSupprime = $menuASupprimer['titre'] ?? 'menu inconnu';
 
 
+$stmt = $pdo-> prepare("
+        DELETE FROM menus
+        WHERE ID = :id
+");
+
+$stmt-> execute([
+    'id' => $menuId
+]);
+
+// une fois le menu supprimer en SQL 
+// on enregistre l'action dans MONGODB 
+    $mongoCollection -> insertOne([
+        // type d'action 
+        'action'=>'menu supprimer',
+        
+        //role de l'actionneur
+        'role' => $user['role'],
+
+        //identifiant actionneur
+        'adminId' => (int) $user['ID'],
+
+        //email actionneur
+        'adminEmail' => $user['email'],
+
+        //type d'action
+        'targetType' => 'menu',
+
+        //ID SQL du menu 
+        'targetId' => $titreMenuSupprime,
+
+        //date de l'action
+        'createdAt' => new \MongoDB\BSON\UTCDateTime(),
+
+        //detail 
+        'details'=>[
+            'message' => 'menu supprimé'
+        ]
+
+]);
 
 
-
-    header('Location: admin.php');
-    exit();
+        header('Location: admin.php');
+        exit();
     }
 }
 ?>
@@ -1004,12 +1075,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['supprimer_menu'])){
 
                             <!--Supprimer un menu -->
                             <td>
-                                <form methodd="POST" action="">
-                                <!-- on envoie l'identifiant du menu caché au moment du clic -->
-                                <input type="hidden" name="menu_id" value="<?php echo (int) $menuAdmin['ID']; ?>">
+                                <form method="POST" action="">
+                                    <!-- on envoie l'identifiant du menu caché au moment du clic -->
+                                    <input type="hidden" name="menu_id" value="<?php echo (int) $menuAdmin['ID']; ?>">
 
-                    <!-- ca permettra a PHP de savoir qu'on cliqué sur supprimer menu-->
-                                <button type="submit" name="supprimer_menu">Supprimer</button>
+                                    <!-- ca permettra a PHP de savoir qu'on cliqué sur supprimer menu-->
+                                    <button type="submit" name="supprimer_menu">Supprimer</button>
                                 </form>
                             </td>
                         </tr>
@@ -1018,11 +1089,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['supprimer_menu'])){
             </table>
         <?php endif; ?>
         <div class="ajouterMenu">
-        <button type="button" id="ouvrirModalMenu"> Ajouter un menu </button>
+            <button type="button" id="ouvrirModalMenu"> Ajouter un menu </button>
         </div>
     </section>
-        <div id="modalMenu" class="modal_overlay hidden">
-        <div>
+    <div id="modalMenu" class="modal_overlay hidden">
+        <div class="modal_content">
             <button type="button" id="fermerModalMenu">X</button>
 
             <h2>Ajouter un Menu</h2>
@@ -1032,54 +1103,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['supprimer_menu'])){
             <?php endif; ?>
 
             <form method="POST" action="">
-    <!-- titre du menu -->
-    <div>
-        <label for="titre_menu">Titre</label>
-        <input type="text" name="titre_menu" id="titre_menu" required>
-    </div>
+                <!-- titre du menu -->
+                <div>
+                    <label for="titre_menu">Titre</label>
+                    <input type="text" name="titre_menu" id="titre_menu" required>
+                </div>
 
-    <!-- description du menu -->
-    <div>
-        <label for="description_menu">Description</label>
-        <textarea name="description_menu" id="description_menu" required></textarea>
-    </div>
+                <!-- description du menu -->
+                <div>
+                    <label for="description_menu">Description</label>
+                    <textarea name="description_menu" id="description_menu" required></textarea>
+                </div>
 
-    <!-- prix du menu -->
-    <div>
-        <label for="prix_menu">Prix</label>
-        <input type="number" step="0.01" name="prix_menu" id="prix_menu" required>
-    </div>
+                <!-- prix du menu -->
+                <div>
+                    <label for="prix_menu">Prix</label>
+                    <input type="number" step="0.01" name="prix_menu" id="prix_menu" required>
+                </div>
 
-    <!-- nombre de personnes -->
-    <div>
-        <label for="nb_personne_menu">Nombre de personnes</label>
-        <input type="number" name="nb_personne_menu" id="nb_personne_menu" required>
-    </div>
+                <!-- nombre de personnes -->
+                <div>
+                    <label for="nb_personne_menu">Nombre de personnes</label>
+                    <input type="number" name="nb_personne_menu" id="nb_personne_menu" required>
+                </div>
 
-    <!-- image de couverture -->
-    <div>
-        <label for="img_cover_menu">Image cover</label>
-        <input type="text" name="img_cover_menu" id="img_cover_menu" required>
-    </div>
+                <!-- image de couverture -->
+                <div>
+                    <label for="img_cover_menu">Image cover</label>
+                    <input type="text" name="img_cover_menu" id="img_cover_menu" required>
+                </div>
 
-    <!-- theme associé -->
-    <div>
-        <label for="theme_id_menu">Theme ID</label>
-        <input type="number" name="theme_id_menu" id="theme_id_menu" required>
-    </div>
+                <!-- theme associé -->
+                <div>
+                    <label for="theme_id_menu">Theme ID</label>
+                    <input type="number" name="theme_id_menu" id="theme_id_menu" required>
+                </div>
 
-    <!-- actif ou non -->
-    <div>
-        <label for="actif_menu">Actif</label>
-        <select name="actif_menu" id="actif_menu" required>
-            <option value="1">Oui</option>
-            <option value="0">Non</option>
-        </select>
-    </div>
+                <!-- actif ou non -->
+                <div>
+                    <label for="actif_menu">Actif</label>
+                    <select name="actif_menu" id="actif_menu" required>
+                        <option value="1">Oui</option>
+                        <option value="0">Non</option>
+                    </select>
+                </div>
 
-    <!-- bouton d'envoi du formulaire -->
-    <button type="submit" name="ajouter_menu">Ajouter le menu</button>
-</form>
+                <!-- bouton d'envoi du formulaire -->
+                <button type="submit" name="ajouter_menu">Ajouter le menu</button>
+            </form>
         </div>
     </div>
     <?php require_once '../include/footer.php'; ?>

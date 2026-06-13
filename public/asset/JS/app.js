@@ -1,4 +1,36 @@
 /////////////////////////////////////////////////////////////////////////////
+//                          MODAL MENU                                     //
+/////////////////////////////////////////////////////////////////////////////
+
+//mes variables
+const ouvrirModalMenu = document.getElementById("ouvrirModalMenu");
+const modalMenu = document.getElementById("modalMenu");
+const fermerModalMenu = document.getElementById("fermerModalMenu");
+
+// on vérifie que les 3 éléments existent bien avant d'ajouter les événements
+if (ouvrirModalMenu && modalMenu && fermerModalMenu) {
+  // clic sur le bouton "Ajouter un menu"
+  // on affiche le modal en retirant la classe hidden
+  ouvrirModalMenu.addEventListener("click", function () {
+    modalMenu.classList.remove("hidden");
+  });
+
+  // clic sur le bouton X on referme le modal
+  fermerModalMenu.addEventListener("click", function () {
+    modalMenu.classList.add("hidden");
+  });
+
+  // clic sur le fond sombre du modal
+  // si on clique en dehors de la fenêtre, on ferme aussi
+  modalMenu.addEventListener("click", function (event) {
+    if (event.target === modalMenu) {
+      modalMenu.classList.add("hidden");
+    }
+  });
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
 //                              MODAL AVIS                                 //
 /////////////////////////////////////////////////////////////////////////////
 
