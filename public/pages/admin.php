@@ -597,6 +597,53 @@ $menusAdmin = $stmt->fetchAll();
 //                               AJOUTER UN MENU                                //
 //////////////////////////////////////////////////////////////////////////////////
 
+//si on a cliqué sur le bouton "ajouter un menu"
+if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST['ajouter_menu'])) {
+
+        // on recupere chaque valeur envoyée par le formulaire
+        $titreMenu = trim($POST['titre_menu'] ?? '');
+        $descriptionMenu = trim($POST['description_menu'] ?? '');
+        $prixMenu = (float) ($_POST['prix_menu'] ?? '');
+        $nbPersonneMenu = (int) ($_POST['nb_personne_menu'] ?? '');
+        $imgCoverMenu = trim($_POST['img_cover_menu'] ?? '');
+        $themeIdMenu = (int) ($_POST['theme_mennu_id'] ?? '');
+        $actifMenu = (int) ($_POST['actif_menu'] ?? '');
+        
+
+        // on verifie que les données minimales sont correctes
+        if(
+            $titreMenu !== '' &&
+            $descriptionMenu !== '' &&
+            $prixMenu > 0 &&
+            $nbPersonneMenu > 0 &&
+            $imgCoverMenu!== "" &&
+            $themeIdMenu > 0
+        ) {
+            // on prepare la requete SQL pour insere le menu 
+            $stmt = $pdo->prepare("
+            INSERT INTO menus (titre, description, prix, nb_personne, img_cover, actif, created_at, theme_id)
+            VALUES (:titre, :description, :prix, :nb_personne, :img_cover, :actif, NOW(), :theme_id)
+
+            ");
+
+            $stmt-> execute([
+
+            'titre' => $titreMenu,
+            'description' => $descriptionMenu,
+            'prix' => $prixMenu,
+            'nb_personne' => $nbPersonneMenu,
+            'img_cover' => $imgCoverMenu,
+            'actif' => $actifMenu,
+            'theme_id' => $themeIdMenu
+            ]);
+
+
+
+            //une fois ajouter on recharge la page
+            header('Location: admin.php');
+            exit();
+        }
+}
 
 
 //////////////////////////////////////////////////////////////////////////////////
