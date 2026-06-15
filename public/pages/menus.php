@@ -16,7 +16,15 @@ ORDER BY ID ASC
 // on execute la requete
 $stmt -> execute();
 
-$menus = $stmt -> fetchAll();
+// fetchAll() retourne des lignes brutes de la base SQL sous forme de tableaux.
+// Ici, on transforme chaque ligne en objet Menu.
+// Le but est d'utiliser ensuite une vraie liste d'objets dans l'affichage,
+// au lieu de travailler directement avec des tableaux SQL.
+$menusData = $stmt->fetchAll();
+$menus = [];
+foreach($menusData as $menuData){
+    $menus[] = Menu::fromDatabaseRow($menuData);
+}
 
 ?>
 <!DOCTYPE html>
@@ -118,27 +126,27 @@ $menus = $stmt -> fetchAll();
         <div class="container_card">
         <?php foreach ($menus as $menu): ?>
             <div class="menu_card">
-                <h3><?php echo htmlspecialchars($menu['titre']); ?> </h3>
+                <h3><?php echo htmlspecialchars($menu->titre); ?> </h3>
                 <p>
-                    <?php echo htmlspecialchars($menu['description']); ?>
+                    <?php echo htmlspecialchars($menu->description); ?>
                 </p>
 
                 <p>
-                Minimum :<?php echo (int) $menu ['nb_personne']; ?> personnes 
+                Minimum :<?php echo htmlspecialchars($menu->getMinimumPersonnesTexte()); ?>
                 </p>
                 <p>
-                    prix : <?php echo number_format((float)$menu['prix'], 2, ',',' ');?>
+                    prix : <?php echo htmlspecialchars($menu->getPrixFormate());?>
                 </p>
                 <div class="img_menu">
                     <img 
-                    src="../<?php echo htmlspecialchars(str_replace('\\','/', $menu['img_cover'])); ?>"
-                    alt="<?php echo htmlspecialchars($menu['titre']); ?>"
+                    src="../<?php echo htmlspecialchars($menu->getImagePath()); ?>"
+                    alt="<?php echo htmlspecialchars($menu->titre); ?>"
                     >
         </div>
         <div class="menu_detail">
         <!-- 
         on passe l'ID du menu dans l'url pour savoir quelle menu afficher -->
-            <a href="menu.php?id=<?php echo (int) $menu['ID']; ?>" 
+            <a href="menu.php?id=<?php echo (int) $menu->id; ?>" 
             >+</a>
         </div>
         

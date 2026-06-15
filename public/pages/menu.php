@@ -33,16 +33,7 @@ $menu = $stmt->fetch();
 
 //affichage tu tableau en menu objet Menu
 if($menu){
-    $menu = new Menu(
-        (int) $menu['ID'],
-        (string) $menu['titre'],
-        (string) $menu['description'],
-        (float) $menu['prix'],
-        (int) $menu['nb_personne'],
-        (string) $menu['img_cover'],
-        1,
-        null
-    );
+    $menu = Menu::fromDatabaseRow($menu);
 }
 
 

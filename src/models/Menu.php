@@ -47,6 +47,22 @@ class Menu
         $this->actif = $actif;
         $this->themeId = $themeId;
     }
+        // Ojet Menu a partir d'une ligne SQL en BDD 
+    //facilite l'utilisation de la classe 
+
+    public static function fromDatabaseRow(array $row): self{
+        return new self(
+            (int) $row['ID'],
+            (string) $row['titre'],
+            (string) $row['description'],
+            (float) $row['prix'],
+            (int) $row['nb_personne'],
+            (string) $row['img_cover'],
+            1,
+            null
+        );
+        }
+    
 
     public function getPrixFormate(): string
     {
@@ -61,6 +77,8 @@ class Menu
 
     public function getMinimumPersonnesTexte(): string
     {
-        return $this->nbPersonne . 'Personnes';
+        return $this->nbPersonne . ' Personnes';
     }
-}
+
+
+    }

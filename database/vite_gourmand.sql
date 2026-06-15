@@ -2,8 +2,8 @@
 -- version 5.1.2
 -- https://www.phpmyadmin.net/
 --
--- HÃ´te : localhost:3307
--- GÃ©nÃ©rÃ© le : lun. 20 avr. 2026 Ã  18:04
+-- Hà´te : localhost:3307
+-- Généré le : lun. 20 avr. 2026 à 18:04
 -- Version du serveur : 5.7.24
 -- Version de PHP : 8.3.1
 
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Base de donnÃ©es : `vite_gourmand`
+-- Base de données : `vite_gourmand`
 --
 
 -- --------------------------------------------------------
@@ -97,15 +97,15 @@ CREATE TABLE `menus` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
--- DÃ©chargement des donnÃ©es de la table `menus`
+-- Déchargement des données de la table `menus`
 --
 
 INSERT INTO `menus` (`ID`, `titre`, `description`, `prix`, `nb_personne`, `img_cover`, `actif`, `created_at`, `theme_id`) VALUES
-(1, 'Tradition', 'Un menu traditionnel et gÃ©nÃ©reux,idÃ©al pour les repas familiaux et Ã©vÃ©nements simples', '120.00', 4, 'assetIMGcover_menucover_menu_classique.png', 1, '2026-01-14 14:26:07', NULL),
-(2, 'Festif Noel', 'Un menu raffinÃ© aux saveurs de fÃªtes, parfait pour les repas de fin dâ€™annÃ©e.', '210.00', 6, 'assetIMGcover_menucover_menu_noel.png', 1, '2026-01-14 14:26:07', NULL),
-(3, 'Formule vÃ©gÃ©tarien Ã‰quilibÃ©', 'Un menu sain et savoureux, sans viande, mettant en valeur des produits frais.', '75.00', 3, 'assetIMGcover_menucover_menu_VG.png', 1, '2026-01-14 14:26:07', NULL),
-(4, 'Formule VÃ©gan crÃ©atif', 'Une expÃ©rience culinaire 100% vÃ©gÃ©tale, moderne et gourmande.', '120.00', 4, 'assetIMGcover_menucover_vegan.png', 1, '2026-01-14 14:26:07', NULL),
-(5, 'Formule sans gluten', 'Un menu conÃ§u pour les personnes intolÃ©rantes au gluten, avec des prÃ©cautions strictes.', '70.00', 2, 'assetIMGcover_menucover_SSGluten.png', 1, '2026-01-14 14:26:07', NULL);
+(1, 'Tradition', 'Un menu traditionnel et généreux,idéal pour les repas familiaux et événements simples', '120.00', 4, 'assetIMGcover_menucover_menu_classique.png', 1, '2026-01-14 14:26:07', NULL),
+(2, 'Festif Noel', 'Un menu raffiné aux saveurs de fêtes, parfait pour les repas de fin dâ€™année.', '210.00', 6, 'assetIMGcover_menucover_menu_noel.png', 1, '2026-01-14 14:26:07', NULL),
+(3, 'Formule végétarien à‰quilibé', 'Un menu sain et savoureux, sans viande, mettant en valeur des produits frais.', '75.00', 3, 'assetIMGcover_menucover_menu_VG.png', 1, '2026-01-14 14:26:07', NULL),
+(4, 'Formule Végan créatif', 'Une expérience culinaire 100% végétale, moderne et gourmande.', '120.00', 4, 'assetIMGcover_menucover_vegan.png', 1, '2026-01-14 14:26:07', NULL),
+(5, 'Formule sans gluten', 'Un menu conà§u pour les personnes intolérantes au gluten, avec des précautions strictes.', '70.00', 2, 'assetIMGcover_menucover_SSGluten.png', 1, '2026-01-14 14:26:07', NULL);
 
 -- --------------------------------------------------------
 
@@ -117,7 +117,7 @@ CREATE TABLE `menu_produit` (
   `ID` int(10) UNSIGNED NOT NULL,
   `produit_id` int(10) UNSIGNED NOT NULL,
   `menu_id` int(10) UNSIGNED NOT NULL,
-  `quantitÃ©` int(11) NOT NULL DEFAULT '1'
+  `quantité` int(11) NOT NULL DEFAULT '1'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
@@ -159,7 +159,7 @@ CREATE TABLE `regimes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
--- DÃ©chargement des donnÃ©es de la table `regimes`
+-- Déchargement des données de la table `regimes`
 --
 
 INSERT INTO `regimes` (`regimes_id`, `nom`, `date_creation`) VALUES
@@ -180,14 +180,14 @@ CREATE TABLE `themes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
--- DÃ©chargement des donnÃ©es de la table `themes`
+-- Déchargement des données de la table `themes`
 --
 
 INSERT INTO `themes` (`ID`, `nom`, `date_creation`) VALUES
 (1, 'Classique', '2026-01-19 12:08:25'),
 (2, 'Noel', '2026-01-19 12:08:25'),
-(3, 'Ã‰vÃ©nements', '2026-01-19 12:08:25'),
-(4, 'PÃ¢ques', '2026-01-19 12:08:25');
+(3, 'à‰vénements', '2026-01-19 12:08:25'),
+(4, 'Pà¢ques', '2026-01-19 12:08:25');
 
 -- --------------------------------------------------------
 
@@ -210,7 +210,7 @@ CREATE TABLE `users` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
--- DÃ©chargement des donnÃ©es de la table `users`
+-- Déchargement des données de la table `users`
 --
 
 INSERT INTO `users` (`ID`, `nom`, `prenom`, `email`, `telephone`, `ville`, `rue`, `code_postal`, `password_hash`, `created_at`, `role`) VALUES
@@ -218,7 +218,7 @@ INSERT INTO `users` (`ID`, `nom`, `prenom`, `email`, `telephone`, `ville`, `rue`
 (2, 'edward', 'Elric', 'edward.elric@yahoo.fr', '0615243658', 'nice', '125 rue des magnolia', '06200', '$2y$10$eKMH04gmSNyUdEQ.9op5jO6acB8ckPpM8TLcg97stlL53.PGBcmd6', '2026-04-07 15:12:49', 'client');
 
 --
--- Index pour les tables dÃ©chargÃ©es
+-- Index pour les tables déchargées
 --
 
 --
@@ -300,7 +300,7 @@ ALTER TABLE `users`
   ADD UNIQUE KEY `email` (`email`);
 
 --
--- AUTO_INCREMENT pour les tables dÃ©chargÃ©es
+-- AUTO_INCREMENT pour les tables déchargées
 --
 
 --
@@ -358,7 +358,7 @@ ALTER TABLE `users`
   MODIFY `ID` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
--- Contraintes pour les tables dÃ©chargÃ©es
+-- Contraintes pour les tables déchargées
 --
 
 --
