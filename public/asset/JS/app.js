@@ -1,3 +1,37 @@
+////////////////////////////////////////////////////////////////////////////
+//                            CARROUSEL                                   //
+////////////////////////////////////////////////////////////////////////////
+
+function initMenuGalerie(){
+  const slides = document.querySelectorAll(".slideMenu");
+  const btnNext = document.querySelector(".btnNextImg");
+  let currentIndex = 0;
+
+  if (!slides.length || !btnNext){
+    return;
+  }
+
+  function afficherSlide(index){
+    slides.forEach((slide) => {
+      slide.classList.remove("active");
+    });
+
+    slides[index].classList.add("active");
+  }
+  btnNext.addEventListener("click",() => {
+    currentIndex ++
+
+    if (currentIndex >= slides.length){
+      currentIndex = 0;
+    }
+    afficherSlide(currentIndex);
+  });
+}
+initMenuGalerie();
+
+
+
+
 /////////////////////////////////////////////////////////////////////////////
 //                          MODAL MENU                                     //
 /////////////////////////////////////////////////////////////////////////////

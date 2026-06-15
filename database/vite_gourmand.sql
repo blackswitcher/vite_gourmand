@@ -413,3 +413,76 @@ COMMIT;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 
 
+-- mise en place de la table allergernes
+CREATE table `allergenes`(
+    `ID` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `nom` varchar(255) NOT NULL,
+    PRIMARY KEY (`ID`),
+    UNIQUE KEY `nom` (`nom`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- table de liaison allergene et menus 
+-- un menu peux avoir plusieur allegerne
+-- un allergene peux appartenir a plusieur menus 
+
+CREATE TABLE `menu_allergene` (
+  `menu_id` int(10) UNSIGNED NOT NULL,
+  `allergene_id` int(10) UNSIGNED NOT NULL,
+  PRIMARY KEY (`menu_id` , `allergene_id`),
+  KEY `allergene_id` (`allergene_id`),
+  CONSTRAINT `menu_allergene_ibfk_1`
+    FOREIGN KEY (`menu_id`) REFERENCES `menus` (`ID`) ON DELETE CASCADE,
+  CONSTRAINT `menu_allergene_ibfk_2`
+    FOREIGN KEY (`allergene_id`) REFERENCES `allergenes` (`ID`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO `allergenes` (`nom`) VALUES
+('Gluten'),
+('Lait'),
+('Oeufs'),
+('Soja'),
+('Fruit a coque');
+
+
+INSERT INTO `menu_allergene` (`menu_id`, `allergene_id`) VALUES
+(1,1), -- tradition -> Gluten
+(1,2), -- tradition -> lait
+(1,3), -- tradition -> Oeufs
+(1,4), -- tradition -> Soja
+(1,5), -- tradition -> Fruit a coque allergene_id
+
+(2,1), -- festif noel -> Gluten
+(2,2), -- festif noel -> Lait
+(2,3), -- festif noel -> Oeuf
+(2,5), -- festif noel -> Fruit a coque allergene_id
+
+(3,1), -- formule veetarienne -> Gluten
+(3,2), -- formule veetarienne -> Lait
+(3,3), -- formule veetarienne -> Oeufs
+
+(4,5), -- formule vegan -> Fruit a coque
+(4,4); -- formule vegan -> Soja allergene_id
+
+
+SELECT ID, menu_id, img_path, alt, ordre
+FROM galerie_menu
+ORDER BY menu_id, ordre;
+
+INSERT INTO galerie_menu (img_path, alt, ordre, menu_id) VALUES
+('asset/asset/tradition1.png','Menu Tradition - image 1', 1, 1),
+('asset/asset/tradition2.png','Menu Tradition - image 2', 2, 1),
+('asset/asset/tradition3.png','Menu Tradition - image 3', 3, 1),
+('asset/asset/tradition4.png','Menu Tradition - image 4', 4, 1),
+('asset/asset/tradition5.png','Menu Tradition - image 5', 5, 1);
+
+UPDATE galerie_menu
+SET img_path = CASE ordre 
+  WHEN 1 THEN 'asset/IMG/tradition1.png'
+  WHEN 2 THEN 'asset/IMG/tradition2.png'
+  WHEN 3 THEN 'asset/IMG/tradition3.png'
+  WHEN 4 THEN 'asset/IMG/tradition4.png'
+  WHEN 5 THEN 'asset/IMG/tradition5.png'
+  ELSE img_path
+END
+WHERE menu_id=1;
+

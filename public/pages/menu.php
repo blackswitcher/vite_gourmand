@@ -41,6 +41,24 @@ if($menu){
 if (!$menu) {
     die('Ce menu n\'existe pas ou n\'est plus disponible.');
 }
+
+// on recupere les allergenes lies aux menus
+// tout les allergenes lié au menu en question
+$stmtAllergenes = $pdo->prepare("
+SELECT allergenes.nom
+FROM allergenes
+INNER JOIN menu_allergene ON menu_allergene.allergene_id = allergenes.ID
+WHERE menu_allergene.menu_id = :menu_id
+ORDER BY allergenes.nom ASC
+");
+
+$stmtAllergenes->execute([
+    'menu_id' => $menu->id
+]);
+
+$allergenes = $stmtAllergenes->fetchAll(PDO::FETCH_COLUMN);
+
+
 // si on clique sur ajouter alors on traite l'ajout
 if ($_SERVER['REQUEST_METHOD']=== 'POST' && isset($_POST['ajouter_panier'])){
 // si le panier n'existe pas on le crée 
@@ -55,6 +73,22 @@ if(!isset($_SESSION['panier'])){
         $_SESSION['panier'][$menu->id] =1;
     }
 }
+
+// on recupere la galerie du menu 
+$stmtGalerie = $pdo->prepare("
+    SELECT img_path, alt, ordre
+    FROM galerie_menu
+    WHERE menu_id = :menu_id
+    ORDER BY ordre ASC
+");
+
+$stmtGalerie ->execute([
+    'menu_id' => $menu->id
+]);
+
+$imagesGalerie = $stmtGalerie->fetchAll();
+
+
 //le mode de fonctionnement dans ma page on recupere id dans l'url
 //exmple id=2 alors ma requete recupere les infos dans la BDD 
 // dans mon html on vas dispatcher mes info a la vue du client 
@@ -84,19 +118,37 @@ if(!isset($_SESSION['panier'])){
         <div class="menu_card">
 
             <!--on affiche le nombre minimum de personnes-->
-            <p>Minimum: <?php echo htmlspecialchars($menu->getMinimumPersonnesTexte()); ?> personnes</p>
+            <p>Minimum: <?php echo htmlspecialchars($menu->getMinimumPersonnesTexte()); ?></p>
             <!-- on affiche le prix -->
             <p>
                 Prix:
                 <?php echo htmlspecialchars($menu->getPrixFormate());?> 
             </p>
 
-            <div class="img_menu">
-                <!-- on mettra plusieur image par la suite -->
+        <?php if (!empty($allergenes)): ?>
+            <div class="allergenes_menu">
+                <p>Allergenes :</p>
+                <p>
+                    <?php echo htmlspecialchars(implode(' - ', $allergenes)); ?>
+                </p>
+            </div>
+            <?php endif; ?>
 
-                <img
-                src="../<?php echo htmlspecialchars($menu->getImagePath()); ?>"
-                    alt="<?php echo htmlspecialchars($menu->titre); ?>">
+            <div>
+                <?php if (!empty($imagesGalerie)): ?>
+                    <?php foreach($imagesGalerie as $index => $image): ?>
+                        <div class="slideMenu <?php echo $index === 0 ? 'active' : ''; ?>">
+                        <img class="img_slide"
+                        src="../<?php echo htmlspecialchars(str_replace('\\','/',$image['img_path'])); ?>"
+                        alt="<?php echo htmlspecialchars($image['alt']); ?>">
+                        </div>
+                        <?php endforeach; ?>
+                        <button type="button" class="btnNextImg">Suivant</button> 
+                    <?php else: ?>
+                        <img
+                            src="../<?php echo htmlspecialchars($menu->getImagePath()); ?>"
+                            alt="<?php echo htmlspecialchars($menu->titre); ?>">
+                            <?php endif; ?>
         </div>
 
         <div class="bouton_appliquer">
@@ -119,6 +171,7 @@ if(!isset($_SESSION['panier'])){
             </div>
     </section>
     <?php require_once '../include/footer.php'; ?>
+    <script src="../asset/JS/app.js"></script>
 </body>
 
 </html>

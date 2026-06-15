@@ -79,6 +79,42 @@ Depuis Windows ou un outil externe
 - structure de BDD : `docs/bdd/structure_bdd.md`
 - documentation BDD complementaire : `docs/bdd/2026-04-20_vite_gourmand.docx`
 
+## Technologies complementaires
 
+Le projet utilise egalement :
 
+- Docker pour lancer l application et la base MySQL en local
+- MongoDB pour journaliser certaines actions d administration
+- phpMyAdmin ou un outil SQL externe pour verifier la base si besoin
+
+## Fonctionnalites admin journalisees dans MongoDB
+
+Les actions suivantes sont journalisees dans MongoDB depuis l espace d administration :
+
+- connexion admin / employe
+- modification du statut d une commande
+- validation d un avis
+- refus d un avis
+- ajout d un employe
+- suppression d un employe
+- ajout d un menu
+- suppression d un menu
+
+## Securite et deploiement
+
+### Securite deja mise en place
+
+- utilisation de requetes preparees avec PDO
+- mots de passe stockes sous forme de hash
+- separation des acces selon les roles
+- controle des actions sensibles dans l espace d administration
+- journalisation de certaines actions admin dans MongoDB
+
+### Points a prevoir pour un deploiement reel
+
+- variables d environnement de production separees
+- configuration serveur adaptee a la production
+- restriction de l affichage des erreurs en production
+- base de donnees de production distincte
+- gestion plus poussee des droits, sauvegardes et acces
 

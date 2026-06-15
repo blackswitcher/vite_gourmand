@@ -19,6 +19,8 @@ Le site sera accessible a l'adresse :
 http://localhost:8080
 ```
 
+Si c est le premier lancement, verifier que Docker Desktop est bien demarre avant d executer la commande.
+
 ## Verifier les conteneurs
 
 Pour verifier que les conteneurs tournent :
@@ -53,8 +55,14 @@ Quand le site PHP parle a MySQL depuis Docker, il faut utiliser :
 
 - `DB_HOST=db`
 - `DB_PORT=3306`
+- `DB_NAME=vite_gourmand`
+- `DB_CHARSET=utf8mb4`
+- `DB_USER=root`
+- `DB_PASSWORD=root`
 
 Ici, `db` est le nom du service Docker MySQL dans `docker-compose.yml`.
+
+
 
 ### Acces depuis Windows ou un outil externe
 
@@ -62,6 +70,9 @@ Quand on veut se connecter a MySQL depuis Windows, DBeaver, phpMyAdmin ou un aut
 
 - `127.0.0.1`
 - port `3307`
+- base : `vite_gourmand`
+- utilisateur : `root`
+- mot de passe : `root`
 
 ### Resume simple
 
