@@ -134,16 +134,17 @@ $imagesGalerie = $stmtGalerie->fetchAll();
             </div>
             <?php endif; ?>
 
-            <div>
+            <div class="img_menu">
                 <?php if (!empty($imagesGalerie)): ?>
                     <?php foreach($imagesGalerie as $index => $image): ?>
                         <div class="slideMenu <?php echo $index === 0 ? 'active' : ''; ?>">
                         <img class="img_slide"
                         src="../<?php echo htmlspecialchars(str_replace('\\','/',$image['img_path'])); ?>"
                         alt="<?php echo htmlspecialchars($image['alt']); ?>">
-                        </div>
-                        <?php endforeach; ?>
-                        <button type="button" class="btnNextImg">Suivant</button> 
+                        
+                    </div>
+                    <?php endforeach; ?>
+                    <button type="button" class="btnNextImg">Suivant</button> 
                     <?php else: ?>
                         <img
                             src="../<?php echo htmlspecialchars($menu->getImagePath()); ?>"

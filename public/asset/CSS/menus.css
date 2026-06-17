@@ -31,7 +31,7 @@
     --title_size: 50px;
     --title_deco: underline;
 
-    --text_shadow: 0 0.5px 0 rgba(255,255,255,0.4);
+    --text_shadow: 0 0.5px 0 rgba(255, 255, 255, 0.4);
     --text_shadow_brown: 0 1px 0 #8E5A2A;
 
     /*----------------GESTION DES RADIUS------------------------*/
@@ -113,28 +113,26 @@ h1 {
     justify-content: center;
     align-items: center;
     text-shadow: var(--text_shadow)
-    
-
-
 }
 
 /*------------------A NE PAS OUBLIER LES CONTAINER ME FACILITE LA GESTION DES POSITIONNEMENT --------*/
 .container_card {
     display: grid;
-    grid-template-columns: repeat(4,1fr);
+    grid-template-columns: repeat(4, 1fr);
     justify-content: center;
     align-items: center;
     margin: 10px;
 }
 
 /*-------------------------GESTION IMG FORMULE-------------------*/
-.img_menu{
+.img_menu {
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 5px;
 }
-.img_menu img{
+
+.img_menu img {
     width: 90%;
     height: auto;
     border: 2px solid var(--color_bg_text);
@@ -188,6 +186,7 @@ h1 {
     margin-bottom: 5px;
     transition: 0.5s ease;
 }
+
 .menu_detail a {
     border: 2px solid #000;
     border-radius: var(--radius_xs);
@@ -208,6 +207,7 @@ h1 {
     transform: scale(1.1);
     box-shadow: 0px 0px 2px var(--color_bg_main);
 }
+
 .menu_detail a:hover {
     background-color: var(--color_bg_main);
     color: var(--color_w_text);
@@ -218,7 +218,7 @@ h1 {
 
 /*---------------------SECTION FILTRE-------------------------------*/
 /*---------------------GESTION DE MA SECTION -----------------------*/
-.filtre{
+.filtre {
     width: 90%;
     margin: 5%;
     padding: var(--padding_m);
@@ -228,10 +228,10 @@ h1 {
     justify-content: center;
     align-items: center;
     background-color: var(--color_bg_second_soft);
-    border:2px solid #8E5A2A;
+    border: 2px solid #8E5A2A;
 }
 
-.filtre h3{
+.filtre h3 {
     font-size: var(--title_size);
     margin-top: 0px;
     margin-left: 20px;
@@ -239,11 +239,12 @@ h1 {
     color: #5A3A1B;
 
 }
+
 /*----------------------GESTION DE MON CONTAINER -------------------*/
-.container_filtre{
+.container_filtre {
     width: 100%;
     display: flex;
-    justify-content:space-evenly;
+    justify-content: space-evenly;
     align-items: center;
     padding: var(--padding_xs);
     color: var(--color_bg_text);
@@ -257,46 +258,50 @@ h1 {
 /*------------------------GESTION DU SELECTEUR DE PRIX--------------*/
 
 
-.container_select select{
+.container_select select {
     appearance: none;
     background-color: var(--color_bg_second);
     color: var(--color_bg_text);
     border-radius: var(--radius_xs);
     height: 30px;
-    color: #fff;    
+    color: #fff;
     width: 200px;
     border: 1px solid var(--color_bg_text);
     text-align: center;
 
 }
-.container_prix_max{
+
+.container_prix_max {
     display: flex;
     justify-content: space-evenly;
     align-items: center;
 
 }
-.container_prix{
+
+.container_prix {
     width: 20px;
     height: auto;
     font-weight: bold;
     padding-top: 5px;
     padding-right: 25px;
 }
+
 /*----------------------GESTION DU DEROULANT ---------------------------*/
 
 /*---------------------GESTION DE L'APPLICATION DES FILTRES-------------*/
 
-.bouton_appliquer{
+.bouton_appliquer {
     display: flex;
     justify-content: center;
     height: 50px;
     width: 100%;
-    margin-top:30px;
+    margin-top: 30px;
 
 }
+
 /*-------------------------GESTION DU BOUTON -------------------------*/
 .bouton_appliquer button,
-.bouton_appliquer a{
+.bouton_appliquer a {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -308,20 +313,21 @@ h1 {
     color: #fff;
     font-weight: bold;
     transition: 0.5s ease;
-    
+
 }
 
 .bouton_appliquer button:hover,
-.bouton_appliquer a:hover{
+.bouton_appliquer a:hover {
     background-color: var(--color_bg_main);
     color: var(--color_w_text);
     border: none;
     transform: scale(1.1);
     box-shadow: 0px 0px 2px var(--color_bg_main);
 }
+
 /*-----------------------GESTION GLOBAL DU MODAL---------------*/
-.menu_modal{
-    padding:15px;
+.menu_modal {
+    padding: 15px;
     display: block;
     width: 70%;
     height: auto;
@@ -332,45 +338,51 @@ h1 {
     color: var(--color_bg_text);
 
 }
+
 /*permet de sortir mon modal du flux normal de ma page */
-.menu_modal_overlay{
+.menu_modal_overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,.55);
+    background: rgba(0, 0, 0, .55);
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 24px;
     z-index: 9999;
 }
-.menu_modal_overlay.hidden{ 
-    display: none;    /*le mode cacher deviens le comportement normal de mon modal*/
+
+.menu_modal_overlay.hidden {
+    display: none;
+    /*le mode cacher deviens le comportement normal de mon modal*/
 }
 
-.menu_modal_content{
-    width: min(1100px,92vw);
+.menu_modal_content {
+    width: min(1100px, 92vw);
     max-height: 90vh;
     overflow: auto;
-    scrollbar-width: none;/*cache la slide bar*/
+    scrollbar-width: none;
+    /*cache la slide bar*/
     position: relative;
 }
 
 /*------------------------GESTION DE MON TITRE-------------------*/
-.menu_modal h3{
+.menu_modal h3 {
     font-weight: bold;
     font-size: var(--title_size);
 }
+
 /*-------------------------SEPARATION DE MA DESCRIPTION ET LES ALLERGENES*/
-.containerDesc{
+.containerDesc {
     display: grid;
-    grid-template-columns: repeat(2,1fr);
+    grid-template-columns: repeat(2, 1fr);
 }
 
-.desc{
+.desc {
     grid-column: 1fr;
 }
+
 /*------------------------GESTION DE MA LISTE ALLERGENES*/
-.allergene{
+.allergene {
     grid-column: 1fr;
     font-weight: bold;
     display: block;
@@ -378,17 +390,17 @@ h1 {
     margin-top: 0;
 }
 
-.titleAllergene{
-    font-weight: bold ;
+.titleAllergene {
+    font-weight: bold;
     font-size: var(--text_size_xl);
     text-decoration: var(--title_deco);
 }
 
-.galerieTitle{
+.galerieTitle {
     text-decoration: var(--title_deco);
 }
 
-.galerieModal{
+.galerieModal {
     position: relative;
     height: 500px;
     display: flex;
@@ -403,7 +415,8 @@ h1 {
     height: 40px;
     border-radius: 50%;
     border: none;
-    background-color: var(--color_bg_text);   /* ton marron */
+    background-color: var(--color_bg_text);
+    /* ton marron */
     color: #fff;
     font-weight: bold;
     font-size: 18px;
@@ -411,21 +424,21 @@ h1 {
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.btnPrevious{
+.btnPrevious {
     left: 5px;
     margin-right: 5px;
 }
 
-.btnNext{
+.btnNext {
     right: 15px;
     margin-left: 5px;
 }
 
-.slideModal{
+.slideModal {
     display: none;
     width: 100%;
     height: 500px;
@@ -434,26 +447,28 @@ h1 {
     box-sizing: border-box;
 }
 
-.slideModal.active{
+.slideModal.active {
     display: block;
 }
-.slideModal img{
-width: 100%;
+
+.slideModal img {
+    width: 100%;
     height: 100%;
-    object-fit: cover; /* ou contain selon le rendu voulu */
+    object-fit: cover;
+    /* ou contain selon le rendu voulu */
     border: 3px solid var(--color_bg_text);
     border-radius: var(--radius_m);
 }
 
-.fermetureModal{
+.fermetureModal {
     display: flex;
     justify-content: center;
     height: 30px;
     width: 100%;
-    margin-top:30px;
+    margin-top: 30px;
 }
 
-.fermetureModal button{
+.fermetureModal button {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -467,7 +482,7 @@ width: 100%;
     transition: 0.5s ease;
 }
 
-.fermetureModal button:hover{
+.fermetureModal button:hover {
     background-color: var(--color_bg_main);
     color: var(--color_w_text);
     border: none;
@@ -477,60 +492,45 @@ width: 100%;
 
 /*-------------------------------------GALERIE MODAL -----------------------------*/
 
-.img_slide{
-position: relative;
-    width: 100%;
-    max-width: 700px;
-    margin: 30px auto 0 auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border: 3px solid #6b3e1d;
-    height: 420px;
-
+.img_menu {
+    position: relative;
+    width: fit-content;
+    max-width: 100%;
+    margin: 30px auto;
 }
 
 .slideMenu {
     display: none;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    border-radius: 18px;
-    background-color: transparent;
 }
 
-.slideMenu.active{
+.slideMenu.active {
     display: block;
 }
 
-.btnNextImg{
+.img_slide {
+    display: block;
+    max-width: 700px;
+    width: 100%;
+    height: auto;
+    border: 3px solid #6b3e1d;
+    border-radius: 18px;
+}
+
+.btnNextImg {
     position: absolute;
-    right: 15px;
-    bottom: 15px;
-    padding: 10px 18px;
+    right: -110px;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 12px 22px;
     border: none;
     border-radius: 999px;
-    background-color: #6b3e1d;
-    color: #fff8ee;
-    font-size: 16px;
-    font-weight: 600;
+    background-color: #8b4f26;
+    color: #ffffff;
+    font-family: "Dancing Script", cursive;
+    font-size: 1.4rem;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
-    transition: background-color 0.2s ease, transform 0.2 ease;
 }
 
-.btnNextImg:hover{
-    background-color: #8a542b;
-    transform: translateY(-2px);
-}
-
-.btnNextImg:active{
-    transform:translateY(0);
-}
-
-.img_slide .slideMenu{
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    
+.btnNextImg:hover {
+    background-color: #6b3e1d;
 }
