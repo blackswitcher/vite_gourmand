@@ -1,3 +1,67 @@
+///////////////////////////////////////////////////////////////////////////
+//                          AJOUT DU PANIER EN AJAX                      //
+///////////////////////////////////////////////////////////////////////////
+
+function initPanierAjax(){
+  // on recupere le form d'ajout au panier
+  const formAjoutPanier = document.querySelector("#formAjoutPanier");
+
+  // si le form n'existe pas sur la page on arrete
+  if(!formAjoutPanier) {
+    return;
+  }
+
+  // on ecoute l envoie du formulaire 
+  formAjoutPanier.addEventListener("submit", async function (event) {
+    // on bloque le rechargement classique de la page 
+    event.preventDefault();
+
+    // on recupere les données du formulaire
+    const formData = new FormData(formAjoutPanier);
+
+    try{
+      // on envoie les données au fichier PHP AJAX
+      const response = await fetch("ajax_panier.php",{
+        method:"POST",
+        body: formData
+      });
+
+      // on transforme la reponse en JSON 
+      const data = await response.json();
+
+      // afficher les potentiel erreur
+      if(!data.success){
+        alert(data.message);
+        return;
+      }
+const panierListe = document.querySelector("#panierResumeListe");
+const panierTotal = document.querySelector("#panierResumeTotal");
+
+if(panierListe && panierTotal){
+  // on vide l'ancienne liste pour la reconstruire proprement
+  panierListe.innerHTML = "";
+
+  // on reconstruit chaque ligne du mini panier 
+  data.panier.forEach((menu)=>{
+    const li = document.createElement("li");
+    li.textContent = menu.titre + " x" + menu.quantite;
+    panierListe.appendChild(li);
+  });
+
+  // on met a jour le total affiche
+  panierTotal.textContent = "Total : " + data.total_panier;
+}
+    } catch (error) {
+      // si un probleme ou JS arrive 
+      alert("Une erreur est survenue pendant l'ajout au panier");
+      console.error(error);
+    }
+    
+  });
+}
+initPanierAjax();
+
+
 ////////////////////////////////////////////////////////////////////////////
 //                            CARROUSEL                                   //
 ////////////////////////////////////////////////////////////////////////////

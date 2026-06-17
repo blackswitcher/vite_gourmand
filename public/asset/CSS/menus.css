@@ -588,3 +588,16 @@ margin-top: 20px;
     border-radius: 18px;
     font-weight: bold;
 }
+
+#panierResumeListe {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-left: 0;
+    margin: 15px 0;
+    list-style: none;
+}
+
+#panierResumeListe li {
+    display: block;
+}

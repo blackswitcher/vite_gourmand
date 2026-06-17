@@ -6,6 +6,47 @@ require_once __DIR__ . '/../../src/configs/session.php';
 // ajout des models
 require_once __DIR__ . '/../../src/models/Menu.php';
 
+// preparation du mini panier a afficher au chargement de la page
+$panierResume = [];
+$totalPanierResume = 0;
+
+// si le panier existe et contient au moins un menu
+if (!empty($_SESSION['panier'])) {
+    // on recupere les ids des menus presents dans la session
+    $idsPanierResume = array_keys($_SESSION['panier']);
+
+    // on nettoie les ids pour ne garder que des entiers valides
+    $idsPanierResume = array_map('intval', $idsPanierResume);
+    $idsPanierResume = array_filter($idsPanierResume, function ($id) {
+        return $id > 0;
+    });
+
+    // si apres nettoyage il reste des ids, on charge les menus correspondants
+    if (!empty($idsPanierResume)) {
+        $placeholderResume = implode(',', array_fill(0, count($idsPanierResume), '?'));
+
+        $stmtPanierResume = $pdo->prepare("
+            SELECT ID, titre, prix
+            FROM menus
+            WHERE ID IN ($placeholderResume)
+            ORDER BY ID ASC
+        ");
+
+        $stmtPanierResume->execute($idsPanierResume);
+        $panierResume = $stmtPanierResume->fetchAll();
+
+        // on ajoute la quantite a chaque menu et on calcule le total global
+        foreach ($panierResume as &$menuPanier) {
+            $quantitePanier = (int) $_SESSION['panier'][$menuPanier['ID']];
+            $prixPanier = (float) $menuPanier['prix'];
+
+            $menuPanier['quantite'] = $quantitePanier;
+            $totalPanierResume += $quantitePanier * $prixPanier;
+        }
+        unset($menuPanier);
+    }
+}
+
 
 // on recuper l'id envoyer dans l URL
 $id = $_GET['id'] ?? null;
@@ -88,47 +129,6 @@ $stmtGalerie->execute([
 
 $imagesGalerie = $stmtGalerie->fetchAll();
 
-////////////////////////////////////////////////////////////////////////////////////
-//                          PANIER DYNAMIQUE                                      //
-////////////////////////////////////////////////////////////////////////////////////
-
-// Mise en place de mon panier 
-$panierResume = [];
-$totalPanierResume = 0;
-
-//si le panier existe et contient au moins un menu 
-if (!empty($_SESSION['panier'])) {
-    // je recupere les id des menus dans le panier 
-    $idsPanierResume = array_keys($_SESSION['panier']);
-
-    //nettoyage de mes ids  pour garder ques des entiers valides
-    $idsPanierResume = array_map('intval', $idsPanierResume);
-    $idsPanierResume = array_filter($idsPanierResume, function ($id) {
-        return $id > 0;
-    });
-    // une fois nettoyer on recupere les infos des menus restant 
-    if (!empty($idsPanierResume)) {
-        $placeholderResume = implode(',', array_fill(0, count($idsPanierResume), '?'));
-
-        $stmtPanierResume = $pdo->prepare("
-        SELECT ID, titre, prix
-        FROM menus
-        WHERE ID IN ($placeholderResume)
-        ORDER BY ID ASC
-        ");
-
-        $stmtPanierResume->execute($idsPanierResume);
-        // on stocke le resultat de la requete dans le mini panier 
-        $panierResume = $stmtPanierResume->fetchAll();
-
-        // calcul du total global du mini panier 
-        foreach ($panierResume as $menuPanier) {
-            $quantitePanier = (int) $_SESSION['panier'][$menuPanier['ID']];
-            $prixPanier = (float) $menuPanier['prix'];
-            $totalPanierResume += $quantitePanier * $prixPanier;
-        }
-    }
-}
 
 //le mode de fonctionnement dans ma page on recupere id dans l'url
 //exmple id=2 alors ma requete recupere les infos dans la BDD 
@@ -201,8 +201,9 @@ if (!empty($_SESSION['panier'])) {
 
                 <div class="bouton_appliquer">
                     <!-- on ajoute le menu au panier en POST -->
-                    <form method="POST">
-                        <button type="submit" name="ajouter_panier">Ajouter au panier</button>
+                    <form id="formAjoutPanier">
+                        <input type="hidden" name="menu_id" value="<?php echo (int) $menu->id; ?>">
+                        <button type="submit">Ajouter au panier</button>
                     </form>
                 </div>
                 <div class="menu_detail">
@@ -211,31 +212,28 @@ if (!empty($_SESSION['panier'])) {
                 </div>
             </div>
 
+<div class="panier_resume" id="panierResume">
+    <h2>Mon Panier</h2>
 
-            <div class="panier_resume">
-                <h2>Mon Panier</h2>
-                <?php if (empty($panierResume)): ?>
-                    <p>Votre panier est vide .</p>
-                <?php else: ?>
-                    <ul>
-                        <?php foreach ($panierResume as $menuPanier): ?>
-                            <li>
-                                <?php echo htmlspecialchars($menuPanier['titre']); ?>
-                                x<?php echo (int) $_SESSION['panier'][$menuPanier['ID']]; ?>
-                            </li>
-                        <?php endforeach; ?>
-                    </ul>
+    <ul id="panierResumeListe">
+        <?php if (!empty($panierResume)): ?>
+            <?php foreach ($panierResume as $menuPanier): ?>
+                <li>
+                    <?php echo htmlspecialchars($menuPanier['titre']); ?>
+                    x<?php echo (int) $menuPanier['quantite']; ?>
+                </li>
+            <?php endforeach; ?>
+        <?php else: ?>
+            <li>Votre panier est vide.</li>
+        <?php endif; ?>
+    </ul>
 
-                    <p class="panier_total">
-                        Total: <?php echo number_format($totalPanierResume, 2, ',', ' '); ?> EUR
-                    </p>
-                    <div class="panier_action">
-                        <a href="commande.php">Passer ma commande</a>
-                    </div>
-                <?php endif; ?>
-            </div>
-        </div>
+    <p id="panierResumeTotal">
+        Total : <?php echo number_format($totalPanierResume, 2, ',', ' '); ?> EUR
+    </p>
 
+    <a href="commande.php">Passer ma commande</a>
+</div>
 
     </section>
     <?php require_once '../include/footer.php'; ?>
