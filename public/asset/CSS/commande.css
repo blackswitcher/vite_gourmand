@@ -1,0 +1,103 @@
+.commande-tableau{
+    width: 100%;
+    max-width: 900px;
+    margin: 30px auto;
+    border-collapse: collapse;
+    background-color: var(--color_bg_second_soft);
+    border: 2px solid var(--color_bg_text);
+    overflow: hidden;
+    color: var(--color_bg_text);
+}
+
+.commande-tableau th,
+.commande-tableau td {
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(90, 58, 27, 0.25);
+    text-align: left;
+    font-size: var(--text_size_s);
+}
+
+.commande_total{
+    width: 100%;
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: var(--color_bg_second_soft);
+    border: 2px solid var(--color_bg_text);
+    border-radius: var(--radius_xl);
+    color: var(--color_bg_text);
+    text-align: center;
+}
+
+.commande_infos_client{
+    width: 100%;
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 25px;
+    background-color: var(--color_bg_second_soft);
+    border: 2px solid var(--color_bg_text);
+    border-radius:var(--radius_xl);
+    color: var(--color_bg_text);
+}
+
+.commande_infos_client p{
+    margin: 8px 0;
+    font-size: var(--text_size_s);
+}
+
+.cmdForm{
+    display: flex;
+    justify-content: center;
+    margin: 25px 0;
+}
+
+.cmdForm button{
+    min-width: 240px;
+    padding: 14px 24px;
+    border: 2px solid var(--color_bg_text);
+    border-radius: var(--radius_m);
+    background-color: var(--color_bg_text);
+    color: var(--color_w_text);
+    font-family: var(--font_body);
+    font-size: var(--text_size_m);
+    cursor: pointer;
+    transition: 0.3 ease;
+
+}
+
+.cmdForm button:hover{
+    background-color: var(--color_bg_main);
+
+}
+
+.cmdForm button:disabled{
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.commande_action_lien{
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+
+}
+
+.commande_action_lien a{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 220px;
+    padding: 12px 20px;
+    border: 2px solid var(--color_bg_text);
+    border-radius: var(--radius_m);
+    background-color: var(--color_w_text);
+    color: var(--color_bg_text);
+    font-family: var(--font_body);
+    font-size: var(--text_size_m);
+    transition: 0.3s ease;
+}
+
+.commande_action_lien a:hover{
+    background-color: var(--color_bg_main);
+    color: var(--color_w_text);
+}
