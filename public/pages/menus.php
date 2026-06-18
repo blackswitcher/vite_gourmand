@@ -125,31 +125,28 @@ foreach($menusData as $menuData){
 <section>
         <div class="container_card">
         <?php foreach ($menus as $menu): ?>
-            <div class="menu_card">
-                <h3><?php echo htmlspecialchars($menu->titre); ?> </h3>
-                <p>
-                    <?php echo htmlspecialchars($menu->description); ?>
-                </p>
-
-                <p>
-                Minimum :<?php echo htmlspecialchars($menu->getMinimumPersonnesTexte()); ?>
-                </p>
-                <p>
-                    prix : <?php echo htmlspecialchars($menu->getPrixFormate());?>
-                </p>
-                <div class="img_menu">
+            <div class="menu_list_card">
+                <div class="menu_list_image">
                     <img 
-                    src="../<?php echo htmlspecialchars($menu->getImagePath()); ?>"
-                    alt="<?php echo htmlspecialchars($menu->titre); ?>"
-                    >
-        </div>
-        <div class="menu_detail">
-        <!-- 
-        on passe l'ID du menu dans l'url pour savoir quelle menu afficher -->
-            <a href="menu.php?id=<?php echo (int) $menu->id; ?>" 
-            >+</a>
-        </div>
-        
+                    src="../<?php echo htmlspecialchars($menu->getImagePath()); ?>" 
+                    alt="<?php echo htmlspecialchars($menu->titre); ?>">
+                </div>
+                <div class="menu_list_content">
+                    <h3 class="menu_list_title"><?php echo htmlspecialchars($menu->titre); ?></h3>
+
+                    <p class="menu_list_desc">
+                        <?php echo htmlspecialchars($menu->description) ?>
+                    </p>
+                    <p class="menu_list_meta">
+                        Minimum : <?php echo htmlspecialchars($menu->getMinimumPersonnesTexte()); ?>
+                    </p>
+                    <p class="menu_list_price">
+                        Prix : <?php echo htmlspecialchars($menu->getPrixFormate()); ?>
+                    </p>
+                    <div class="menu_list_action">
+                        <a href="menu.php?id=<?php echo (int) $menu->id; ?>"> Voir le menu </a>
+                    </div>
+                </div>
             </div>
             <?php endforeach;?>
         </div>

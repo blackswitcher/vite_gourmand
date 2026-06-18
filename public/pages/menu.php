@@ -70,7 +70,7 @@ $stmt->execute([
 ]);
 
 // on recupere le menu trouvé 
-$menu = $stmt->fetch();
+$menu = $stmt->fetch(PDO::FETCH_ASSOC);
 
 //affichage tu tableau en menu objet Menu
 if ($menu) {
@@ -158,82 +158,86 @@ $imagesGalerie = $stmtGalerie->fetchAll();
         <p class="accroche"><?php echo htmlspecialchars($menu->description); ?></p>
         <div class="menu_container">
             <div class="menu_card">
+                <div class="menu_infos">
+                    <p>Minimum : <?php echo htmlspecialchars($menu->getMinimumPersonnesTexte()); ?></p>
 
-                <!--on affiche le nombre minimum de personnes-->
-                <p>Minimum: <?php echo htmlspecialchars($menu->getMinimumPersonnesTexte()); ?></p>
-                <!-- on affiche le prix -->
-                <p>
-                    Prix:
-                    <?php echo htmlspecialchars($menu->getPrixFormate()); ?>
+                    <p>
+                        Prix :
+                        <?php echo htmlspecialchars($menu->getPrixFormate()); ?>
+                    </p>
+
+                    <div class="description_menu">
+                        <p>Description :</p>
+                        <p><?php echo htmlspecialchars($menu->description); ?></p>
+                    </div>
+
+                    <?php if (!empty($allergenes)): ?>
+                        <div class="allergenes_menu">
+                            <p>Allergenes :</p>
+                            <p><?php echo htmlspecialchars(implode(' - ', $allergenes)); ?></p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <div class="menu_media">
+                    <div class="menu_galerie_detail">
+                        <?php if (!empty($imagesGalerie)): ?>
+                            <?php foreach ($imagesGalerie as $index => $image): ?>
+                                <div class="slideMenu <?php echo $index === 0 ? 'active' : ''; ?>">
+                                    <img
+                                        class="img_slide"
+                                        src="../<?php echo htmlspecialchars(str_replace('\\', '/', $image['img_path'])); ?>"
+                                        alt="<?php echo htmlspecialchars($image['alt']); ?>">
+                                </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <div class="slideMenu active">
+                                <img
+                                    class="img_slide"
+                                    src="../<?php echo htmlspecialchars($menu->getImagePath()); ?>"
+                                    alt="<?php echo htmlspecialchars($menu->titre); ?>">
+                            </div>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="bloc_btn_next">
+                        <button type="button" class="btnNextImg">Suivant</button>
+                    </div>
+
+                    <div class="bouton_appliquer">
+                        <form id="formAjoutPanier">
+                            <input type="hidden" name="menu_id" value="<?php echo (int) $menu->id; ?>">
+                            <button type="submit">Ajouter au panier</button>
+                        </form>
+                    </div>
+
+                    <div class="menu_detail">
+                        <a href="menus.php">Retour</a>
+                    </div>
+                </div>
+            </div>
+            <div class="panier_resume" id="panierResume">
+                <h2>Mon Panier</h2>
+
+                <ul id="panierResumeListe">
+                    <?php if (!empty($panierResume)): ?>
+                        <?php foreach ($panierResume as $menuPanier): ?>
+                            <li>
+                                <?php echo htmlspecialchars($menuPanier['titre']); ?>
+                                x<?php echo (int) $menuPanier['quantite']; ?>
+                            </li>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <li>Votre panier est vide.</li>
+                    <?php endif; ?>
+                </ul>
+
+                <p id="panierResumeTotal">
+                    Total : <?php echo number_format($totalPanierResume, 2, ',', ' '); ?> EUR
                 </p>
 
-                <?php if (!empty($allergenes)): ?>
-                    <div class="allergenes_menu">
-                        <p>Allergenes :</p>
-                        <p>
-                            <?php echo htmlspecialchars(implode(' - ', $allergenes)); ?>
-                        </p>
-                    </div>
-                <?php endif; ?>
-<div class="menu_galerie_detail">
-    <?php if (!empty($imagesGalerie)): ?>
-        <?php foreach ($imagesGalerie as $index => $image): ?>
-            <div class="slideMenu <?php echo $index === 0 ? 'active' : ''; ?>">
-                <img
-                    class="img_slide"
-                    src="../<?php echo htmlspecialchars(str_replace('\\', '/', $image['img_path'])); ?>"
-                    alt="<?php echo htmlspecialchars($image['alt']); ?>">
+                <a href="commande.php">Passer ma commande</a>
             </div>
-        <?php endforeach; ?>
-    <?php else: ?>
-        <div class="slideMenu active">
-            <img
-                class="img_slide"
-                src="../<?php echo htmlspecialchars($menu->getImagePath()); ?>"
-                alt="<?php echo htmlspecialchars($menu->titre); ?>">
-        </div>
-    <?php endif; ?>
-</div>
-
-<div class="bloc_btn_next">
-    <button type="button" class="btnNextImg">Suivant</button>
-</div>
-
-                <div class="bouton_appliquer">
-                    <!-- on ajoute le menu au panier en POST -->
-                    <form id="formAjoutPanier">
-                        <input type="hidden" name="menu_id" value="<?php echo (int) $menu->id; ?>">
-                        <button type="submit">Ajouter au panier</button>
-                    </form>
-                </div>
-                <div class="menu_detail">
-                    <!-- lien de retour au menu-->
-                    <a href="menus.php">Retour</a>
-                </div>
-            </div>
-
-<div class="panier_resume" id="panierResume">
-    <h2>Mon Panier</h2>
-
-    <ul id="panierResumeListe">
-        <?php if (!empty($panierResume)): ?>
-            <?php foreach ($panierResume as $menuPanier): ?>
-                <li>
-                    <?php echo htmlspecialchars($menuPanier['titre']); ?>
-                    x<?php echo (int) $menuPanier['quantite']; ?>
-                </li>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <li>Votre panier est vide.</li>
-        <?php endif; ?>
-    </ul>
-
-    <p id="panierResumeTotal">
-        Total : <?php echo number_format($totalPanierResume, 2, ',', ' '); ?> EUR
-    </p>
-
-    <a href="commande.php">Passer ma commande</a>
-</div>
 
     </section>
     <?php require_once '../include/footer.php'; ?>
