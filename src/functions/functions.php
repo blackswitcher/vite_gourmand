@@ -117,3 +117,43 @@ function sendMail(string $toEmail, string $toName, string $subject, string $html
             return false;
             }
 }
+
+
+
+/**
+ * Genere toutes les informations necéssaires a une verification par code 
+ * 
+ * Le code lisible sera envoyé par mail.
+ * Seul son hash sera enregistré dans MySQL.
+ * 
+ * @param int $validityMinutes Durée de validité du code.
+ * @return array code lisible, hash securisé et date d'expiration.
+ */
+
+function generateEmailverificationCode (
+    int $validityMinutes =15
+    ): array {
+
+    //produit un nombre aleatoire a 6 chiffre
+    $code = (string) random_int(100000,999999);
+    
+    // protege le code avant son stockage en base 
+    $codeHash = password_hash($code, PASSWORD_DEFAULT);
+
+    // on calcule l'expiration a partir de l'heure actuelle du serveur PHP
+    $expireAt = date(
+        'Y-m-d H:i:s',
+        time() + ($validityMinutes * 60)
+    );
+    return [
+        //cette valeur ne dois jamais etre en BDD 
+        //uniquement a la preparation du mail 
+        'code' => $code,
+
+        // valeur enregistrer dans verification_code_hash
+        'hash' => $codeHash,
+
+        //cette valeur sera enregistrée dans verification_code_expires_at
+        'expires_at' => $expireAt
+    ];
+}

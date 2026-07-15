@@ -7,6 +7,8 @@ $projectRoot = dirname($_SERVER['DOCUMENT_ROOT']);
 
 require_once $projectRoot . '/src/configs/session.php';
 require_once $projectRoot . '/src/configs/db.php';
+// charge les fonction communes avant le traitement des inscriptions
+require_once $projectRoot . '/src/functions/functions.php';
 /** @var \MongoDB\Collection $mongoCollection */
 
 
@@ -48,6 +50,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // on veux enregistrer un log MongoDB seulement si la personne connectée
         // est un admin ou employé
         if($users['role'] === 'admin' || $users['role'] === 'employe'){
+            try{
+            //on essaie d'ajouter un doc dans mongo
+            //Important ce log est utile mais il ne doit pas bloquer la connexion
+
             // on insere un doc dans la collection des log admin
             $mongoCollection->insertOne([
 
@@ -71,6 +77,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'message' => 'connexion reussie'
                 ]
             ]);
+} catch (Throwable $e) {
+    // Si MongoDB plante, on enregistre l'erreur dans les logs PHP.
+    // Mais on ne bloque pas la connexion de l'utilisateur.
+    error_log('Erreur log Mongo connexion : ' . $e->getMessage());
+}
+
         }
             header('Location: /index.php');
             exit();
@@ -112,13 +124,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'cet email est déjà utilisé.';
             } else {
                 $passwordHash = password_hash($mdp, PASSWORD_DEFAULT);
+                // genere le code, son hash et son expiration grace a la focntion commune
+                $verification = generateEmailVerificationCode();
+
+                //code lisible: il servira pour le code du mail 
+                $verificationCode = $verification['code'];
+
+                //hash sécurisé , ils era enregistrer en BDD 
+                $verificationCodeHash = verification['hash'];
+
+                //Date d'expiration aussi enregistrer 
+                $verificationCodeExpiresAt = verification['expires_at'];
+
 
                 $stmt = $pdo->prepare("
-                    INSERT INTO users( email, password_hash, rue, code_postal, ville, nom, prenom, telephone, role)
-                    VALUES(:email, :password_hash, :rue, :code_postal, :ville, :nom, :prenom, :telephone, :role)
+                    INSERT INTO users( email, email_verified, verification_code_hash,verification_code_expires_at, password_hash, rue, code_postal, ville, nom, prenom, telephone, role)
+                    VALUES(:email, :email_verified, :verification_code_hash, :verification_code_expires_at, :password_hash, :rue, :code_postal, :ville, :nom, :prenom, :telephone, :role)
                     ");
 
                 $stmt->execute([
+                    // le nouveau compte commence comme non verified
+                    'email_verified' => 0,
+
+                    //Seul le hash du code est enregistré
+                    'verification_code_hash' => $verificationCodeHash,
+                    
+                    //cette date permettra de refuser un code trop ancien.
+                    'verification_code_expires_at' => $verificationCodeExpiresAt,
+                    
+                    //Donnée habituelle de l'utilisateur
                     "email" => $email,
                     "password_hash" => $passwordHash,
                     "rue" => $rue,
@@ -129,14 +163,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     "telephone" => $telephone,
                     "role" => 'client'
                 ]);
-            }
-            $stmt = $pdo->prepare("SELECT * FROM users WHERE email= :email");
-            $stmt->execute(['email' => $email]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-            $_SESSION['user'] = $user;
-            header('Location: /index.php');
-            exit();
+                $stmt = $pdo->prepare("SELECT * FROM users WHERE email= :email");
+                $stmt->execute(['email' => $email]);
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                $_SESSION['user'] = $user;
+                header('Location: /index.php');
+                exit();
+                }
         }
     }
 }
