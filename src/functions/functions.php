@@ -110,10 +110,7 @@ function sendMail(string $toEmail, string $toName, string $subject, string $html
             // on affiche pas le detail technique au visiteur 
             error_log('Erreur envoie mail : ' . $mail->ErrorInfo);
 
-            // on retourne false pour que le reste du site sache que le mail n'set pas parti
-            echo '<pre>';
-            echo 'Erreur PHPMailer : ' . $mail->ErrorInfo;
-            echo '</pre>';
+
             return false;
             }
 }

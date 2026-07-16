@@ -121,6 +121,18 @@ require_once __DIR__ . '/../../src/configs/session.php';
                             <?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8');?>
                         </p>
                         <?php endif; ?>
+
+                        <?php if (!empty($verificationMessage)):?>
+                            <p class="verification_success">
+                                <?php 
+                                echo htmlspecialchars(
+                                    $verificationMessage,
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                );
+                                ?>
+                            </p>
+                            <?php endif; ?>
                         <p>Votre code a usage unique a été envoyé à :</p>
 
                         <p>
@@ -137,12 +149,12 @@ require_once __DIR__ . '/../../src/configs/session.php';
                         <form method="POST"
                         action="/index.php?verification=pending">
     <!-- Permettre a PHP d'identifier cette action z-->
-     <input 
-     type="hidden"
-     name="action"
-     value="verify_email_code"
-     >
-     <div class="formulaire">
+    <input 
+    type="hidden"
+    name="action"
+    value="verify_email_code"
+    >
+    <div class="formulaire">
         <label for="verificationCode">
             Code à six chiffres
         </label>
@@ -172,14 +184,23 @@ require_once __DIR__ . '/../../src/configs/session.php';
                             <span id="verificationCountdown">30</span>
                             seconde(s).
                         </p>
-    <!--Javascript activera ce bouton à la fin du compteur-->
-                        <button
+
+
+                        <!--Formulaire separé pour identifier clairement le renvoie coté php-->
+                        <form action="/index.php?verification=pending" method="POST">
+                            <input 
+                            type="hidden" 
+                            name="action" 
+                            value="resend_verification_code">
+                        <!--Javascript retirera disabled apres le delai visuel 
+                        PHP verifiera quand meme les 30 sec coté serveur -->
+                        <button 
                         id="resendVerificationCode"
-                        type="button"
-                        disabled
-                        >
-                        Renvoyer le code 
-                        </button>
+                        type="submit"
+                        disabled>
+                            Renvoyer le code
+                    </button>
+                        </form>
     <!--Ce bouton affichera ensuite le formulaire de correction-->
     <button
     id="showChangeEmail"

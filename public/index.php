@@ -44,6 +44,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // verification des données entre users et la BDD 
         if ($users && password_verify($mdp, $users['password_hash'])) {
+        
+        //le MDP est correct mais l'adresse doit egalement etre confirmé avant la connexion
+        if ((int) $users['email_verified'] !== 1) {
+            // on memorise le compte qui attend encore sa confirmation
+            //cela permettra au modal d'afficher la bonne adresse
+            $_SESSION['pending_verification_email'] = $users['email'];
+
+            //on ne crée pas encore la session 
+            // user retourne sur l'accueil avec le modal ouvert 
+            header('Location: /index.php?verification=pending');
+            exit();
+        }
+
+        //Le compte est confimé: onsecurise la nouvelle connexion
+        //et on enregistre users comme connecté
+        session_regenerate_id(true);
+        
         //on ouvre la session utilisateur en gardant les info SQL    
         $_SESSION['user'] = $users;
 
@@ -90,6 +107,137 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'identifiant incorrects';
         }
     }
+    ////////////////////////////////////////////////////////////////////
+    //                  RENVOIE DU CODE EMAIL                         //
+    ////////////////////////////////////////////////////////////////////
+
+    if ($action === 'resend_verification_code') {
+        //Adresse conservé dans la session d'inscription en attente 
+        $pendingEmail = $_SESSION['pending_verification_email'] ?? '';
+
+        if($pendingEmail === ''){
+            $error = 'Aucune vérification de compte n\'est en cours. ';
+        } else {
+            // on recupere le compte et l'heure du dernier envoi.
+            $stmt = $do->prepare("
+            SELECT
+            ID,
+                email,
+                nom,
+                prenom,
+                email_verified,
+                verification_code_sent_at
+            FROM users
+            WHERE email = :email
+            LIMIT 1
+            ");
+
+            $stmt->execute([
+                'email' => $pendingEmail
+            ]);
+
+            pendingUser = $stmt->fetch(PDO::FETCH_ASSOC);
+            if(!pendingUser){
+                $error = 'Le compte en attente est introuvable.';
+            } elseif ((int) $pendingUser['email_verified'] === 1){
+                $error = 'Cette adresse mail est déjà confirmée';
+            } else{
+                //transforme la derniere date MySQL en timestamp
+                //si aucune date n'existe, on utilise ZERO 
+                $lastSentTimestamp = !empty(
+                    pendingUser['verification_code_sent_at']
+                )
+                ? strtotime($pendingUser['verification_code_sent_at'])
+                : 0;
+
+                //Calcule le nombre de seconde restant avant un renvoie
+                $remainingSeconds = 
+                30 - (time() - (int)$lastSentTimestamp);
+
+                if ($remainingSeconds > 0) {
+                    $error = 
+                    'veuillez patienter encore' . 
+                    $remainingSeconds . 
+                    'seconde(s) avant de demander un nouveau code.';
+                }else{
+                    //reutilise la fonction commune :
+                    //nouveau code, nouveau hash et nouvelles dates.
+                    $verification = generateEmailVerificationCode();
+
+                    $newCode = $verification['code'];
+                    $newCodeHash = $verification['hash'];
+                    $newCodeExpiresAt = $verification['expires_at'];
+                    $newCodeSentAt = $verification['sent_at'];
+
+                    //l'ancien code est remplacé : 
+                    //il ne pourra donc plus etre utilisé
+                    $stmt = $pdo->prepare("
+                    UPDATE users
+                    SET verification_code_hash = :code_hash,
+                        verification_code_expires_at = :expires_at,
+                        verification_code_sent_at = :sent_at
+                    WHERE ID = :id
+                    AND email_verified = 0
+                    ");
+                    $stmt->execute([
+                        'code_hash' => $newCodeHash,
+                        'expires_at' => $newCodeExpiresAt,
+                        'sent_at' => $newCodeSentAt,
+                        'id' => $pendingUser['ID']
+                    ]);
+
+                    //Protection du prenom avant son inserton en HTML
+                    $safeFirstName = htmlspecialchars(
+                        $pendingUser['prenom'],
+                        ENT_QUOTES,
+                        'UTF-8'
+                    );
+
+                    $recipientName = trim(
+                        $pendingUser['prenom'] . ' ' . 
+                        $pendingUser['nom']
+                    );
+
+                    $subject = 
+                    'Votre nouveau code de verification - Vite & gourmand';
+
+                    $htmlContent = "
+                    <h1> Nouveau Code de verification </h1>
+                    
+                    <p> Bonjour {$safeFirstName}, </p>
+
+                    <p>Votre Nouveau code est :</p>
+
+                    <p>{$newCode}</p>
+
+                    <p> Ce code est valable pendant 15 minutes </p>
+                    ";
+
+                    $textContent =
+                    "Bonjour {$pendingUser['prenom']},\n\n" . 
+                    "Votre nouveau code est {$newCode}\n" . 
+                    "Ce code est valable pendant 15 minutes.";
+
+                    $mailSent = sendMail(
+                        $pendingUser['email'],
+                        $recipientName,
+                        $subject,
+                        $htmlContent?
+                        $textContent
+                    );
+
+                    if (mailSent){
+                        $verificationMessage = 
+                        'Un nouveau code vient de vous etre envoyé.';
+                    }else {
+                        $error = 
+                        'Le nouveau code a été créé, mais le mail n\'a pu être envoyé.'
+                        
+                    }
+                }
+            }
+        }
+    }
 
     ////////////////////////////////////////////////////////////////////
     //                  VALIDATION DU CODE EMAIL                      //
@@ -126,7 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             $pendingUser = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if($pendingUser){
+            if(!pendingUser){
         $error = 'Ce compte est introuvable ou déjà confirmé';
             } elseif(
                 empty($pendingUser['verification_code_hash'])||
@@ -153,7 +301,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     SET email_verified = 1,
                         verification_code_hash = NULL,
                         verification_code_expires_at = NULL,
-                        verification_code_sent_at = NULL,
+                        verification_code_sent_at = NULL
                     WHERE ID = :id
                 ");
 
@@ -172,6 +320,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ]);
 
                 $verifiedUser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                $WelcomeRecipientName = trim(
+                    $verifiedUser['prenom'] . ' ' . $verifiedUser['nom']
+                );
+
+                //protege le prenom avant son insertion en HTML 
+                $WelcomeRecipientName = htmlspecialchars(
+                    $verifiedUser['prenom'],
+                    ENT_QUOTES,
+                    'UTF-8'
+                );
+
+                //contenus propre du mail de bienvenue.
+                $welcomeSubject = 'Bienvenue chez Vite & Gourmand';
+
+                $welcomeHtmlContent = "
+                    <h1>Bienvenue chez Vite & Gourmand</h1>
+
+                    <p> Bonjour {$welcomeSafeFirstName},</p>
+
+                    <p>Votre adresse mail est maintenant confirmée</p>
+
+                    <p>
+                        Votre compte est desormais actif vous pouvez profiter de tous les 
+                        services et ne tardez pas a decouvrir notre recette gourmande.
+                    </p>
+                ";
+
+                $welcomeTextContent = 
+                "Bonjour {$verifiedUser['prenom']}, \n\n " . 
+                "Votre adresse mail est maintenant confirmée" . 
+                "Votre compte est desormais actif vous pouvez profiter de tous les 
+                services et ne tardez pas a decouvrir notre recette gourmande.
+                ";
+
+                // un echec du mail de bienvenue ne doit pas annuler la confirmation de compte
+                // ni la connexion du compte 
+                sendMail(
+                    $verifiedUser['email'],
+                    $WelcomeRecipientName,
+                    $welcomeSubject,
+                    $welcomeHtmlContent,
+                    $welcomeTextContent
+                );
 
                 //Renouvelle l'id de la session avant la connexion 
                 session_regenerate_id(true);
@@ -517,4 +709,4 @@ $avisValides = $stmt->fetchAll();
         <script src="asset/JS/app.js"></script>
 </body>
 
-</html>
+</html> 

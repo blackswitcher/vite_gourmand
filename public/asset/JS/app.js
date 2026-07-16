@@ -181,8 +181,9 @@ if (boutonOuvrir && boutonFermer && modalEmploye){
 
 
 
-
-//------------------------------------ GESTION MODAL MAP ---------------------
+////////////////////////////////////////////////////////////////////////////////
+//------------------------------------ GESTION MODAL MAP ---------------------//
+////////////////////////////////////////////////////////////////////////////////
 function initMapModal(){
 
 var bouton = document.querySelector(".bouton");
@@ -384,7 +385,10 @@ function verifInscription() {
 }
 verifInscription();
 
+
+
 function verifNewMDP() {
+  // Récupération des éléments nécessaires.
   const MDP = document.getElementById("MDP");
   const MDPVerif = document.getElementById("MDPVerif");
   const btnInscription = document.getElementById("btnInscription");
@@ -392,9 +396,19 @@ function verifNewMDP() {
   const submitBtn = document.getElementById("submitBtn");
   const blocInscription = document.querySelector(".inscription");
 
-  if (!MDP || !MDPVerif || !submitBtn || !blocInscription) return;
+  // Si le formulaire n’existe pas sur la page, on arrête proprement.
+  if (
+    !MDP ||
+    !MDPVerif ||
+    !btnInscription ||
+    !btnConnexion ||
+    !submitBtn ||
+    !blocInscription
+  ) {
+    return;
+  }
 
-  // change le texte du bouton
+  // Adapte le texte du bouton au formulaire affiché.
   function setMode(mode) {
     if (mode === "inscription") {
       submitBtn.textContent = "S'inscrire";
@@ -404,35 +418,131 @@ function verifNewMDP() {
       submitBtn.disabled = false;
     }
   }
-}
-  // vérification des mots de passe + confirmation
-  function checkMDP(){
-    const isInscription = blocInscription.classList.contains("is-active");
+
+  // Compare les deux mots de passe uniquement pendant l’inscription.
+  function checkMDP() {
+    const isInscription =
+      blocInscription.classList.contains("is-active");
+
     const mdpValue = MDP.value.trim();
     const mdpVerifValue = MDPVerif.value.trim();
 
-    if(!isInscription){
+    if (!isInscription || mdpVerifValue.length === 0) {
       MDPVerif.setCustomValidity("");
-      submitBtn.disabled=false;
+      submitBtn.disabled = false;
       return;
     }
-    if(mdpVerifValue.length === 0) {
-      MDPVerif.setCustomValidity("");
-      submitBtn.disabled =false;
-      return;
-    }
-    if(mdpValue !==mdpVerifValue){
-      MDPVerif.setCustomValidity("les mots de passe ne sont pas identiques");
+
+    if (mdpValue !== mdpVerifValue) {
+      MDPVerif.setCustomValidity(
+        "Les mots de passe ne sont pas identiques."
+      );
+
       submitBtn.disabled = true;
     } else {
       MDPVerif.setCustomValidity("");
       submitBtn.disabled = false;
     }
   }
-checkMDP();
 
-// Gestion des cupcakes notes 
+  btnInscription.addEventListener("click", () => {
+    setMode("inscription");
+    checkMDP();
+  });
 
+  btnConnexion.addEventListener("click", () => {
+    setMode("connexion");
+  });
+
+  // Revérification immédiate à chaque modification.
+  MDP.addEventListener("input", checkMDP);
+  MDPVerif.addEventListener("input", checkMDP);
+
+  setMode("connexion");
+}
+
+// Lance la fonction après sa déclaration.
+verifNewMDP();
+
+///////////////////////////////////////////////////////////////////////////////
+//                              MODAL VERIF ADRESSE MAIL                     //
+///////////////////////////////////////////////////////////////////////////////
+
+function initEmailVerificationModal(){
+  //Element propre au modal de verif
+  // attention a ne pas melanger avec les autre modal 
+
+  const verificationOverlay = document.getElementById("verificationOverlay");
+  const closeVerificationModal = document.getElementById("closeVerificationModal");
+  const verificationCountdown = document.getElementById("verificationCountdown");
+  const resendVerificationCode = document.getElementById("resendVerificationCode");
+
+  //Si aucune verification n'est en cours, 
+  // le modal n'existe pas et la function s'arrete 
+  if(!verificationOverlay) {
+    return;
+  }
+
+  // ferme le modal avec la croix.
+  if(closeVerificationModal){
+    closeVerificationModal.addEventListener("click", ()=> {
+      verificationOverlay.classList.add("hidden");
+    });
+  }
+
+  //ferme aussi le modal en cliquant sur le blur exterieur
+  verificationOverlay.addEventListener("click", (event) => {
+    if(event.target === verificationOverlay){
+      verificationOverlay.classList.add("hidden");
+    }
+  });
+  //si le compteur ou le bouton manque, on conserve seulement le fonctionnement open/close
+  if(!verificationCountdown || !resendVerificationCode){
+    return;
+  }
+
+  // recupere le nombre actuellement affiché dans le HTML 
+  let remainingSeconds = Number.parseInt(
+    verificationCountdown.textContent,
+    10
+  );
+
+  //sécurité si le contenu du compteur n'est pas un nombre
+  if (Number.isNaN(remainingSeconds)){
+    remainingSeconds = 30;
+  }
+
+  function updateCountdown(){
+    //met a jour le nombre visible 
+    verificationCountdown.textContent = remainingSeconds;
+
+    // a zero le bouton devient utilisable
+    if (remainingSeconds <= 0){
+      resendVerificationCode.disabled = false;
+      return;
+    }
+
+    // setTimeout attend 1000 millisecondes, donc une seconde.
+    // Après cette attente, on retire 1 à remainingSeconds.
+    // Puis updateCountdown() est rappelée pour actualiser l’affichage.
+    window.setTimeout(() => {
+      //retire une seonde au compteur 
+      remainingSeconds --;
+
+      //relance l'affichage
+      updateCountdown();
+    }, 1000);
+  }
+
+  //premier appel: le compteur commence avec la valeur du HTML 
+  updateCountdown();
+}
+
+//execute l'initialisation du modal au chargement du script
+initEmailVerificationModal();
+///////////////////////////////////////////////////////////////////////////////
+//                              Gestion des cupcakes notes                   // 
+///////////////////////////////////////////////////////////////////////////////
 const cupcakes = document.querySelectorAll(".cupcake");
 const noteInput = document.getElementById("note");
 const ratingText = document.getElementById("ratingText");
