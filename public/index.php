@@ -119,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Aucune vérification de compte n\'est en cours. ';
         } else {
             // on recupere le compte et l'heure du dernier envoi.
-            $stmt = $do->prepare("
+            $stmt = $pdo->prepare("
             SELECT
             ID,
                 email,
@@ -136,8 +136,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'email' => $pendingEmail
             ]);
 
-            pendingUser = $stmt->fetch(PDO::FETCH_ASSOC);
-            if(!pendingUser){
+            $pendingUser = $stmt->fetch(PDO::FETCH_ASSOC);
+            if(!$pendingUser){
                 $error = 'Le compte en attente est introuvable.';
             } elseif ((int) $pendingUser['email_verified'] === 1){
                 $error = 'Cette adresse mail est déjà confirmée';
@@ -145,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 //transforme la derniere date MySQL en timestamp
                 //si aucune date n'existe, on utilise ZERO 
                 $lastSentTimestamp = !empty(
-                    pendingUser['verification_code_sent_at']
+                    $pendingUser['verification_code_sent_at']
                 )
                 ? strtotime($pendingUser['verification_code_sent_at'])
                 : 0;
@@ -222,17 +222,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $pendingUser['email'],
                         $recipientName,
                         $subject,
-                        $htmlContent?
+                        $htmlContent,
                         $textContent
                     );
 
-                    if (mailSent){
+                    if ($mailSent){
                         $verificationMessage = 
                         'Un nouveau code vient de vous etre envoyé.';
                     }else {
                         $error = 
-                        'Le nouveau code a été créé, mais le mail n\'a pu être envoyé.'
-                        
+                        'Le nouveau code a été créé, mais le mail n\'a pu être envoyé.';
+
                     }
                 }
             }
@@ -274,7 +274,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             $pendingUser = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if(!pendingUser){
+            if(!$pendingUser){
         $error = 'Ce compte est introuvable ou déjà confirmé';
             } elseif(
                 empty($pendingUser['verification_code_hash'])||
@@ -321,12 +321,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 $verifiedUser = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                $WelcomeRecipientName = trim(
+                $welcomeRecipientName = trim(
                     $verifiedUser['prenom'] . ' ' . $verifiedUser['nom']
                 );
 
                 //protege le prenom avant son insertion en HTML 
-                $WelcomeRecipientName = htmlspecialchars(
+                $welcomeSafeFirstName = htmlspecialchars(
                     $verifiedUser['prenom'],
                     ENT_QUOTES,
                     'UTF-8'
