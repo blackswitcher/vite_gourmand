@@ -90,6 +90,104 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'identifiant incorrects';
         }
     }
+
+    ////////////////////////////////////////////////////////////////////
+    //                  VALIDATION DU CODE EMAIL                      //
+    ////////////////////////////////////////////////////////////////////
+
+    if($action === 'verify_email_code'){
+
+        //code envoyé par le formulaire du modal 
+        $submittedCode = trim($_POST['verification_code'] ?? '');
+        
+        //Adresse conservée temporairement apres l'inscription
+        $pendingEmail = $_SESSION['pending_verification_email'] ?? '';
+
+        //Sans cette session, on ne sait pas quel compte doit etre confirmé
+        if($pendingEmail === ''){
+            $error = 'Aucune vérification est en cours.';
+
+            //le navigateur effectue deja ce controle 
+            //mais PHP doit egalement le faire pour des question de sécurité
+
+        }elseif (!preg_match('/^[0-9]{6}$/' , $submittedCode)){
+            $error = 'Le code doit contenir exactement six chiffres.';
+        }else{
+            // Recherche uniquement le compte associé a la session actuelle.
+            $stmt = $pdo->prepare("
+            SELECT *
+            FROM users
+            WHERE email = :email
+            AND email_verified = 0
+            ");
+
+            $stmt -> execute([
+                'email' => $pendingEmail
+            ]);
+            $pendingUser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if($pendingUser){
+        $error = 'Ce compte est introuvable ou déjà confirmé';
+            } elseif(
+                empty($pendingUser['verification_code_hash'])||
+                empty($pendingUser['verification_code_expires_at'])
+            ){
+                $error = 'Aucun code de vérification valide n\'est disponible';
+                //strtotime() transforme la date MySQL en nombre comparable a time 
+            }elseif(
+                strtotime($pendingUser['verification_code_expires_at']) < time()
+            ){
+                $error = 'ce code a expiré. Demandez un nouveau code ';
+            } elseif(
+                !password_verify(
+                    $submittedCode,
+                    $pendingUser['verification_code_hash']
+                )
+            ){
+                $error = 'le code saisi est incorrect.';
+            }else{
+                //le code est code et encore valide 
+                //le compteur devient officiellement confirmé
+                $stmt = $pdo->prepare("
+                    UPDATE users
+                    SET email_verified = 1,
+                        verification_code_hash = NULL,
+                        verification_code_expires_at = NULL,
+                        verification_code_sent_at = NULL,
+                    WHERE ID = :id
+                ");
+
+                $stmt->execute([
+                    'id'=> $pendingUser['ID']
+                ]);
+                // on recharge apres la mise a jour
+                $stmt = $pdo->prepare("
+                SELECT *
+                FROM users
+                WHERE ID = :id
+                ");
+
+                $stmt->execute([
+                    "id" => $pendingUser['ID']
+                ]);
+
+                $verifiedUser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                //Renouvelle l'id de la session avant la connexion 
+                session_regenerate_id(true);
+
+                //le compte est maintenant autorisé à etre connecté
+                $_SESSION['user'] = $verifiedUser;
+
+                //cette donnée temporaire n'est plus nécéssaire
+                unset($_SESSION['pending_verification_email']);
+
+                header('Location: /index.php?verification=success');
+                exit();
+            }
+        }
+    }
+
     if ($action === 'inscription') {
         $email = trim($_POST['email'] ?? '');
         $mdp = trim($_POST['MDP'] ?? '');
@@ -131,15 +229,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $verificationCode = $verification['code'];
 
                 //hash sécurisé , ils era enregistrer en BDD 
-                $verificationCodeHash = verification['hash'];
+                $verificationCodeHash = $verification['hash'];
 
                 //Date d'expiration aussi enregistrer 
-                $verificationCodeExpiresAt = verification['expires_at'];
-
-
+                $verificationCodeExpiresAt = $verification['expires_at'];
+                
+                //Date utilisée pour empeche un renvoie avant 30 secondes.
+                $verificationCodeSentAt = $verification['sent_at'];
                 $stmt = $pdo->prepare("
-                    INSERT INTO users( email, email_verified, verification_code_hash,verification_code_expires_at, password_hash, rue, code_postal, ville, nom, prenom, telephone, role)
-                    VALUES(:email, :email_verified, :verification_code_hash, :verification_code_expires_at, :password_hash, :rue, :code_postal, :ville, :nom, :prenom, :telephone, :role)
+                    INSERT INTO users( 
+                    email, 
+                    email_verified, 
+                    verification_code_hash,
+                    verification_code_expires_at,
+                    verification_code_sent_at, 
+                    password_hash, 
+                    rue, 
+                    code_postal, 
+                    ville, 
+                    nom, 
+                    prenom, 
+                    telephone, 
+                    role)
+                    VALUES(:email, 
+                    :email_verified, 
+                    :verification_code_hash, 
+                    :verification_code_expires_at,
+                    :verification_code_sent_at ,
+                    :password_hash, 
+                    :rue, 
+                    :code_postal, 
+                    :ville, 
+                    :nom, 
+                    :prenom, 
+                    :telephone, 
+                    :role)
                     ");
 
                 $stmt->execute([
@@ -152,6 +276,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     //cette date permettra de refuser un code trop ancien.
                     'verification_code_expires_at' => $verificationCodeExpiresAt,
                     
+                    //cette date permettra d'eviter le spam d'envoie de code 
+                    'verification_code_sent_at' => $verificationCodeSentAt,
                     //Donnée habituelle de l'utilisateur
                     "email" => $email,
                     "password_hash" => $passwordHash,
@@ -163,13 +289,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     "telephone" => $telephone,
                     "role" => 'client'
                 ]);
-                $stmt = $pdo->prepare("SELECT * FROM users WHERE email= :email");
-                $stmt->execute(['email' => $email]);
-                $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                
-                $_SESSION['user'] = $user;
-                header('Location: /index.php');
+
+                //Construit le nom qui sera affiché dans le champ destinataire.
+                $recipientName = trim($prenom . ' ' . $nom);
+
+                //protege le prenom avant de l'inserer dans le contenu HTML 
+                $safeFirstName = htmlspecialchars(
+                    $prenom,
+                    ENT_QUOTES,
+                    'UTF-8'
+                );
+                // sujet visible dans le mail
+                $subject = 'votre code de verification - Vite & Gourmand';
+
+                //version HTML du message 
+                // $verificationCode contient le code lisible, jamais son hash.
+                $htmlContent = "
+                    <h1>Confirmation de votre inscription </h1>
+
+                    <p> Bonjour {$safeFirstName},</p>
+
+                    <p>Voici votre code de verification : <strong>{$verificationCode}</strong></p>
+
+                    <p> Ce code est valide pendant une durée de 15 minutes. </p>
+
+                    <p> Si vous n'êtes pas à l'origine de cette création de compte, veuillez ignorer ce message.;</p>";
+
+                // Version text pour les logiciel qui n'affiche aps le HTML
+                $textContent = 
+                "Bonjour {$prenom},\n\n" . 
+                "Votre code de verification est : {$verificationCode}\n" . 
+                "Ce code est valable pendant une durée de 15 Minutes. \n\n" . 
+                "Si vous n'êtes pas a l'origine de cette creation de compte veuillez ignorer ce message";
+
+                //le destinataire  et le contenu propres a la verification
+                $mailSent = sendMail(
+                    $email,
+                    $recipientName,
+                    $subject,
+                    $htmlContent,
+                    $textContent
+                );
+
+            // on memorise uniquement de l'adresse du compte qui attend sa verification
+            //ce n'est pas encore une session utilisateur connectée
+            $_SESSION['pending_verification_email'] = $email;
+
+            //on redirige uniquement si le mail a bien été envoyée 
+            if($mailSent){
+                header('location: /index.php?verification=pending');
                 exit();
+            }
+            $error = 'Votre compte a été créé, mais le mail de vérification n’a pas pu être envoyé.';
                 }
         }
     }

@@ -49,7 +49,7 @@ require_once __DIR__ . '/../../src/configs/session.php';
                         <button id="btnInscription" type="button">Inscription</button>
                     </div>
                     <div>
-                        <form method="POST" action="/index.php">
+                        <form method="POST" action="index.php">
                             <input type="hidden" name="action" id="actionForm" value="connexion">
                             <!--email -->
                             <div class="formulaire">
@@ -96,4 +96,109 @@ require_once __DIR__ . '/../../src/configs/session.php';
             </div>
         </div>
     </div>
+    <?php
+    //le modal existe seulement lorqu'une inscription attend une confirmation
+    $verificationPending = isset(
+        $_SESSION['pending_verification_email']
+    );
+    
+    // le parametre present dans l'url demande son ouverture automatique
+    $openVerificationModal = 
+    $verificationPending && 
+    ($_GET['verification'] ?? '') ==='pending';
+    ?>
+
+    <?php if ($verificationPending): ?>
+        <div id="verificationOverlay" class="modal_overlay <?php echo $openVerificationModal ? '' : 'hidden'; ?>">
+            <div class="connexion_content verification_content">
+                <section class="section_formulaire">
+                    <div class="container_formulaire">
+                        <h2>Vérifiez votre adresse Mail</h2>
+                        <?php
+                        if (!empty($error)):
+                        ?>
+                        <p class="verification_error">
+                            <?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8');?>
+                        </p>
+                        <?php endif; ?>
+                        <p>Votre code a usage unique a été envoyé à :</p>
+
+                        <p>
+                            <?php 
+                            //Protection obligatoire avant l'affichage HTML 
+                            echo htmlspecialchars(
+                                $_SESSION['pending_verification_email'],
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+                            ?>
+                        </p>
+
+                        <form method="POST"
+                        action="/index.php?verification=pending">
+    <!-- Permettre a PHP d'identifier cette action z-->
+     <input 
+     type="hidden"
+     name="action"
+     value="verify_email_code"
+     >
+     <div class="formulaire">
+        <label for="verificationCode">
+            Code à six chiffres
+        </label>
+
+        <input 
+        id="verificationCode"
+        type="text"
+        name="verification_code"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        minlength="6"
+        maxlength="6"
+        pattern="[0-9]{6}"
+        required
+        >
+    </div>
+
+        <div class="submitBtn">
+            <button type="submit">
+                Valider mon code 
+            </button>
+     </div>
+                    </form>
+                    <div class="verification_actions">
+                        <p>
+                            Nouveau code disponible dans
+                            <span id="verificationCountdown">30</span>
+                            seconde(s).
+                        </p>
+    <!--Javascript activera ce bouton à la fin du compteur-->
+                        <button
+                        id="resendVerificationCode"
+                        type="button"
+                        disabled
+                        >
+                        Renvoyer le code 
+                        </button>
+    <!--Ce bouton affichera ensuite le formulaire de correction-->
+    <button
+    id="showChangeEmail"
+    type="button"
+    >
+Modifier l'adresse mail
+    </button>
+                    </div>
+                    </div>
+                </section>
+                <div class="fermetureOverlay">
+                    <button
+                    id="closeVerificationModal"
+                    class="modal_close"
+                    type="button"
+                    >X
+                    </button>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
 </header>

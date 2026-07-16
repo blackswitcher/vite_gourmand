@@ -130,7 +130,7 @@ function sendMail(string $toEmail, string $toName, string $subject, string $html
  * @return array code lisible, hash securisé et date d'expiration.
  */
 
-function generateEmailverificationCode (
+function generateEmailVerificationCode (
     int $validityMinutes =15
     ): array {
 
@@ -140,11 +140,25 @@ function generateEmailverificationCode (
     // protege le code avant son stockage en base 
     $codeHash = password_hash($code, PASSWORD_DEFAULT);
 
+
+    // on memorise l'heure actuelle une seule fois
+    //ainsi la date d'envoie et expiration ont la meme base 
+    $currentTimestamp = time();
+
+    //Date du dernier envoie utilisée pour le delai de 30seconde
+    $sentAt = date(
+        'Y-m-d H:i:s',
+        $currentTimestamp
+    );
+
+    
+
     // on calcule l'expiration a partir de l'heure actuelle du serveur PHP
     $expireAt = date(
         'Y-m-d H:i:s',
-        time() + ($validityMinutes * 60)
+        $currentTimestamp + ($validityMinutes * 60)
     );
+
     return [
         //cette valeur ne dois jamais etre en BDD 
         //uniquement a la preparation du mail 
@@ -154,6 +168,9 @@ function generateEmailverificationCode (
         'hash' => $codeHash,
 
         //cette valeur sera enregistrée dans verification_code_expires_at
-        'expires_at' => $expireAt
+        'expires_at' => $expireAt,
+
+        //on enregistgre la caleur de la date d'envoie 
+        'sent_at' => $sentAt
     ];
 }
