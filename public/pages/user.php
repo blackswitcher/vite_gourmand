@@ -293,7 +293,27 @@ $modeEdition = isset($_GET['edit']) && $_GET['edit'] == 1;
                     </table>
                 <?php endif; ?>
             </section>
-            <p><a class="button-link btnModifierProfil" href="user.php?edit=1">Modifier mes informations</a></p>
+            <!--Regroupe les actions et le statut du compte sur une meme ligne-->
+                <div class="profile_actions">
+                    
+                        <a class="button-link btnModifierProfil" 
+                            href="user.php?edit=1">Modifier mes informations
+                        </a>
+                    <?php 
+                    // je recupere le staut de veif du compte
+                    //si la donnée est absente je considere par securité que le compte n'est pas verifié 
+                    $emailVerified = (int) ($user['email_verified'] ?? 0);?>
+                    <?php if ($emailVerified === 1):  ?> 
+                    <!--Information visuelle uniquement 
+                    pour dire que le compte est verifier-->
+                    <span class="account_verified">
+                        ✓ Compte validé
+                    </span>
+                    <?php endif; ?>
+            </div>
+
+
+
         <?php else: ?>
             <div class="user_profile">
                 <h1>Modifier Mon Profil</h1>

@@ -101,11 +101,11 @@ require_once __DIR__ . '/../../src/configs/session.php';
     $verificationPending = isset(
         $_SESSION['pending_verification_email']
     );
-    
+
     // le parametre present dans l'url demande son ouverture automatique
-    $openVerificationModal = 
-    $verificationPending && 
-    ($_GET['verification'] ?? '') ==='pending';
+    $openVerificationModal =
+        $verificationPending &&
+        ($_GET['verification'] ?? '') === 'pending';
     ?>
 
     <?php if ($verificationPending): ?>
@@ -117,14 +117,14 @@ require_once __DIR__ . '/../../src/configs/session.php';
                         <?php
                         if (!empty($error)):
                         ?>
-                        <p class="verification_error">
-                            <?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8');?>
-                        </p>
+                            <p class="verification_error">
+                                <?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?>
+                            </p>
                         <?php endif; ?>
 
-                        <?php if (!empty($verificationMessage)):?>
+                        <?php if (!empty($verificationMessage)): ?>
                             <p class="verification_success">
-                                <?php 
+                                <?php
                                 echo htmlspecialchars(
                                     $verificationMessage,
                                     ENT_QUOTES,
@@ -132,11 +132,11 @@ require_once __DIR__ . '/../../src/configs/session.php';
                                 );
                                 ?>
                             </p>
-                            <?php endif; ?>
+                        <?php endif; ?>
                         <p>Votre code a usage unique a été envoyé à :</p>
 
                         <p>
-                            <?php 
+                            <?php
                             //Protection obligatoire avant l'affichage HTML 
                             echo htmlspecialchars(
                                 $_SESSION['pending_verification_email'],
@@ -147,79 +147,75 @@ require_once __DIR__ . '/../../src/configs/session.php';
                         </p>
 
                         <form method="POST"
-                        action="/index.php?verification=pending">
-    <!-- Permettre a PHP d'identifier cette action z-->
-    <input 
-    type="hidden"
-    name="action"
-    value="verify_email_code"
-    >
-    <div class="formulaire">
-        <label for="verificationCode">
-            Code à six chiffres
-        </label>
+                            action="/index.php?verification=pending">
+                            <!-- Permettre a PHP d'identifier cette action z-->
+                            <input
+                                type="hidden"
+                                name="action"
+                                value="verify_email_code">
+                            <div class="formulaire">
+                                <label for="verificationCode">
+                                    Code à six chiffres
+                                </label>
 
-        <input 
-        id="verificationCode"
-        type="text"
-        name="verification_code"
-        inputmode="numeric"
-        autocomplete="one-time-code"
-        minlength="6"
-        maxlength="6"
-        pattern="[0-9]{6}"
-        required
-        >
-    </div>
+                                <input
+                                    id="verificationCode"
+                                    type="text"
+                                    name="verification_code"
+                                    inputmode="numeric"
+                                    autocomplete="one-time-code"
+                                    minlength="6"
+                                    maxlength="6"
+                                    pattern="[0-9]{6}"
+                                    required>
+                            </div>
 
-        <div class="submitBtn">
-            <button type="submit">
-                Valider mon code 
-            </button>
-     </div>
-                    </form>
-                    <div class="verification_actions">
-                        <p>
-                            Nouveau code disponible dans
-                            <span id="verificationCountdown">30</span>
-                            seconde(s).
-                        </p>
-
-
-                        <!--Formulaire separé pour identifier clairement le renvoie coté php-->
-                        <form action="/index.php?verification=pending" method="POST">
-                            <input 
-                            type="hidden" 
-                            name="action" 
-                            value="resend_verification_code">
-                        <!--Javascript retirera disabled apres le delai visuel 
-                        PHP verifiera quand meme les 30 sec coté serveur -->
-                        <button 
-                        id="resendVerificationCode"
-                        type="submit"
-                        disabled>
-                            Renvoyer le code
-                    </button>
+                            <div class="submitBtn">
+                                <button type="submit">
+                                    Valider mon code
+                                </button>
+                            </div>
                         </form>
-    <!--Ce bouton affichera ensuite le formulaire de correction-->
-    <button
-    id="showChangeEmail"
-    type="button"
-    >
-Modifier l'adresse mail
-    </button>
-                    </div>
+                        <div class="verification_actions">
+                            <p>
+                                Nouveau code disponible dans
+                                <span id="verificationCountdown">30</span>
+                                seconde(s).
+                            </p>
+
+
+                            <!--Formulaire separé pour identifier clairement le renvoie coté php-->
+                            <form action="/index.php?verification=pending" method="POST">
+                                <input
+                                    type="hidden"
+                                    name="action"
+                                    value="resend_verification_code">
+                                <!--Javascript retirera disabled apres le delai visuel 
+                        PHP verifiera quand meme les 30 sec coté serveur -->
+                                <button
+                                    id="resendVerificationCode"
+                                    type="submit"
+                                    disabled>
+                                    Renvoyer le code
+                                </button>
+                            </form>
+                            <!--Ce bouton affichera ensuite le formulaire de correction-->
+                            <button
+                                id="showChangeEmail"
+                                type="button">
+                                Modifier l'adresse mail
+                            </button>
+                        </div>
                     </div>
                 </section>
                 <div class="fermetureOverlay">
                     <button
-                    id="closeVerificationModal"
-                    class="modal_close"
-                    type="button"
-                    >X
+                        id="closeVerificationModal"
+                        class="modal_close"
+                        type="button">X
                     </button>
                 </div>
             </div>
         </div>
-        <?php endif; ?>
+    <?php endif; ?>
 </header>

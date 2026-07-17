@@ -2,12 +2,12 @@
 //                          AJOUT DU PANIER EN AJAX                      //
 ///////////////////////////////////////////////////////////////////////////
 
-function initPanierAjax(){
+function initPanierAjax() {
   // on recupere le form d'ajout au panier
   const formAjoutPanier = document.querySelector("#formAjoutPanier");
 
   // si le form n'existe pas sur la page on arrete
-  if(!formAjoutPanier) {
+  if (!formAjoutPanier) {
     return;
   }
 
@@ -19,10 +19,10 @@ function initPanierAjax(){
     // on recupere les données du formulaire
     const formData = new FormData(formAjoutPanier);
 
-    try{
+    try {
       // on envoie les données au fichier PHP AJAX
-      const response = await fetch("ajax_panier.php",{
-        method:"POST",
+      const response = await fetch("ajax_panier.php", {
+        method: "POST",
         body: formData
       });
 
@@ -30,33 +30,33 @@ function initPanierAjax(){
       const data = await response.json();
 
       // afficher les potentiel erreur
-      if(!data.success){
+      if (!data.success) {
         alert(data.message);
         return;
       }
-const panierListe = document.querySelector("#panierResumeListe");
-const panierTotal = document.querySelector("#panierResumeTotal");
+      const panierListe = document.querySelector("#panierResumeListe");
+      const panierTotal = document.querySelector("#panierResumeTotal");
 
-if(panierListe && panierTotal){
-  // on vide l'ancienne liste pour la reconstruire proprement
-  panierListe.innerHTML = "";
+      if (panierListe && panierTotal) {
+        // on vide l'ancienne liste pour la reconstruire proprement
+        panierListe.innerHTML = "";
 
-  // on reconstruit chaque ligne du mini panier 
-  data.panier.forEach((menu)=>{
-    const li = document.createElement("li");
-    li.textContent = menu.titre + " x" + menu.quantite;
-    panierListe.appendChild(li);
-  });
+        // on reconstruit chaque ligne du mini panier 
+        data.panier.forEach((menu) => {
+          const li = document.createElement("li");
+          li.textContent = menu.titre + " x" + menu.quantite;
+          panierListe.appendChild(li);
+        });
 
-  // on met a jour le total affiche
-  panierTotal.textContent = "Total : " + data.total_panier;
-}
+        // on met a jour le total affiche
+        panierTotal.textContent = "Total : " + data.total_panier;
+      }
     } catch (error) {
       // si un probleme ou JS arrive 
       alert("Une erreur est survenue pendant l'ajout au panier");
       console.error(error);
     }
-    
+
   });
 }
 initPanierAjax();
@@ -66,26 +66,26 @@ initPanierAjax();
 //                            CARROUSEL                                   //
 ////////////////////////////////////////////////////////////////////////////
 
-function initMenuGalerie(){
+function initMenuGalerie() {
   const slides = document.querySelectorAll(".slideMenu");
   const btnNext = document.querySelector(".btnNextImg");
   let currentIndex = 0;
 
-  if (!slides.length || !btnNext){
+  if (!slides.length || !btnNext) {
     return;
   }
 
-  function afficherSlide(index){
+  function afficherSlide(index) {
     slides.forEach((slide) => {
       slide.classList.remove("active");
     });
 
     slides[index].classList.add("active");
   }
-  btnNext.addEventListener("click",() => {
-    currentIndex ++
+  btnNext.addEventListener("click", () => {
+    currentIndex++
 
-    if (currentIndex >= slides.length){
+    if (currentIndex >= slides.length) {
       currentIndex = 0;
     }
     afficherSlide(currentIndex);
@@ -139,7 +139,7 @@ const commandeIdAvis = document.getElementById('commande_id_avis');
 
 // je parcourt les boutons avis 
 boutonAvis.forEach((bouton) => {
-  bouton.addEventListener('click', () =>{
+  bouton.addEventListener('click', () => {
     // je vais lire l'id de la commande que j'ai stocker ds data-commande
     const commandeId = bouton.dataset.commandeId;
 
@@ -167,12 +167,12 @@ const boutonFermer = document.getElementById('fermerModalEmploye');
 const modalEmploye = document.getElementById('modalEmploye');
 
 
-if (boutonOuvrir && boutonFermer && modalEmploye){
-  boutonOuvrir.addEventListener('click', function(){
+if (boutonOuvrir && boutonFermer && modalEmploye) {
+  boutonOuvrir.addEventListener('click', function () {
     modalEmploye.classList.remove('hidden');
   });
 
-  boutonFermer.addEventListener('click', function() {
+  boutonFermer.addEventListener('click', function () {
     modalEmploye.classList.add('hidden');
   });
 }
@@ -184,61 +184,62 @@ if (boutonOuvrir && boutonFermer && modalEmploye){
 ////////////////////////////////////////////////////////////////////////////////
 //------------------------------------ GESTION MODAL MAP ---------------------//
 ////////////////////////////////////////////////////////////////////////////////
-function initMapModal(){
+function initMapModal() {
 
-var bouton = document.querySelector(".bouton");
-var menu = document.querySelector(".menu");
+  var bouton = document.querySelector(".bouton");
+  var menu = document.querySelector(".menu");
 
-window.menuToggle = function () {
-  menu.classList.toggle("active");
-  bouton.classList.toggle("active");
-};
+  window.menuToggle = function () {
+    menu.classList.toggle("active");
+    bouton.classList.toggle("active");
+  };
 
-// gestion du modal
+  // gestion du modal
 
-const openMapBtn = document.getElementById("openMapBtn");
-const mapModal = document.getElementById("mapModal");
-const closeMapBtn = document.querySelector("#mapModal .modal_close");
+  const openMapBtn = document.getElementById("openMapBtn");
+  const mapModal = document.getElementById("mapModal");
+  const closeMapBtn = document.querySelector("#mapModal .modal_close");
 
-if (openMapBtn && mapModal && closeMapBtn) {
-  // ouvrir
-  openMapBtn.addEventListener("click", () => {
-    mapModal.classList.add("open");
-  });
+  if (openMapBtn && mapModal && closeMapBtn) {
+    // ouvrir
+    openMapBtn.addEventListener("click", () => {
+      mapModal.classList.add("open");
+    });
 
-  //fermer en cliquant sur la croix
+    //fermer en cliquant sur la croix
 
-  closeMapBtn.addEventListener("click", () => {
-    mapModal.classList.remove("open");
-  });
-
-  // fermer si on clique en dehors
-  mapModal.addEventListener("click", (e) => {
-    if (e.target === mapModal) {
+    closeMapBtn.addEventListener("click", () => {
       mapModal.classList.remove("open");
-    }
-  });
-}
+    });
+
+    // fermer si on clique en dehors
+    mapModal.addEventListener("click", (e) => {
+      if (e.target === mapModal) {
+        mapModal.classList.remove("open");
+      }
+    });
+  }
 }
 
 initMapModal();
+
 
 // gestion de la fonction Prix
-function initPrix(){
+function initPrix() {
 
-const prixMaxInput = document.getElementById("prixMax");
-const prixMaxValue = document.getElementById("prixMaxValue");
+  const prixMaxInput = document.getElementById("prixMax");
+  const prixMaxValue = document.getElementById("prixMaxValue");
 
-// il s'agit de ma value de départ
-prixMaxValue.textContent = prixMaxInput.value;
-
-//mise a jour en temps reel
-
-prixMaxInput.addEventListener("input", () => {
+  // il s'agit de ma value de départ du cruseur
   prixMaxValue.textContent = prixMaxInput.value;
-});
+
+  //mise a jour en temps reel
+
+  prixMaxInput.addEventListener("input", () => {
+    prixMaxValue.textContent = prixMaxInput.value;
+  });
 }
-initMapModal();
+initPrix();
 
 // gestion du carroussel
 
@@ -340,8 +341,8 @@ function ongletConnexion() {
       ongletInscription.classList.remove("hidden");
       ongletInscription.classList.add("is-active");
 
-      if(actionForm) {
-        actionForm.value="inscription";
+      if (actionForm) {
+        actionForm.value = "inscription";
       }
     });
 
@@ -349,8 +350,8 @@ function ongletConnexion() {
       ongletInscription.classList.remove("is-active");
       ongletInscription.classList.add("hidden");
 
-      if(actionForm) {
-        actionForm.value="connexion";
+      if (actionForm) {
+        actionForm.value = "connexion";
       }
 
     });
@@ -468,7 +469,7 @@ verifNewMDP();
 //                              MODAL VERIF ADRESSE MAIL                     //
 ///////////////////////////////////////////////////////////////////////////////
 
-function initEmailVerificationModal(){
+function initEmailVerificationModal() {
   //Element propre au modal de verif
   // attention a ne pas melanger avec les autre modal 
 
@@ -479,25 +480,25 @@ function initEmailVerificationModal(){
 
   //Si aucune verification n'est en cours, 
   // le modal n'existe pas et la function s'arrete 
-  if(!verificationOverlay) {
+  if (!verificationOverlay) {
     return;
   }
 
   // ferme le modal avec la croix.
-  if(closeVerificationModal){
-    closeVerificationModal.addEventListener("click", ()=> {
+  if (closeVerificationModal) {
+    closeVerificationModal.addEventListener("click", () => {
       verificationOverlay.classList.add("hidden");
     });
   }
 
   //ferme aussi le modal en cliquant sur le blur exterieur
   verificationOverlay.addEventListener("click", (event) => {
-    if(event.target === verificationOverlay){
+    if (event.target === verificationOverlay) {
       verificationOverlay.classList.add("hidden");
     }
   });
   //si le compteur ou le bouton manque, on conserve seulement le fonctionnement open/close
-  if(!verificationCountdown || !resendVerificationCode){
+  if (!verificationCountdown || !resendVerificationCode) {
     return;
   }
 
@@ -508,16 +509,16 @@ function initEmailVerificationModal(){
   );
 
   //sécurité si le contenu du compteur n'est pas un nombre
-  if (Number.isNaN(remainingSeconds)){
+  if (Number.isNaN(remainingSeconds)) {
     remainingSeconds = 30;
   }
 
-  function updateCountdown(){
+  function updateCountdown() {
     //met a jour le nombre visible 
     verificationCountdown.textContent = remainingSeconds;
 
     // a zero le bouton devient utilisable
-    if (remainingSeconds <= 0){
+    if (remainingSeconds <= 0) {
       resendVerificationCode.disabled = false;
       return;
     }
@@ -527,7 +528,7 @@ function initEmailVerificationModal(){
     // Puis updateCountdown() est rappelée pour actualiser l’affichage.
     window.setTimeout(() => {
       //retire une seonde au compteur 
-      remainingSeconds --;
+      remainingSeconds--;
 
       //relance l'affichage
       updateCountdown();
@@ -571,7 +572,7 @@ cupcakes.forEach((cupcake) => {
 
 const ratingElement = document.querySelector(".rating");
 
-if (ratingElement){
+if (ratingElement) {
   ratingElement.addEventListener("mouseleave", () => {
     paint(current);
   });

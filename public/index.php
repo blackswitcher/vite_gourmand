@@ -44,63 +44,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // verification des données entre users et la BDD 
         if ($users && password_verify($mdp, $users['password_hash'])) {
-        
-        //le MDP est correct mais l'adresse doit egalement etre confirmé avant la connexion
-        if ((int) $users['email_verified'] !== 1) {
-            // on memorise le compte qui attend encore sa confirmation
-            //cela permettra au modal d'afficher la bonne adresse
-            $_SESSION['pending_verification_email'] = $users['email'];
 
-            //on ne crée pas encore la session 
-            // user retourne sur l'accueil avec le modal ouvert 
-            header('Location: /index.php?verification=pending');
-            exit();
-        }
+            //le MDP est correct mais l'adresse doit egalement etre confirmé avant la connexion
+            if ((int) $users['email_verified'] !== 1) {
+                // on memorise le compte qui attend encore sa confirmation
+                //cela permettra au modal d'afficher la bonne adresse
+                $_SESSION['pending_verification_email'] = $users['email'];
 
-        //Le compte est confimé: onsecurise la nouvelle connexion
-        //et on enregistre users comme connecté
-        session_regenerate_id(true);
-        
-        //on ouvre la session utilisateur en gardant les info SQL    
-        $_SESSION['user'] = $users;
+                //on ne crée pas encore la session 
+                // user retourne sur l'accueil avec le modal ouvert 
+                header('Location: /index.php?verification=pending');
+                exit();
+            }
 
-        // on veux enregistrer un log MongoDB seulement si la personne connectée
-        // est un admin ou employé
-        if($users['role'] === 'admin' || $users['role'] === 'employe'){
-            try{
-            //on essaie d'ajouter un doc dans mongo
-            //Important ce log est utile mais il ne doit pas bloquer la connexion
+            //Le compte est confimé: onsecurise la nouvelle connexion
+            //et on enregistre users comme connecté
+            session_regenerate_id(true);
 
-            // on insere un doc dans la collection des log admin
-            $mongoCollection->insertOne([
+            //on ouvre la session utilisateur en gardant les info SQL    
+            $_SESSION['user'] = $users;
 
-                //type d'evenement: ici connexion
-                'action' => 'connexion',
+            // on veux enregistrer un log MongoDB seulement si la personne connectée
+            // est un admin ou employé
+            if ($users['role'] === 'admin' || $users['role'] === 'employe') {
+                try {
+                    //on essaie d'ajouter un doc dans mongo
+                    //Important ce log est utile mais il ne doit pas bloquer la connexion
 
-                // role de la personne connectée 
-                'role' => $users['role'],
+                    // on insere un doc dans la collection des log admin
+                    $mongoCollection->insertOne([
 
-                //ID SQL de l'utilisateur
-                'adminId' => (int) $users['ID'],
+                        //type d'evenement: ici connexion
+                        'action' => 'connexion',
 
-                // email connecté 
-                'adminEmail'  => $users ['email'],
+                        // role de la personne connectée 
+                        'role' => $users['role'],
 
-                // on gere la date et heure de la connection
-                'createdAt' => new \MongoDB\BSON\UTCDateTime(),
+                        //ID SQL de l'utilisateur
+                        'adminId' => (int) $users['ID'],
 
-                //message de connexion
-                'details' =>[
-                    'message' => 'connexion reussie'
-                ]
-            ]);
-} catch (Throwable $e) {
-    // Si MongoDB plante, on enregistre l'erreur dans les logs PHP.
-    // Mais on ne bloque pas la connexion de l'utilisateur.
-    error_log('Erreur log Mongo connexion : ' . $e->getMessage());
-}
+                        // email connecté 
+                        'adminEmail'  => $users['email'],
 
-        }
+                        // on gere la date et heure de la connection
+                        'createdAt' => new \MongoDB\BSON\UTCDateTime(),
+
+                        //message de connexion
+                        'details' => [
+                            'message' => 'connexion reussie'
+                        ]
+                    ]);
+                } catch (Throwable $e) {
+                    // Si MongoDB plante, on enregistre l'erreur dans les logs PHP.
+                    // Mais on ne bloque pas la connexion de l'utilisateur.
+                    error_log('Erreur log Mongo connexion : ' . $e->getMessage());
+                }
+            }
             header('Location: /index.php');
             exit();
         } else {
@@ -115,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         //Adresse conservé dans la session d'inscription en attente 
         $pendingEmail = $_SESSION['pending_verification_email'] ?? '';
 
-        if($pendingEmail === ''){
+        if ($pendingEmail === '') {
             $error = 'Aucune vérification de compte n\'est en cours. ';
         } else {
             // on recupere le compte et l'heure du dernier envoi.
@@ -137,29 +136,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
 
             $pendingUser = $stmt->fetch(PDO::FETCH_ASSOC);
-            if(!$pendingUser){
+            if (!$pendingUser) {
                 $error = 'Le compte en attente est introuvable.';
-            } elseif ((int) $pendingUser['email_verified'] === 1){
+            } elseif ((int) $pendingUser['email_verified'] === 1) {
                 $error = 'Cette adresse mail est déjà confirmée';
-            } else{
+            } else {
                 //transforme la derniere date MySQL en timestamp
                 //si aucune date n'existe, on utilise ZERO 
-                $lastSentTimestamp = !empty(
-                    $pendingUser['verification_code_sent_at']
-                )
-                ? strtotime($pendingUser['verification_code_sent_at'])
-                : 0;
+                $lastSentTimestamp = !empty($pendingUser['verification_code_sent_at'])
+                    ? strtotime($pendingUser['verification_code_sent_at'])
+                    : 0;
 
                 //Calcule le nombre de seconde restant avant un renvoie
-                $remainingSeconds = 
-                30 - (time() - (int)$lastSentTimestamp);
+                $remainingSeconds =
+                    30 - (time() - (int)$lastSentTimestamp);
 
                 if ($remainingSeconds > 0) {
-                    $error = 
-                    'veuillez patienter encore' . 
-                    $remainingSeconds . 
-                    'seconde(s) avant de demander un nouveau code.';
-                }else{
+                    $error =
+                        'veuillez patienter encore' .
+                        $remainingSeconds .
+                        'seconde(s) avant de demander un nouveau code.';
+                } else {
                     //reutilise la fonction commune :
                     //nouveau code, nouveau hash et nouvelles dates.
                     $verification = generateEmailVerificationCode();
@@ -194,12 +191,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     );
 
                     $recipientName = trim(
-                        $pendingUser['prenom'] . ' ' . 
-                        $pendingUser['nom']
+                        $pendingUser['prenom'] . ' ' .
+                            $pendingUser['nom']
                     );
 
-                    $subject = 
-                    'Votre nouveau code de verification - Vite & gourmand';
+                    $subject =
+                        'Votre nouveau code de verification - Vite & gourmand';
 
                     $htmlContent = "
                     <h1> Nouveau Code de verification </h1>
@@ -214,9 +211,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ";
 
                     $textContent =
-                    "Bonjour {$pendingUser['prenom']},\n\n" . 
-                    "Votre nouveau code est {$newCode}\n" . 
-                    "Ce code est valable pendant 15 minutes.";
+                        "Bonjour {$pendingUser['prenom']},\n\n" .
+                        "Votre nouveau code est {$newCode}\n" .
+                        "Ce code est valable pendant 15 minutes.";
 
                     $mailSent = sendMail(
                         $pendingUser['email'],
@@ -226,13 +223,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $textContent
                     );
 
-                    if ($mailSent){
-                        $verificationMessage = 
-                        'Un nouveau code vient de vous etre envoyé.';
-                    }else {
-                        $error = 
-                        'Le nouveau code a été créé, mais le mail n\'a pu être envoyé.';
-
+                    if ($mailSent) {
+                        $verificationMessage =
+                            'Un nouveau code vient de vous etre envoyé.';
+                    } else {
+                        $error =
+                            'Le nouveau code a été créé, mais le mail n\'a pu être envoyé.';
                     }
                 }
             }
@@ -243,24 +239,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     //                  VALIDATION DU CODE EMAIL                      //
     ////////////////////////////////////////////////////////////////////
 
-    if($action === 'verify_email_code'){
+    if ($action === 'verify_email_code') {
 
         //code envoyé par le formulaire du modal 
         $submittedCode = trim($_POST['verification_code'] ?? '');
-        
+
         //Adresse conservée temporairement apres l'inscription
         $pendingEmail = $_SESSION['pending_verification_email'] ?? '';
 
         //Sans cette session, on ne sait pas quel compte doit etre confirmé
-        if($pendingEmail === ''){
+        if ($pendingEmail === '') {
             $error = 'Aucune vérification est en cours.';
 
             //le navigateur effectue deja ce controle 
             //mais PHP doit egalement le faire pour des question de sécurité
 
-        }elseif (!preg_match('/^[0-9]{6}$/' , $submittedCode)){
+        } elseif (!preg_match('/^[0-9]{6}$/', $submittedCode)) {
             $error = 'Le code doit contenir exactement six chiffres.';
-        }else{
+        } else {
             // Recherche uniquement le compte associé a la session actuelle.
             $stmt = $pdo->prepare("
             SELECT *
@@ -269,31 +265,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             AND email_verified = 0
             ");
 
-            $stmt -> execute([
+            $stmt->execute([
                 'email' => $pendingEmail
             ]);
             $pendingUser = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if(!$pendingUser){
-        $error = 'Ce compte est introuvable ou déjà confirmé';
-            } elseif(
-                empty($pendingUser['verification_code_hash'])||
+            if (!$pendingUser) {
+                $error = 'Ce compte est introuvable ou déjà confirmé';
+            } elseif (
+                empty($pendingUser['verification_code_hash']) ||
                 empty($pendingUser['verification_code_expires_at'])
-            ){
+            ) {
                 $error = 'Aucun code de vérification valide n\'est disponible';
                 //strtotime() transforme la date MySQL en nombre comparable a time 
-            }elseif(
+            } elseif (
                 strtotime($pendingUser['verification_code_expires_at']) < time()
-            ){
+            ) {
                 $error = 'ce code a expiré. Demandez un nouveau code ';
-            } elseif(
+            } elseif (
                 !password_verify(
                     $submittedCode,
                     $pendingUser['verification_code_hash']
                 )
-            ){
+            ) {
                 $error = 'le code saisi est incorrect.';
-            }else{
+            } else {
                 //le code est code et encore valide 
                 //le compteur devient officiellement confirmé
                 $stmt = $pdo->prepare("
@@ -306,7 +302,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ");
 
                 $stmt->execute([
-                    'id'=> $pendingUser['ID']
+                    'id' => $pendingUser['ID']
                 ]);
                 // on recharge apres la mise a jour
                 $stmt = $pdo->prepare("
@@ -348,10 +344,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </p>
                 ";
 
-                $welcomeTextContent = 
-                "Bonjour {$verifiedUser['prenom']}, \n\n " . 
-                "Votre adresse mail est maintenant confirmée" . 
-                "Votre compte est desormais actif vous pouvez profiter de tous les 
+                $welcomeTextContent =
+                    "Bonjour {$verifiedUser['prenom']}, \n\n " .
+                    "Votre adresse mail est maintenant confirmée" .
+                    "Votre compte est desormais actif vous pouvez profiter de tous les 
                 services et ne tardez pas a decouvrir notre recette gourmande.
                 ";
 
@@ -359,7 +355,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // ni la connexion du compte 
                 sendMail(
                     $verifiedUser['email'],
-                    $WelcomeRecipientName,
+                    $welcomeRecipientName,
                     $welcomeSubject,
                     $welcomeHtmlContent,
                     $welcomeTextContent
@@ -425,7 +421,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 //Date d'expiration aussi enregistrer 
                 $verificationCodeExpiresAt = $verification['expires_at'];
-                
+
                 //Date utilisée pour empeche un renvoie avant 30 secondes.
                 $verificationCodeSentAt = $verification['sent_at'];
                 $stmt = $pdo->prepare("
@@ -464,10 +460,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     //Seul le hash du code est enregistré
                     'verification_code_hash' => $verificationCodeHash,
-                    
+
                     //cette date permettra de refuser un code trop ancien.
                     'verification_code_expires_at' => $verificationCodeExpiresAt,
-                    
+
                     //cette date permettra d'eviter le spam d'envoie de code 
                     'verification_code_sent_at' => $verificationCodeSentAt,
                     //Donnée habituelle de l'utilisateur
@@ -508,11 +504,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <p> Si vous n'êtes pas à l'origine de cette création de compte, veuillez ignorer ce message.;</p>";
 
                 // Version text pour les logiciel qui n'affiche aps le HTML
-                $textContent = 
-                "Bonjour {$prenom},\n\n" . 
-                "Votre code de verification est : {$verificationCode}\n" . 
-                "Ce code est valable pendant une durée de 15 Minutes. \n\n" . 
-                "Si vous n'êtes pas a l'origine de cette creation de compte veuillez ignorer ce message";
+                $textContent =
+                    "Bonjour {$prenom},\n\n" .
+                    "Votre code de verification est : {$verificationCode}\n" .
+                    "Ce code est valable pendant une durée de 15 Minutes. \n\n" .
+                    "Si vous n'êtes pas a l'origine de cette creation de compte veuillez ignorer ce message";
 
                 //le destinataire  et le contenu propres a la verification
                 $mailSent = sendMail(
@@ -523,17 +519,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $textContent
                 );
 
-            // on memorise uniquement de l'adresse du compte qui attend sa verification
-            //ce n'est pas encore une session utilisateur connectée
-            $_SESSION['pending_verification_email'] = $email;
+                // on memorise uniquement de l'adresse du compte qui attend sa verification
+                //ce n'est pas encore une session utilisateur connectée
+                $_SESSION['pending_verification_email'] = $email;
 
-            //on redirige uniquement si le mail a bien été envoyée 
-            if($mailSent){
-                header('location: /index.php?verification=pending');
-                exit();
-            }
-            $error = 'Votre compte a été créé, mais le mail de vérification n’a pas pu être envoyé.';
+                //on redirige uniquement si le mail a bien été envoyée 
+                if ($mailSent) {
+                    header('location: /index.php?verification=pending');
+                    exit();
                 }
+                $error = 'Votre compte a été créé, mais le mail de vérification n’a pas pu être envoyé.';
+            }
         }
     }
 }
@@ -709,4 +705,4 @@ $avisValides = $stmt->fetchAll();
         <script src="asset/JS/app.js"></script>
 </body>
 
-</html> 
+</html>
