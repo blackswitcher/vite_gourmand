@@ -230,6 +230,10 @@ function initPrix() {
   const prixMaxInput = document.getElementById("prixMax");
   const prixMaxValue = document.getElementById("prixMaxValue");
 
+  if(!prixMaxInput || !prixMaxValue){
+    return;
+  }
+
   // il s'agit de ma value de départ du cruseur
   prixMaxValue.textContent = prixMaxInput.value;
 
@@ -239,7 +243,7 @@ function initPrix() {
     prixMaxValue.textContent = prixMaxInput.value;
   });
 }
-initPrix();
+init();
 
 // gestion du carroussel
 

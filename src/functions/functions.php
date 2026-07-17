@@ -171,3 +171,65 @@ function generateEmailVerificationCode (
         'sent_at' => $sentAt
     ];
 }
+
+/**
+ * genere les informations pour reinitialiser un mot de passe
+ * 
+ * Le jeton lisible sera envoyé dans un lien par mail 
+ * Seul son hash sera enregistre dans la BDD 
+ * 
+ * @param int $validityMinutes Durée de validité du lien en minute
+ * @return array jeton lisible, hash securisé et date associé
+ */
+
+function generatePasswordResetToken(
+    int $validityMinutes = 30
+): array {
+    /**
+     * produit 32 octets aléatoire sécurisés
+     * 
+     * bin2hex() transforme ces données en une chaine de 64 caractere
+     * utilisable sans difficulté dans une URL
+     */
+    $token = bin2hex(random_bytes(32));
+    /**
+     * le token ne doit pas etre enregistrer en BDD 
+     * 
+     * le MDP choisi par l'utilisateur lui devra l'etre 
+     * SHA-256 convient pour produire son empreinte 
+     */
+    $tokenHash = hash('sha256',$token);
+
+    /**
+     * on recupere l'heure actuelle une seule fois afin que la date d'envoie
+     * la date d'expiration partagent la meme base 
+     */
+
+    $currentTimestamp = time();
+
+    //date de creation d'envoi de la demande 
+    $sentAt = date(
+        'Y-m-d H:i:s',
+        $currentTimestamp
+    );
+
+    //le lien expirera dans 30 minutes par default 
+    $expiresAt = date(
+        'Y-m-d H:i:s',
+        $currentTimestamp + ($validityMinutes * 60)
+    );
+
+    return [
+        /**
+         * valeur lisible destinée uniquement au lien envoyé par mail 
+         * Elle ne devra jamis etre enregistrée directement dans MySQL
+         */
+        'token' => $token,
+
+        'token_hash' => $tokenHash,
+
+        'expires_at' => $expireAt,
+
+        'sent_at' => $sentAt
+    ];
+}

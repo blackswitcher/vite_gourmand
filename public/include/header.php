@@ -57,8 +57,14 @@ require_once __DIR__ . '/../../src/configs/session.php';
                                 <input id="email" type="email" name="email" required autocomplete="email">
                                 <!--mot de passe -->
                                 <label for="MDP">Mot de passe</label>
-                                <input id="MDP" type="password" name="MDP" required autocomplete="motDePasse">
+                                <input id="MDP" type="password" name="MDP" required autocomplete="current-password">
                             </div>
+                                    <!-- ce lien recharge l'accueil avec un paramtre GET
+                                    PHP utilisera ce parametre pour ouvrir automatiquement
+                                    le modal de demande de reinitialisation -->
+                                    <a href="/index.php?password_reset=request" class="forgot_password_link">
+                                    Mot de passe oublié ?
+                                    </a>
                             <!------------------------------FORMULAIRE D INSCRIPTION CACHER AU DERPART-------------------->
                             <div class="inscription hidden">
                                 <div class="formulaire">
@@ -96,7 +102,59 @@ require_once __DIR__ . '/../../src/configs/session.php';
             </div>
         </div>
     </div>
+    <?php /**
+     *Le modal sera ouvert uniquement si l'url contient:
+     * ?password_reset=request
+     */ 
+    $openPasswordResetRequest =
+    ($_GET['password_reset'] ?? '') === 'request';
+    ?>
+    <div 
+    id="passwordResetRequestOverlay"
+    class="modal_overlay <?php echo $openPasswordResetRequest ? '' : 'hidden'; ?>">
+<div class="connexion_content password_reset_content">
+    <section class="section_formulaire">
+        <div class="container_formulaire">
+            <h2>Mot de passe oublié</h2>
+            <p>
+                Indiquez votre adresse mail.
+            </p>
+            <form 
+            action="/index.php?password_reset=request" 
+            method="POST">
+                    <!--permettra a index.php d'identifier cette demande -->
+                    <input type="hidden"
+                            name="action"
+                            value="request_password_reset">
+                            <div class="formulaire">
+                                <label for="passwordResetEmail">
+                                    Adresse mail
+                                </label>
+                                <input 
+                                type="email"
+                                id="passwordResetEmail"
+                                name="email"
+                                autocomplete="email"
+                                required>
+                            </div>
+                            <div class="submitBtn">
+                                <button type="submit">
+                                    Recevoir le lien
+                                </button>
+                            </div>
+        </form>
+        </div>
+    </section>
+    <div class="fermetureOverlay">
+                    <!--Pour le moment fermer reviens juste a l'accueil
+                    -->
+                    <a href="/index.php" class="modal_close" aria-label="fermer">X</a>
+    </div>
+
+</div>
+</div>
     <?php
+
     //le modal existe seulement lorqu'une inscription attend une confirmation
     $verificationPending = isset(
         $_SESSION['pending_verification_email']
