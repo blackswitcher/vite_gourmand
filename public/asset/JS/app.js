@@ -243,7 +243,7 @@ function initPrix() {
     prixMaxValue.textContent = prixMaxInput.value;
   });
 }
-init();
+initPrix();
 
 // gestion du carroussel
 
@@ -302,8 +302,10 @@ function afficherMenu() {
 }
 //appel de ma function ^^
 afficherMenu();
+///////////////////////////////////////////////////////////////////////////////////////
+//------------------------------GESTION DU MODAL CONNEXION --------------------------//
+///////////////////////////////////////////////////////////////////////////////////////
 
-//------------------------------GESTION DU MODAL CONNEXION --------------------------
 function initModalConnexion() {
   const btnModalConnexion = document.getElementById("modalConnexion");
   const modalOverlay = document.querySelector(".modal_overlay");

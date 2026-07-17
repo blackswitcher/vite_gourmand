@@ -228,7 +228,7 @@ function generatePasswordResetToken(
 
         'token_hash' => $tokenHash,
 
-        'expires_at' => $expireAt,
+        'expires_at' => $expiresAt,
 
         'sent_at' => $sentAt
     ];

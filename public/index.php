@@ -107,6 +107,233 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     ////////////////////////////////////////////////////////////////////
+    //                  DEMANDE REINITIALISATION MDP                  //
+    ////////////////////////////////////////////////////////////////////
+
+    if ($action === 'request_password_reset'){
+        /**
+         * on recupere et on nettoie l'adresse envoyé par le formulaire.
+         * trim() est parfait pour ca 
+         */
+        $resetEmail = trim($_POST['email'] ?? '');
+
+        /**
+         * tout les message doivent etre securisé comme par exemple 
+         * - compte trouvé 
+         * -compte inexistant 
+         * -delai non terminé
+         * 
+         * on evite de reveler des information a traver les messages
+         * j'opte pour une version generique qui englobe tout les cas 
+         */
+
+    $passwordResetMessage = 
+                'un lien a été adresser a l\'adresse fourni, si un compte y a été associé';
+    
+
+    /**
+     * Meme si le navigateur possede type = email on verifie encore via le serveur 
+     */
+
+    if (filter_var($resetEmail, FILTER_VALIDATE_EMAIL)) {
+
+        //Recherche uniquement les info necessaire en BBD 
+        $stmt = $pdo -> prepare("
+        SELECT
+        ID,
+        email,
+        nom,
+        prenom,
+        password_reset_sent_at
+        FROM users
+        WHERE email = :email
+        LIMIT 1
+        ");
+
+    $stmt->execute([
+        'email' => $resetEmail
+    ]);
+
+    $resetUser = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    /**
+     * une fois le compte verifier on peux continuer vers la demande de mot de passe
+     * 
+     */
+    
+    if($resetUser){
+        /**
+         * strtotime() transforme la date Mysql en timestamp.
+         * 
+         * si aucune demande n'as encore ete faite on utilise false pour
+         * autorisé l'envoie immediatement
+         * 
+         */
+        $lastResetSentTimestamp = 
+        !empty($resetUser['password_reset_sent_at'])
+        ? strtotime($resetUser['password_reset_sent_at'])
+        :false;
+
+        /**
+         * une nouvelle generation de lien sera autorisé si 
+         * aucune demande precedente 
+         * + de 60 seconde ecoulées
+         */
+
+        $resetAllowed = 
+        $lastResetSentTimestamp === false
+        || (time() - $lastResetSentTimestamp) >= 60;
+
+        if ($resetAllowed){
+            /**
+             * genere
+             * le jeton
+             * son hash
+             * sa date d'expiration
+             * sa date d'envoie 
+             * 
+             */
+
+            $passwordReset = generatePasswordResetToken();
+
+            /**
+             * seul le hash sera enregistrer
+             * le veritable jeton servira plus tard pour 
+             * le lienle lien dans le mail 
+             */
+            $stmt = $pdo ->prepare("
+            UPDATE users
+            SET
+                password_reset_token_hash = :token_hash,
+                password_reset_expires_at = :expires_at,
+                password_reset_sent_at = :sent_at
+            WHERE ID = :id
+            ");
+
+            $stmt-> execute([
+                'token_hash' => $passwordReset['token_hash'],
+                'expires_at' => $passwordReset['expires_at'],
+                'sent_at' => $passwordReset['sent_at'],
+                'id' => $resetUser['ID']
+            ]);
+
+            /**
+             * Recupere l'adresse principale du site depuis le .env 
+             * rtrim() evite d'obtenir "/" en double lors de la construction du lien 
+             * 
+             */
+        
+            $appUrl = rtrim($_ENV['APP_URL']?? '', '/');
+
+            if ($appUrl === ''){
+                /**
+                 * cette erreur est enregistrée dans les logs du serveur.
+                 * Elle ne revele aucun detail a users
+                 */
+
+                error_log(
+                    'Impossible d\'envoyer le mail de réinitialisation : APP_URL est absente'
+                );
+            }else {
+                /**
+                 * contruction le lien recu dans le mail 
+                 * 
+                 * Important:
+                 * on place le veritable jeton dans le lien 
+                 */
+
+                $resetLink = 
+                $appUrl
+                .'/index.php?password_reset=change&token='
+                .rawurlencode($passwordReset['token']);
+
+                /**
+                 * Nom complet affiché par le logiciel de messagerie 
+                 */
+                $resetRecipientName = trim(
+                    $resetUser['prenom'] . ' ' . $resetUser['nom']
+                );
+                /**
+                 * Protection des valeurs qui seront insérée dans le HTML.
+                 * 
+                 */
+                $resetSafeFirstName = htmlspecialchars(
+                    $resetUser['prenom'],
+                    ENT_QUOTES,
+                    'UTF-8'
+                );
+
+                $resetSafeLink = htmlspecialchars(
+                    $resetLink,
+                    ENT_QUOTES,
+                    'UTF-8'
+                );
+
+                $resetSubject = 
+                'Réinitialisation de votre mot de passe - Vite est gourmand';
+
+                /**
+                 * Version HTML du message 
+                 * 
+                 */
+
+                $resetHtmlContent = "
+                <h1>Réinitialisation du mot de passe </h1>
+
+                <p> Bonjour {$resetSafeFirstName},</p>
+
+                <p>
+                    Une demande de réinitialisation a été éffectuée
+                    pour votre compte Vite & Gourmand.
+                </p>
+
+                <p>
+                    <a href=\"{$resetSafeLink}\">
+                    Choisir un nouveau mot de passe 
+                    </a>
+                </p>
+
+                <p>
+                    Ce lien expirera dans 30 Minutes 
+                </p>
+
+                <p> 
+                Si vous n'etes pas a l'origine de cette demande veuillez ignorez ce message 
+                </p> 
+                ";
+
+                $resetTextContent = 
+                " Bonjour {$resetSafeFirstName},\n\n" . 
+                "Une demande de réinitialisation a été éffectuée pour votre compte Vite & Gourmand.\n\n" . 
+                "utliser le lien pour choisir un nouveau mot de passe :\n" . 
+                $resetLink . "\n\n" . 
+                "ce lien expiera dans 30 minutes. \n\n" . 
+                "si vous n'etes pas a l'origine de cette demande," . 
+                "Ignorez ce message0.";
+
+                /**
+                 * sendMail() renvoie true ou false 
+                 * elle journalise si ll'envoie echoue
+                 */
+
+                sendMail(
+                    $resetUser['email'],
+                    $resetRecipientName,
+                    $resetSubject,
+                    $resetHtmlContent,
+                    $resetTextContent
+                );
+
+            }
+            }
+    }
+
+    }
+    }
+
+
+
+    ////////////////////////////////////////////////////////////////////
     //                  RENVOIE DU CODE EMAIL                         //
     ////////////////////////////////////////////////////////////////////
 
