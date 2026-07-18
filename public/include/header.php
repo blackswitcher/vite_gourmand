@@ -22,8 +22,8 @@ require_once __DIR__ . '/../../src/configs/session.php';
                     <?php if ($_SESSION['user']['role'] === 'client'): ?>
                         <li><a class="navBouton" href="/pages/user.php">Mon Profil</a></li>
                     <?php elseif (
-                        // pas obligatoire mais par precaution dans l'hypothese ou on rajoute un role car pour l'instant si c'est pas client c'est forcement un employe ou un admin 
-                        //simple verification supplementaire 
+                        // pas obligatoire mais par precaution dans l'hypothese ou on rajoute un role car pour l'instant si c'est pas client c'est forcement un employe ou un admin
+                        //simple verification supplementaire
                         $_SESSION['user']['role'] === 'admin' ||
                         $_SESSION['user']['role'] === 'employe'
                     ): ?>
@@ -63,10 +63,11 @@ require_once __DIR__ . '/../../src/configs/session.php';
                                     PHP utilisera ce parametre pour ouvrir automatiquement
                                     le modal de demande de reinitialisation -->
                                     <a href="/index.php?password_reset=request" class="forgot_password_link">
+
                                     Mot de passe oublié ?
                                     </a>
                             <!------------------------------FORMULAIRE D INSCRIPTION CACHER AU DERPART-------------------->
-                            <div class="inscription hidden">
+                            <div class="inscription hidde n">
                                 <div class="formulaire">
                                     <label for="MDPVerif">Vérification mot de passe</label>
                                     <input id="MDPVerif" type="password" name="MDPVerif">
@@ -105,22 +106,22 @@ require_once __DIR__ . '/../../src/configs/session.php';
     <?php /**
      *Le modal sera ouvert uniquement si l'url contient:
      * ?password_reset=request
-     */ 
+     */
     $openPasswordResetRequest =
     ($_GET['password_reset'] ?? '') === 'request';
     ?>
-    <div 
+    <div
     id="passwordResetRequestOverlay"
     class="modal_overlay <?php echo $openPasswordResetRequest ? '' : 'hidden'; ?>">
 <div class="connexion_content password_reset_content">
     <section class="section_formulaire">
         <div class="container_formulaire">
-            <h2>Mot de passe oublié</h2>
+            <h2>Changer mon mot de passe</h2>
             <p>
                 Indiquez votre adresse mail.
             </p>
-            <form 
-            action="/index.php?password_reset=request" 
+            <form
+            action="/index.php?password_reset=request"
             method="POST">
                     <!--permettra a index.php d'identifier cette demande -->
                     <input type="hidden"
@@ -130,7 +131,7 @@ require_once __DIR__ . '/../../src/configs/session.php';
                                 <label for="passwordResetEmail">
                                     Adresse mail
                                 </label>
-                                <input 
+                                <input
                                 type="email"
                                 id="passwordResetEmail"
                                 name="email"
@@ -153,6 +154,110 @@ require_once __DIR__ . '/../../src/configs/session.php';
 
 </div>
 </div>
+<!---
+Ce modal existe uniquement lorsque user viens depuis le lien reinitialisation
+-->
+
+<?php
+if (!empty($passwordResetChangeRequested)):
+?>
+<div id="passwordResetChangeOverlay" class="modal_overlay">
+    <div class="connexion_content password_reset_content">
+        <section class="section_formulaire">
+            <div class="container_formulaire">
+                <?php if($passwordResetTokenValid):?>
+                    <h2>Choisir votre nouveau mot de passe </h2>
+                    <p>
+                        veuillez definir votre nouveau mot de passe.
+                    </p>
+
+                    <?php if (!empty($passwordResetFormError)):?>
+                        <p class="verification_error">
+                            <?php
+                            // Protection obligatoire avant l'affichage HTML reflexe a avoir
+                            echo htmlspecialchars(
+                                $passwordResetFormError,
+                                ENT_QUOTES,
+                                'UTF-8'
+                            );
+                            ?>
+                        </p>
+                        <?php endif; ?>
+                    <form
+                    action="/index.php?password_reset=change&amp;token=<?php
+                    echo rawurlencode($passwordResetToken);?>"
+                    method="POST">
+                <!--indique a index quelle action traiter -->
+                <input type="hidden"
+                name="action"
+                value="change_password">
+                <!--Le jeton est renvoyé au serveur
+                double verification de PHP un champs caché peut etre modifier par users-->
+                <input
+                type="hidden"
+                name="password_reset_token"
+                value="<?php echo htmlspecialchars(
+                    $passwordResetToken,
+                    ENT_QUOTES,
+                    'UTF-8'
+                ); ?>">
+                <div class="formulaire">
+                    <label for="newPassword">
+                        Nouveau mot de passe
+                    </label>
+
+                    <input
+                    id="newPassword"
+                    type="password"
+                    name="new_password"
+                    autocomplete="new-password"
+                    minlength="12"
+                    maxlength="255"
+                    required>
+
+                    <label for="newPasswordConfirmation">
+                        Confirmer le nouveau mot de passe
+                    </label>
+                    <input
+                    id="newPasswordConfirmation"
+                    type="password"
+                    name="new_password_confirmation"
+                    autocomplete="new-password"
+                    minlength="12"
+                    maxlentgh="255"
+                    required>
+                </div>
+                <div class="submitBtn">
+                    <button type="submit">
+                        Enregistrer mon nouveau mot de passe
+                    </button>
+                </div>
+                    </form>
+                    <?php else: ?>
+                        <!--
+                        Aucun formulaire n'est affiché lorsque le jeton est inconnu
+                        incorrect ou expiré --->
+                        <p class="verification_error">
+                            <?php
+                            echo htmlspecialchars(
+                            $passwordResetTokenError,
+                            ENT_QUOTES,
+                            'UTF-8'
+                            ); ?>
+                        </p>
+                        <a href="/index.php?password_reset=request" class="forgot_password_link">
+                            Demander un nouveau lien
+                        </a>
+                        <?php endif;?>
+            </div>
+        </section>
+        <div class="fermetureOverlay">
+                    <!--Revenir a l'accueil retire le jeton a l'adresse-->
+                    <a href="/index.php" class="modal_close" aria-label="Fermer">X</a>
+        </div>
+    </div>
+</div>
+<?php endif;?>
     <?php
 
     //le modal existe seulement lorqu'une inscription attend une confirmation
@@ -195,7 +300,7 @@ require_once __DIR__ . '/../../src/configs/session.php';
 
                         <p>
                             <?php
-                            //Protection obligatoire avant l'affichage HTML 
+                            //Protection obligatoire avant l'affichage HTML
                             echo htmlspecialchars(
                                 $_SESSION['pending_verification_email'],
                                 ENT_QUOTES,
@@ -248,7 +353,7 @@ require_once __DIR__ . '/../../src/configs/session.php';
                                     type="hidden"
                                     name="action"
                                     value="resend_verification_code">
-                                <!--Javascript retirera disabled apres le delai visuel 
+                                <!--Javascript retirera disabled apres le delai visuel
                         PHP verifiera quand meme les 30 sec coté serveur -->
                                 <button
                                     id="resendVerificationCode"

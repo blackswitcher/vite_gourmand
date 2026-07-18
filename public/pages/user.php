@@ -1,12 +1,12 @@
 <?php
-// connexion a la BDD 
+// connexion a la BDD
 
 require_once __DIR__ . '/../../src/configs/db.php';
 
-// on charge la session ^^ 
+// on charge la session ^^
 require_once __DIR__ . '/../../src/configs/session.php';
 
-// on charge les functions 
+// on charge les functions
 require_once __DIR__ . '/../../src/functions/functions.php';
 
 if (!isset($_SESSION['user'])) {
@@ -16,13 +16,13 @@ if (!isset($_SESSION['user'])) {
 //on recupere les données de l'utilisateur
 $user = $_SESSION['user'];
 
-// je prepare un tableau vide pour recuperer l'historique de commande 
+// je prepare un tableau vide pour recuperer l'historique de commande
 
 $commandeUtilisateur = [];
 
-// je dois recupere plusieur table dans ma requete commande/avis 
+// je dois recupere plusieur table dans ma requete commande/avis
 $stmt = $pdo->prepare("
-    SELECT 
+    SELECT
         commande.ID,
         commande.date_creation,
         commande.statut,
@@ -39,7 +39,7 @@ $stmt->execute([
     'user_id' => $user['ID']
 ]);
 
-// on les places dans le tableau fait plus haut 
+// on les places dans le tableau fait plus haut
 $commandeUtilisateur = $stmt->fetchAll();
 
 //il me faut un tableau pour gerer les different etat qui se trouve dans functions
@@ -49,11 +49,11 @@ $libellesStatuts = getLibellesStatutsCommande();
 //                             AJOUT D'UN AVIS                                    //
 ////////////////////////////////////////////////////////////////////////////////////
 
-// on charge ca si le form du modal a ete envoyé 
+// on charge ca si le form du modal a ete envoyé
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_avis'])) {
 
-    // on recupere les données du formulaire 
+    // on recupere les données du formulaire
     $commandeId = (int) ($_POST['commande_id'] ?? 0);
     $note = (int) ($_POST['note'] ?? 0);
     $commentaire = trim($_POST['commentaire'] ?? '');
@@ -62,9 +62,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_avis'])) {
     // on verifie que les champs principaux sont bien remplis
     if ($commandeId > 0 && $note >= 1 && $note <= 5 && !empty($commentaire)) {
 
-        // on verifie que la commande existe bien, 
+        // on verifie que la commande existe bien,
         // qu'elle appartient a l'utilisateur connecte
-        // et quelle est bien en statut terminée 
+        // et quelle est bien en statut terminée
 
         $stmt = $pdo->prepare("
     SELECT ID, statut, user_id
@@ -82,9 +82,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_avis'])) {
 
         // controle de la commande et du statut
         if ($commandeCible && in_array((int) $commandeCible['statut'],[3, 4, 5], true)){
-            // on verifie qu'aucun avis n'existe pas deja pour cette commande 
+            // on verifie qu'aucun avis n'existe pas deja pour cette commande
             $stmt = $pdo->prepare("
-        SELECT ID 
+        SELECT ID
         FROM avis
         WHERE commande_id = :commande_id
         ");
@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_avis'])) {
             $avisExistant = $stmt->fetch();
 
             // si aucun avis n'existe encore,
-            // on peut inserer le nouvel avis 
+            // on peut inserer le nouvel avis
 
             if (!$avisExistant) {
 
@@ -128,7 +128,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_avis'])) {
                 header('Location: user.php');
                 exit();
 
-                // gestion des differentes erreurs 
+                // gestion des differentes erreurs
             } else {
                 $error = 'un avis existe deja pour cette commmande';
             }
@@ -145,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_avis'])) {
 //                          MODIFIER MON PROFIL                                   //
 ////////////////////////////////////////////////////////////////////////////////////
 
-//si le formulaire de modif est envoyé 
+//si le formulaire de modif est envoyé
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_profil'])) {
     $nom = trim($_POST['nom'] ?? '');
     $prenom = trim($_POST['prenom'] ?? '');
@@ -163,7 +163,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_profil'])) {
         !empty($code_postal) &&
         !empty($ville)
     ) {
-        //MAJ Utilisateur 
+        //MAJ Utilisateur
         $stmt = $pdo->prepare("
             UPDATE users
             SET nom =:nom,
@@ -185,15 +185,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_profil'])) {
             'id' => $user['ID']
         ]);
 
-        //on recharge l'utilisateur mis a jour dans la BDD 
+        //on recharge l'utilisateur mis a jour dans la BDD
         $stmt = $pdo->prepare("SELECT * FROM users WHERE ID = :id");
         $stmt->execute(['id' => $user['ID']]);
         $user = $stmt->fetch();
 
-        //Mise a jour de la session 
+        //Mise a jour de la session
         $_SESSION['user'] = $user;
 
-        //on redirige pour revenir en mode normal 
+        //on redirige pour revenir en mode normal
         header('Location: user.php');
         exit();
     } else {
@@ -274,7 +274,7 @@ $modeEdition = isset($_GET['edit']) && $_GET['edit'] == 1;
                                     <td><?php echo number_format((float) $commande['total'], 2, ',', ' '); ?> € </td>
                                     <td><?php
                                         // gestion de la colonnes 'avis' et un seul avis peux etre poser par commande
-                                        //l'avis peut etre poser que si mon client a recu sa commande donc statut terminer        
+                                        //l'avis peut etre poser que si mon client a recu sa commande donc statut terminer
                                         if (in_array((int) $commande['statut'],[3, 4, 5], true) && empty($commande['avis_id'])): ?>
                                             <!--je vais integrer l'id de la commande a mon bouton -->
                                             <button type="button" class="btnAvis" data-commande-id="<?php echo (int) $commande['ID']; ?>">Laisser un avis </button>
@@ -295,16 +295,24 @@ $modeEdition = isset($_GET['edit']) && $_GET['edit'] == 1;
             </section>
             <!--Regroupe les actions et le statut du compte sur une meme ligne-->
                 <div class="profile_actions">
-                    
-                        <a class="button-link btnModifierProfil" 
+
+                        <a class="button-link btnModifierProfil"
                             href="user.php?edit=1">Modifier mes informations
                         </a>
-                    <?php 
+
+                        <!--Le lien reviens a l'accuil avec le parametre deja utilisé par le systeme de reinitialisation
+
+                        je veux afficher direct le modal mot de passe oublié --->
+
+                        <a href="/index.php?password_reset=request" class="button-link btnPasswordReset">
+                            Modifier mon mot de passe
+                        </a>
+                    <?php
                     // je recupere le staut de veif du compte
-                    //si la donnée est absente je considere par securité que le compte n'est pas verifié 
+                    //si la donnée est absente je considere par securité que le compte n'est pas verifié
                     $emailVerified = (int) ($user['email_verified'] ?? 0);?>
-                    <?php if ($emailVerified === 1):  ?> 
-                    <!--Information visuelle uniquement 
+                    <?php if ($emailVerified === 1):  ?>
+                    <!--Information visuelle uniquement
                     pour dire que le compte est verifier-->
                     <span class="account_verified">
                         ✓ Compte validé
@@ -356,7 +364,7 @@ $modeEdition = isset($_GET['edit']) && $_GET['edit'] == 1;
             <h2>Laisser un avis</h2>
 
             <form method="POST" action="">
-                <!--- ce champ caché stockera l'ID de la commande 
+                <!--- ce champ caché stockera l'ID de la commande
             ca vas se remplir au premier clic sur le bouton --->
                 <input type="hidden" name="commande_id" id="commande_id_avis">
                 <div>
