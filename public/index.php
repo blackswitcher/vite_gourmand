@@ -24,7 +24,7 @@ if (isset($_GET['logout'])) {
     exit();
 }
 
-$action="";
+$action = "";
 // recuperation du formulaire connexion et nettoyage de l'entrée
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -107,29 +107,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
-    ////////////////////////////////////////////////////////////////////
-    //                  DEMANDE REINITIALISATION MDP                  //
-    ////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+//                  DEMANDE REINITIALISATION MDP                  //
+////////////////////////////////////////////////////////////////////
 
-    if ($action === 'request_password_reset'){
-        /**
-         * on recupere et on nettoie l'adresse envoyé par le formulaire.
-         * trim() est parfait pour ca
-         */
-        $resetEmail = trim($_POST['email'] ?? '');
+if ($action === 'request_password_reset') {
+    /**
+     * on recupere et on nettoie l'adresse envoyé par le formulaire.
+     * trim() est parfait pour ca
+     */
+    $resetEmail = trim($_POST['email'] ?? '');
 
-        /**
-         * tout les message doivent etre securisé comme par exemple
-         * - compte trouvé
-         * -compte inexistant
-         * -delai non terminé
-         *
-         * on evite de reveler des information a traver les messages
-         * j'opte pour une version generique qui englobe tout les cas
-         */
+    /**
+     * tout les message doivent etre securisé comme par exemple
+     * - compte trouvé
+     * -compte inexistant
+     * -delai non terminé
+     *
+     * on evite de reveler des information a traver les messages
+     * j'opte pour une version generique qui englobe tout les cas
+     */
 
     $passwordResetMessage =
-                'un lien a été adresser a l\'adresse fourni, si un compte y a été associé';
+        'un lien a été adresser a l\'adresse fourni, si un compte y a été associé';
 
 
     /**
@@ -139,7 +139,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (filter_var($resetEmail, FILTER_VALIDATE_EMAIL)) {
 
         //Recherche uniquement les info necessaire en BBD
-        $stmt = $pdo -> prepare("
+        $stmt = $pdo->prepare("
         SELECT
         ID,
         email,
@@ -151,58 +151,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         LIMIT 1
         ");
 
-    $stmt->execute([
-        'email' => $resetEmail
-    ]);
+        $stmt->execute([
+            'email' => $resetEmail
+        ]);
 
-    $resetUser = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    /**
-     * une fois le compte verifier on peux continuer vers la demande de mot de passe
-     *
-     */
-
-    if($resetUser){
-        /**
-         * strtotime() transforme la date Mysql en timestamp.
-         *
-         * si aucune demande n'as encore ete faite on utilise false pour
-         * autorisé l'envoie immediatement
-         *
-         */
-        $lastResetSentTimestamp =
-        !empty($resetUser['password_reset_sent_at'])
-        ? strtotime($resetUser['password_reset_sent_at'])
-        :false;
+        $resetUser = $stmt->fetch(PDO::FETCH_ASSOC);
 
         /**
-         * une nouvelle generation de lien sera autorisé si
-         * aucune demande precedente
-         * + de 60 seconde ecoulées
+         * une fois le compte verifier on peux continuer vers la demande de mot de passe
+         *
          */
 
-        $resetAllowed =
-        $lastResetSentTimestamp === false
-        || (time() - $lastResetSentTimestamp) >= 60;
-
-        if ($resetAllowed){
+        if ($resetUser) {
             /**
-             * genere
-             * le jeton
-             * son hash
-             * sa date d'expiration
-             * sa date d'envoie
+             * strtotime() transforme la date Mysql en timestamp.
+             *
+             * si aucune demande n'as encore ete faite on utilise false pour
+             * autorisé l'envoie immediatement
              *
              */
-
-            $passwordReset = generatePasswordResetToken();
+            $lastResetSentTimestamp =
+                !empty($resetUser['password_reset_sent_at'])
+                ? strtotime($resetUser['password_reset_sent_at'])
+                : false;
 
             /**
-             * seul le hash sera enregistrer
-             * le veritable jeton servira plus tard pour
-             * le lienle lien dans le mail
+             * une nouvelle generation de lien sera autorisé si
+             * aucune demande precedente
+             * + de 60 seconde ecoulées
              */
-            $stmt = $pdo ->prepare("
+
+            $resetAllowed =
+                $lastResetSentTimestamp === false
+                || (time() - $lastResetSentTimestamp) >= 60;
+
+            if ($resetAllowed) {
+                /**
+                 * genere
+                 * le jeton
+                 * son hash
+                 * sa date d'expiration
+                 * sa date d'envoie
+                 *
+                 */
+
+                $passwordReset = generatePasswordResetToken();
+
+                /**
+                 * seul le hash sera enregistrer
+                 * le veritable jeton servira plus tard pour
+                 * le lienle lien dans le mail
+                 */
+                $stmt = $pdo->prepare("
             UPDATE users
             SET
                 password_reset_token_hash = :token_hash,
@@ -211,74 +211,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             WHERE ID = :id
             ");
 
-            $stmt-> execute([
-                'token_hash' => $passwordReset['token_hash'],
-                'expires_at' => $passwordReset['expires_at'],
-                'sent_at' => $passwordReset['sent_at'],
-                'id' => $resetUser['ID']
-            ]);
-
-            /**
-             * Recupere l'adresse principale du site depuis le .env
-             * rtrim() evite d'obtenir "/" en double lors de la construction du lien
-             *
-             */
-
-            $appUrl = rtrim($_ENV['APP_URL']?? '', '/');
-
-            if ($appUrl === ''){
-                /**
-                 * cette erreur est enregistrée dans les logs du serveur.
-                 * Elle ne revele aucun detail a users
-                 */
-
-                error_log(
-                    'Impossible d\'envoyer le mail de réinitialisation : APP_URL est absente'
-                );
-            }else {
-                /**
-                 * contruction le lien recu dans le mail
-                 *
-                 * Important:
-                 * on place le veritable jeton dans le lien
-                 */
-
-                $resetLink =
-                $appUrl
-                .'/index.php?password_reset=change&token='
-                .rawurlencode($passwordReset['token']);
+                $stmt->execute([
+                    'token_hash' => $passwordReset['token_hash'],
+                    'expires_at' => $passwordReset['expires_at'],
+                    'sent_at' => $passwordReset['sent_at'],
+                    'id' => $resetUser['ID']
+                ]);
 
                 /**
-                 * Nom complet affiché par le logiciel de messagerie
-                 */
-                $resetRecipientName = trim(
-                    $resetUser['prenom'] . ' ' . $resetUser['nom']
-                );
-                /**
-                 * Protection des valeurs qui seront insérée dans le HTML.
-                 *
-                 */
-                $resetSafeFirstName = htmlspecialchars(
-                    $resetUser['prenom'],
-                    ENT_QUOTES,
-                    'UTF-8'
-                );
-
-                $resetSafeLink = htmlspecialchars(
-                    $resetLink,
-                    ENT_QUOTES,
-                    'UTF-8'
-                );
-
-                $resetSubject =
-                'Réinitialisation de votre mot de passe - Vite est gourmand';
-
-                /**
-                 * Version HTML du message
+                 * Recupere l'adresse principale du site depuis le .env
+                 * rtrim() evite d'obtenir "/" en double lors de la construction du lien
                  *
                  */
 
-                $resetHtmlContent = "
+                $appUrl = rtrim($_ENV['APP_URL'] ?? '', '/');
+
+                if ($appUrl === '') {
+                    /**
+                     * cette erreur est enregistrée dans les logs du serveur.
+                     * Elle ne revele aucun detail a users
+                     */
+
+                    error_log(
+                        'Impossible d\'envoyer le mail de réinitialisation : APP_URL est absente'
+                    );
+                } else {
+                    /**
+                     * contruction le lien recu dans le mail
+                     *
+                     * Important:
+                     * on place le veritable jeton dans le lien
+                     */
+
+                    $resetLink =
+                        $appUrl
+                        . '/index.php?password_reset=change&token='
+                        . rawurlencode($passwordReset['token']);
+
+                    /**
+                     * Nom complet affiché par le logiciel de messagerie
+                     */
+                    $resetRecipientName = trim(
+                        $resetUser['prenom'] . ' ' . $resetUser['nom']
+                    );
+                    /**
+                     * Protection des valeurs qui seront insérée dans le HTML.
+                     *
+                     */
+                    $resetSafeFirstName = htmlspecialchars(
+                        $resetUser['prenom'],
+                        ENT_QUOTES,
+                        'UTF-8'
+                    );
+
+                    $resetSafeLink = htmlspecialchars(
+                        $resetLink,
+                        ENT_QUOTES,
+                        'UTF-8'
+                    );
+
+                    $resetSubject =
+                        'Réinitialisation de votre mot de passe - Vite est gourmand';
+
+                    /**
+                     * Version HTML du message
+                     *
+                     */
+
+                    $resetHtmlContent = "
                 <h1>Réinitialisation du mot de passe </h1>
 
                 <p> Bonjour {$resetSafeFirstName},</p>
@@ -303,82 +303,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </p>
                 ";
 
-                $resetTextContent =
-                " Bonjour {$resetSafeFirstName},\n\n" .
-                "Une demande de réinitialisation a été éffectuée pour votre compte Vite & Gourmand.\n\n" .
-                "utliser le lien pour choisir un nouveau mot de passe :\n" .
-                $resetLink . "\n\n" .
-                "ce lien expiera dans 30 minutes. \n\n" .
-                "si vous n'etes pas a l'origine de cette demande," .
-                "Ignorez ce message0.";
+                    $resetTextContent =
+                        " Bonjour {$resetSafeFirstName},\n\n" .
+                        "Une demande de réinitialisation a été éffectuée pour votre compte Vite & Gourmand.\n\n" .
+                        "utliser le lien pour choisir un nouveau mot de passe :\n" .
+                        $resetLink . "\n\n" .
+                        "ce lien expiera dans 30 minutes. \n\n" .
+                        "si vous n'etes pas a l'origine de cette demande," .
+                        "Ignorez ce message0.";
 
-                /**
-                 * sendMail() renvoie true ou false
-                 * elle journalise si ll'envoie echoue
-                 */
+                    /**
+                     * sendMail() renvoie true ou false
+                     * elle journalise si ll'envoie echoue
+                     */
 
-                sendMail(
-                    $resetUser['email'],
-                    $resetRecipientName,
-                    $resetSubject,
-                    $resetHtmlContent,
-                    $resetTextContent
-                );
-
+                    sendMail(
+                        $resetUser['email'],
+                        $resetRecipientName,
+                        $resetSubject,
+                        $resetHtmlContent,
+                        $resetTextContent
+                    );
+                }
             }
-            }
+        }
     }
-
-    }
-    }
+}
 ////////////////////////////////////////////////////////////////////////
 //                  CHANGEMENT DE MOT DE PASSE                        //
 ////////////////////////////////////////////////////////////////////////
-if($action === 'change_password'){
+if ($action === 'change_password') {
 
-$newPassword =
-    $_POST['new_password'] ?? '' ;
+    $newPassword =
+        $_POST['new_password'] ?? '';
 
-$newPasswordConfirmation =
-$_POST['new_password_confirmation'] ?? '';
+    $newPasswordConfirmation =
+        $_POST['new_password_confirmation'] ?? '';
 
-// jeton transmis par le champ caché du formulaire
-$submittedResetToken =
-trim($_POST['password_reset_token'] ?? '');
+    // jeton transmis par le champ caché du formulaire
+    $submittedResetToken =
+        trim($_POST['password_reset_token'] ?? '');
 
-$passwordResetFormError = '';
+    $passwordResetFormError = '';
 
-/**
- * premiere protection: controle du format du jeton
- */
-
-if (!preg_match('/^[a-f0-9]{64}$/i', $submittedResetToken)){
-    $passwordResetFormError =
-    'Ce lien de reinitialisation est invalide ou a expiré.';
-
-}elseif($newPassword !== $newPasswordConfirmation){
-    $passwordResetFormError='Les mots de passe ne correspondent pas.';
-}elseif(
-    strlen($newPassword) < 12 ||
-    strlen($newPassword) > 255
-){
     /**
-     *verification realiser coté serveur
-     *
-     *attribut minlength du html ,peut etre contourne :
-     * PHP doit suivre les meme regles
-     */
-    $passwordResetFormError ='Le mot de passe  doit contenir entre 12 et 255 caracteres';
-}else{
-    /**
-     * Reproduction du hash SHA-256 du jeton recu
-     * on comparera a celle enregistree dans password_reset_token_hash
+     * premiere protection: controle du format du jeton
      */
 
-    $submittedResetTokenHash =
-    hash('sha256',$submittedResetToken);
+    if (!preg_match('/^[a-f0-9]{64}$/i', $submittedResetToken)) {
+        $passwordResetFormError =
+            'Ce lien de reinitialisation est invalide ou a expiré.';
+    } elseif ($newPassword !== $newPasswordConfirmation) {
+        $passwordResetFormError = 'Les mots de passe ne correspondent pas.';
+    } elseif (
+        strlen($newPassword) < 12 ||
+        strlen($newPassword) > 255
+    ) {
+        /**
+         *verification realiser coté serveur
+         *
+         *attribut minlength du html ,peut etre contourne :
+         * PHP doit suivre les meme regles
+         */
+        $passwordResetFormError = 'Le mot de passe  doit contenir entre 12 et 255 caracteres';
+    } else {
+        /**
+         * Reproduction du hash SHA-256 du jeton recu
+         * on comparera a celle enregistree dans password_reset_token_hash
+         */
 
-    $stmt=$pdo->prepare("
+        $submittedResetTokenHash =
+            hash('sha256', $submittedResetToken);
+
+        $stmt = $pdo->prepare("
     SELECT
         ID,
         email,
@@ -390,45 +387,45 @@ if (!preg_match('/^[a-f0-9]{64}$/i', $submittedResetToken)){
         LIMIT 1
     ");
 
-    $stmt->execute([
-        'token_hash'=> $submittedResetTokenHash
-    ]);
+        $stmt->execute([
+            'token_hash' => $submittedResetTokenHash
+        ]);
 
-    $resetAccount =
-    $stmt-> fetch(PDO::FETCH_ASSOC);
+        $resetAccount =
+            $stmt->fetch(PDO::FETCH_ASSOC);
 
-    /**
-     * Nouvelle verification au niveau du POST
-     */
+        /**
+         * Nouvelle verification au niveau du POST
+         */
 
-    if(
-        !$resetAccount ||
-        empty($resetAccount['password_reset_expires_at']) ||
-        strtotime($resetAccount['password_reset_expires_at']) <= time()
-    ){
-        $passwordResetFormError =
-        'ce lien de reinitialisation est invalide ou a expiré.';
-        }else {
+        if (
+            !$resetAccount ||
+            empty($resetAccount['password_reset_expires_at']) ||
+            strtotime($resetAccount['password_reset_expires_at']) <= time()
+        ) {
+            $passwordResetFormError =
+                'ce lien de reinitialisation est invalide ou a expiré.';
+        } else {
             /**
              * creation du hash securise du nouveau mot de passe
              */
 
             $newPasswordHash =
-            password_hash($newPassword, PASSWORD_DEFAULT);
+                password_hash($newPassword, PASSWORD_DEFAULT);
 
             //heure calculer via le serveur PHP
             $currentDateTime = date('Y-m-d H:i:s');
 
-        /**
-         * Lupdate effectue quatre operation simultanée
-         *
-         * -remplace le MDP
-         * -supprime le jeton
-         * -supprime son expiration
-         * -supprime la date de demande
-         */
+            /**
+             * Lupdate effectue quatre operation simultanée
+             *
+             * -remplace le MDP
+             * -supprime le jeton
+             * -supprime son expiration
+             * -supprime la date de demande
+             */
 
-        $stmt=$pdo->prepare("
+            $stmt = $pdo->prepare("
         UPDATE users
         SET
             password_hash = :password_hash,
@@ -440,49 +437,49 @@ if (!preg_match('/^[a-f0-9]{64}$/i', $submittedResetToken)){
             AND password_reset_expires_at > :current_time
         ");
 
-        $stmt->execute([
-            'password_hash' => $newPasswordHash,
-            'id' => $resetAccount['ID'],
-            'token_hash' => $submittedResetTokenHash,
-            'current_time' => $currentDateTime
-        ]);
-        /**
-         * une ligne modifier signifie que le compte le jeton et l'expiration
-         * correspondaient encore au moment exact de ma modif
-         */
-
-        if($stmt->rowCount() !==1){
-            $passwordResetFormError =
-            'le mot de passe n\'as pas pu etre modifié. Demandez un nouveau lien.';
-        }else{
-            // message temporaire conservé pour le prochaine affichage0
-            $_SESSION['password_reset_success'] =
-            'votre mot de passe a bien été modifié';
-
+            $stmt->execute([
+                'password_hash' => $newPasswordHash,
+                'id' => $resetAccount['ID'],
+                'token_hash' => $submittedResetTokenHash,
+                'current_time' => $currentDateTime
+            ]);
             /**
-             * on termine avec une redirection propre pour ne pas avoir besoin de recharger la page
-             *
+             * une ligne modifier signifie que le compte le jeton et l'expiration
+             * correspondaient encore au moment exact de ma modif
              */
-            header('Location: /index.php?password_reset=success');
-            exit();
+
+            if ($stmt->rowCount() !== 1) {
+                $passwordResetFormError =
+                    'le mot de passe n\'as pas pu etre modifié. Demandez un nouveau lien.';
+            } else {
+                // message temporaire conservé pour le prochaine affichage0
+                $_SESSION['password_reset_success'] =
+                    'votre mot de passe a bien été modifié';
+
+                /**
+                 * on termine avec une redirection propre pour ne pas avoir besoin de recharger la page
+                 *
+                 */
+                header('Location: /index.php?password_reset=success');
+                exit();
             }
         }
+    }
 }
-}
 
-    ////////////////////////////////////////////////////////////////////
-    //                  RENVOIE DU CODE EMAIL                         //
-    ////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+//                  RENVOIE DU CODE EMAIL                         //
+////////////////////////////////////////////////////////////////////
 
-    if ($action === 'resend_verification_code') {
-        //Adresse conservé dans la session d'inscription en attente
-        $pendingEmail = $_SESSION['pending_verification_email'] ?? '';
+if ($action === 'resend_verification_code') {
+    //Adresse conservé dans la session d'inscription en attente
+    $pendingEmail = $_SESSION['pending_verification_email'] ?? '';
 
-        if ($pendingEmail === '') {
-            $error = 'Aucune vérification de compte n\'est en cours. ';
-        } else {
-            // on recupere le compte et l'heure du dernier envoi.
-            $stmt = $pdo->prepare("
+    if ($pendingEmail === '') {
+        $error = 'Aucune vérification de compte n\'est en cours. ';
+    } else {
+        // on recupere le compte et l'heure du dernier envoi.
+        $stmt = $pdo->prepare("
             SELECT
             ID,
                 email,
@@ -495,44 +492,44 @@ if (!preg_match('/^[a-f0-9]{64}$/i', $submittedResetToken)){
             LIMIT 1
             ");
 
-            $stmt->execute([
-                'email' => $pendingEmail
-            ]);
+        $stmt->execute([
+            'email' => $pendingEmail
+        ]);
 
-            $pendingUser = $stmt->fetch(PDO::FETCH_ASSOC);
-            if (!$pendingUser) {
-                $error = 'Le compte en attente est introuvable.';
-            } elseif ((int) $pendingUser['email_verified'] === 1) {
-                $error = 'Cette adresse mail est déjà confirmée';
+        $pendingUser = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$pendingUser) {
+            $error = 'Le compte en attente est introuvable.';
+        } elseif ((int) $pendingUser['email_verified'] === 1) {
+            $error = 'Cette adresse mail est déjà confirmée';
+        } else {
+            //transforme la derniere date MySQL en timestamp
+            //si aucune date n'existe, on utilise ZERO
+            $lastSentTimestamp = !empty($pendingUser['verification_code_sent_at'])
+                ? strtotime($pendingUser['verification_code_sent_at'])
+                : 0;
+
+            //Calcule le nombre de seconde restant avant un renvoie
+            $remainingSeconds =
+                30 - (time() - (int)$lastSentTimestamp);
+
+            if ($remainingSeconds > 0) {
+                $error =
+                    'veuillez patienter encore' .
+                    $remainingSeconds .
+                    'seconde(s) avant de demander un nouveau code.';
             } else {
-                //transforme la derniere date MySQL en timestamp
-                //si aucune date n'existe, on utilise ZERO
-                $lastSentTimestamp = !empty($pendingUser['verification_code_sent_at'])
-                    ? strtotime($pendingUser['verification_code_sent_at'])
-                    : 0;
+                //reutilise la fonction commune :
+                //nouveau code, nouveau hash et nouvelles dates.
+                $verification = generateEmailVerificationCode();
 
-                //Calcule le nombre de seconde restant avant un renvoie
-                $remainingSeconds =
-                    30 - (time() - (int)$lastSentTimestamp);
+                $newCode = $verification['code'];
+                $newCodeHash = $verification['hash'];
+                $newCodeExpiresAt = $verification['expires_at'];
+                $newCodeSentAt = $verification['sent_at'];
 
-                if ($remainingSeconds > 0) {
-                    $error =
-                        'veuillez patienter encore' .
-                        $remainingSeconds .
-                        'seconde(s) avant de demander un nouveau code.';
-                } else {
-                    //reutilise la fonction commune :
-                    //nouveau code, nouveau hash et nouvelles dates.
-                    $verification = generateEmailVerificationCode();
-
-                    $newCode = $verification['code'];
-                    $newCodeHash = $verification['hash'];
-                    $newCodeExpiresAt = $verification['expires_at'];
-                    $newCodeSentAt = $verification['sent_at'];
-
-                    //l'ancien code est remplacé :
-                    //il ne pourra donc plus etre utilisé
-                    $stmt = $pdo->prepare("
+                //l'ancien code est remplacé :
+                //il ne pourra donc plus etre utilisé
+                $stmt = $pdo->prepare("
                     UPDATE users
                     SET verification_code_hash = :code_hash,
                         verification_code_expires_at = :expires_at,
@@ -540,29 +537,29 @@ if (!preg_match('/^[a-f0-9]{64}$/i', $submittedResetToken)){
                     WHERE ID = :id
                     AND email_verified = 0
                     ");
-                    $stmt->execute([
-                        'code_hash' => $newCodeHash,
-                        'expires_at' => $newCodeExpiresAt,
-                        'sent_at' => $newCodeSentAt,
-                        'id' => $pendingUser['ID']
-                    ]);
+                $stmt->execute([
+                    'code_hash' => $newCodeHash,
+                    'expires_at' => $newCodeExpiresAt,
+                    'sent_at' => $newCodeSentAt,
+                    'id' => $pendingUser['ID']
+                ]);
 
-                    //Protection du prenom avant son inserton en HTML
-                    $safeFirstName = htmlspecialchars(
-                        $pendingUser['prenom'],
-                        ENT_QUOTES,
-                        'UTF-8'
-                    );
+                //Protection du prenom avant son inserton en HTML
+                $safeFirstName = htmlspecialchars(
+                    $pendingUser['prenom'],
+                    ENT_QUOTES,
+                    'UTF-8'
+                );
 
-                    $recipientName = trim(
-                        $pendingUser['prenom'] . ' ' .
-                            $pendingUser['nom']
-                    );
+                $recipientName = trim(
+                    $pendingUser['prenom'] . ' ' .
+                        $pendingUser['nom']
+                );
 
-                    $subject =
-                        'Votre nouveau code de verification - Vite & gourmand';
+                $subject =
+                    'Votre nouveau code de verification - Vite & gourmand';
 
-                    $htmlContent = "
+                $htmlContent = "
                     <h1> Nouveau Code de verification </h1>
 
                     <p> Bonjour {$safeFirstName}, </p>
@@ -574,89 +571,89 @@ if (!preg_match('/^[a-f0-9]{64}$/i', $submittedResetToken)){
                     <p> Ce code est valable pendant 15 minutes </p>
                     ";
 
-                    $textContent =
-                        "Bonjour {$pendingUser['prenom']},\n\n" .
-                        "Votre nouveau code est {$newCode}\n" .
-                        "Ce code est valable pendant 15 minutes.";
+                $textContent =
+                    "Bonjour {$pendingUser['prenom']},\n\n" .
+                    "Votre nouveau code est {$newCode}\n" .
+                    "Ce code est valable pendant 15 minutes.";
 
-                    $mailSent = sendMail(
-                        $pendingUser['email'],
-                        $recipientName,
-                        $subject,
-                        $htmlContent,
-                        $textContent
-                    );
+                $mailSent = sendMail(
+                    $pendingUser['email'],
+                    $recipientName,
+                    $subject,
+                    $htmlContent,
+                    $textContent
+                );
 
-                    if ($mailSent) {
-                        $verificationMessage =
-                            'Un nouveau code vient de vous etre envoyé.';
-                    } else {
-                        $error =
-                            'Le nouveau code a été créé, mais le mail n\'a pu être envoyé.';
-                    }
+                if ($mailSent) {
+                    $verificationMessage =
+                        'Un nouveau code vient de vous etre envoyé.';
+                } else {
+                    $error =
+                        'Le nouveau code a été créé, mais le mail n\'a pu être envoyé.';
                 }
             }
         }
     }
+}
 
-    ////////////////////////////////////////////////////////////////////
-    //                  VALIDATION DU CODE EMAIL                      //
-    ////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////
+//                  VALIDATION DU CODE EMAIL                      //
+////////////////////////////////////////////////////////////////////
 
-    if ($action === 'verify_email_code') {
+if ($action === 'verify_email_code') {
 
-        //code envoyé par le formulaire du modal
-        $submittedCode = trim($_POST['verification_code'] ?? '');
+    //code envoyé par le formulaire du modal
+    $submittedCode = trim($_POST['verification_code'] ?? '');
 
-        //Adresse conservée temporairement apres l'inscription
-        $pendingEmail = $_SESSION['pending_verification_email'] ?? '';
+    //Adresse conservée temporairement apres l'inscription
+    $pendingEmail = $_SESSION['pending_verification_email'] ?? '';
 
-        //Sans cette session, on ne sait pas quel compte doit etre confirmé
-        if ($pendingEmail === '') {
-            $error = 'Aucune vérification est en cours.';
+    //Sans cette session, on ne sait pas quel compte doit etre confirmé
+    if ($pendingEmail === '') {
+        $error = 'Aucune vérification est en cours.';
 
-            //le navigateur effectue deja ce controle
-            //mais PHP doit egalement le faire pour des question de sécurité
+        //le navigateur effectue deja ce controle
+        //mais PHP doit egalement le faire pour des question de sécurité
 
-        } elseif (!preg_match('/^[0-9]{6}$/', $submittedCode)) {
-            $error = 'Le code doit contenir exactement six chiffres.';
-        } else {
-            // Recherche uniquement le compte associé a la session actuelle.
-            $stmt = $pdo->prepare("
+    } elseif (!preg_match('/^[0-9]{6}$/', $submittedCode)) {
+        $error = 'Le code doit contenir exactement six chiffres.';
+    } else {
+        // Recherche uniquement le compte associé a la session actuelle.
+        $stmt = $pdo->prepare("
             SELECT *
             FROM users
             WHERE email = :email
             AND email_verified = 0
             ");
 
-            $stmt->execute([
-                'email' => $pendingEmail
-            ]);
-            $pendingUser = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt->execute([
+            'email' => $pendingEmail
+        ]);
+        $pendingUser = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if (!$pendingUser) {
-                $error = 'Ce compte est introuvable ou déjà confirmé';
-            } elseif (
-                empty($pendingUser['verification_code_hash']) ||
-                empty($pendingUser['verification_code_expires_at'])
-            ) {
-                $error = 'Aucun code de vérification valide n\'est disponible';
-                //strtotime() transforme la date MySQL en nombre comparable a time
-            } elseif (
-                strtotime($pendingUser['verification_code_expires_at']) < time()
-            ) {
-                $error = 'ce code a expiré. Demandez un nouveau code ';
-            } elseif (
-                !password_verify(
-                    $submittedCode,
-                    $pendingUser['verification_code_hash']
-                )
-            ) {
-                $error = 'le code saisi est incorrect.';
-            } else {
-                //le code est code et encore valide
-                //le compteur devient officiellement confirmé
-                $stmt = $pdo->prepare("
+        if (!$pendingUser) {
+            $error = 'Ce compte est introuvable ou déjà confirmé';
+        } elseif (
+            empty($pendingUser['verification_code_hash']) ||
+            empty($pendingUser['verification_code_expires_at'])
+        ) {
+            $error = 'Aucun code de vérification valide n\'est disponible';
+            //strtotime() transforme la date MySQL en nombre comparable a time
+        } elseif (
+            strtotime($pendingUser['verification_code_expires_at']) < time()
+        ) {
+            $error = 'ce code a expiré. Demandez un nouveau code ';
+        } elseif (
+            !password_verify(
+                $submittedCode,
+                $pendingUser['verification_code_hash']
+            )
+        ) {
+            $error = 'le code saisi est incorrect.';
+        } else {
+            //le code est code et encore valide
+            //le compteur devient officiellement confirmé
+            $stmt = $pdo->prepare("
                     UPDATE users
                     SET email_verified = 1,
                         verification_code_hash = NULL,
@@ -665,37 +662,37 @@ if (!preg_match('/^[a-f0-9]{64}$/i', $submittedResetToken)){
                     WHERE ID = :id
                 ");
 
-                $stmt->execute([
-                    'id' => $pendingUser['ID']
-                ]);
-                // on recharge apres la mise a jour
-                $stmt = $pdo->prepare("
+            $stmt->execute([
+                'id' => $pendingUser['ID']
+            ]);
+            // on recharge apres la mise a jour
+            $stmt = $pdo->prepare("
                 SELECT *
                 FROM users
                 WHERE ID = :id
                 ");
 
-                $stmt->execute([
-                    "id" => $pendingUser['ID']
-                ]);
+            $stmt->execute([
+                "id" => $pendingUser['ID']
+            ]);
 
-                $verifiedUser = $stmt->fetch(PDO::FETCH_ASSOC);
+            $verifiedUser = $stmt->fetch(PDO::FETCH_ASSOC);
 
-                $welcomeRecipientName = trim(
-                    $verifiedUser['prenom'] . ' ' . $verifiedUser['nom']
-                );
+            $welcomeRecipientName = trim(
+                $verifiedUser['prenom'] . ' ' . $verifiedUser['nom']
+            );
 
-                //protege le prenom avant son insertion en HTML
-                $welcomeSafeFirstName = htmlspecialchars(
-                    $verifiedUser['prenom'],
-                    ENT_QUOTES,
-                    'UTF-8'
-                );
+            //protege le prenom avant son insertion en HTML
+            $welcomeSafeFirstName = htmlspecialchars(
+                $verifiedUser['prenom'],
+                ENT_QUOTES,
+                'UTF-8'
+            );
 
-                //contenus propre du mail de bienvenue.
-                $welcomeSubject = 'Bienvenue chez Vite & Gourmand';
+            //contenus propre du mail de bienvenue.
+            $welcomeSubject = 'Bienvenue chez Vite & Gourmand';
 
-                $welcomeHtmlContent = "
+            $welcomeHtmlContent = "
                     <h1>Bienvenue chez Vite & Gourmand</h1>
 
                     <p> Bonjour {$welcomeSafeFirstName},</p>
@@ -708,87 +705,87 @@ if (!preg_match('/^[a-f0-9]{64}$/i', $submittedResetToken)){
                     </p>
                 ";
 
-                $welcomeTextContent =
-                    "Bonjour {$verifiedUser['prenom']}, \n\n " .
-                    "Votre adresse mail est maintenant confirmée" .
-                    "Votre compte est desormais actif vous pouvez profiter de tous les
+            $welcomeTextContent =
+                "Bonjour {$verifiedUser['prenom']}, \n\n " .
+                "Votre adresse mail est maintenant confirmée" .
+                "Votre compte est desormais actif vous pouvez profiter de tous les
                 services et ne tardez pas a decouvrir notre recette gourmande.
                 ";
 
-                // un echec du mail de bienvenue ne doit pas annuler la confirmation de compte
-                // ni la connexion du compte
-                sendMail(
-                    $verifiedUser['email'],
-                    $welcomeRecipientName,
-                    $welcomeSubject,
-                    $welcomeHtmlContent,
-                    $welcomeTextContent
-                );
+            // un echec du mail de bienvenue ne doit pas annuler la confirmation de compte
+            // ni la connexion du compte
+            sendMail(
+                $verifiedUser['email'],
+                $welcomeRecipientName,
+                $welcomeSubject,
+                $welcomeHtmlContent,
+                $welcomeTextContent
+            );
 
-                //Renouvelle l'id de la session avant la connexion
-                session_regenerate_id(true);
+            //Renouvelle l'id de la session avant la connexion
+            session_regenerate_id(true);
 
-                //le compte est maintenant autorisé à etre connecté
-                $_SESSION['user'] = $verifiedUser;
+            //le compte est maintenant autorisé à etre connecté
+            $_SESSION['user'] = $verifiedUser;
 
-                //cette donnée temporaire n'est plus nécéssaire
-                unset($_SESSION['pending_verification_email']);
+            //cette donnée temporaire n'est plus nécéssaire
+            unset($_SESSION['pending_verification_email']);
 
-                header('Location: /index.php?verification=success');
-                exit();
-            }
+            header('Location: /index.php?verification=success');
+            exit();
         }
     }
+}
 
-    if ($action === 'inscription') {
-        $email = trim($_POST['email'] ?? '');
-        $mdp = trim($_POST['MDP'] ?? '');
-        $mdpVerif = trim($_POST['MDPVerif'] ?? '');
-        $rue = trim($_POST['rue'] ?? '');
-        $code_postal = trim($_POST['code_postal'] ?? '');
-        $ville = trim($_POST['ville'] ?? '');
-        $nom = trim($_POST['nom'] ?? '');
-        $prenom = trim($_POST['prenom'] ?? '');
-        $telephone = trim($_POST['telephone'] ?? '');
+if ($action === 'inscription') {
+    $email = trim($_POST['email'] ?? '');
+    $mdp = trim($_POST['MDP'] ?? '');
+    $mdpVerif = trim($_POST['MDPVerif'] ?? '');
+    $rue = trim($_POST['rue'] ?? '');
+    $code_postal = trim($_POST['code_postal'] ?? '');
+    $ville = trim($_POST['ville'] ?? '');
+    $nom = trim($_POST['nom'] ?? '');
+    $prenom = trim($_POST['prenom'] ?? '');
+    $telephone = trim($_POST['telephone'] ?? '');
 
-        if (
-            empty($email) ||
-            empty($mdp) ||
-            empty($mdpVerif) ||
-            empty($rue) ||
-            empty($code_postal) ||
-            empty($ville) ||
-            empty($nom) ||
-            empty($prenom) ||
-            empty($telephone)
-        ) {
-            $error = 'Tous les champs sont obligatoire.';
-        } elseif ($mdp !== $mdpVerif) {
-            $error = 'Les mots de passes ne correspondent pas.';
+    if (
+        empty($email) ||
+        empty($mdp) ||
+        empty($mdpVerif) ||
+        empty($rue) ||
+        empty($code_postal) ||
+        empty($ville) ||
+        empty($nom) ||
+        empty($prenom) ||
+        empty($telephone)
+    ) {
+        $error = 'Tous les champs sont obligatoire.';
+    } elseif ($mdp !== $mdpVerif) {
+        $error = 'Les mots de passes ne correspondent pas.';
+    } else {
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE email = :email");
+        $stmt->execute(['email' => $email]);
+        $usersExist = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($usersExist) {
+            $error = 'cet email est déjà utilisé.';
         } else {
-            $stmt = $pdo->prepare("SELECT * FROM users WHERE email = :email");
-            $stmt->execute(['email' => $email]);
-            $usersExist = $stmt->fetch(PDO::FETCH_ASSOC);
+            $passwordHash = password_hash($mdp, PASSWORD_DEFAULT);
+            // genere le code, son hash et son expiration grace a la focntion commune
+            $verification = generateEmailVerificationCode();
 
-            if ($usersExist) {
-                $error = 'cet email est déjà utilisé.';
-            } else {
-                $passwordHash = password_hash($mdp, PASSWORD_DEFAULT);
-                // genere le code, son hash et son expiration grace a la focntion commune
-                $verification = generateEmailVerificationCode();
+            //code lisible: il servira pour le code du mail
+            $verificationCode = $verification['code'];
 
-                //code lisible: il servira pour le code du mail
-                $verificationCode = $verification['code'];
+            //hash sécurisé , ils era enregistrer en BDD
+            $verificationCodeHash = $verification['hash'];
 
-                //hash sécurisé , ils era enregistrer en BDD
-                $verificationCodeHash = $verification['hash'];
+            //Date d'expiration aussi enregistrer
+            $verificationCodeExpiresAt = $verification['expires_at'];
 
-                //Date d'expiration aussi enregistrer
-                $verificationCodeExpiresAt = $verification['expires_at'];
-
-                //Date utilisée pour empeche un renvoie avant 30 secondes.
-                $verificationCodeSentAt = $verification['sent_at'];
-                $stmt = $pdo->prepare("
+            //Date utilisée pour empeche un renvoie avant 30 secondes.
+            $verificationCodeSentAt = $verification['sent_at'];
+            $stmt = $pdo->prepare("
                     INSERT INTO users(
                     email,
                     email_verified,
@@ -818,45 +815,45 @@ if (!preg_match('/^[a-f0-9]{64}$/i', $submittedResetToken)){
                     :role)
                     ");
 
-                $stmt->execute([
-                    // le nouveau compte commence comme non verified
-                    'email_verified' => 0,
+            $stmt->execute([
+                // le nouveau compte commence comme non verified
+                'email_verified' => 0,
 
-                    //Seul le hash du code est enregistré
-                    'verification_code_hash' => $verificationCodeHash,
+                //Seul le hash du code est enregistré
+                'verification_code_hash' => $verificationCodeHash,
 
-                    //cette date permettra de refuser un code trop ancien.
-                    'verification_code_expires_at' => $verificationCodeExpiresAt,
+                //cette date permettra de refuser un code trop ancien.
+                'verification_code_expires_at' => $verificationCodeExpiresAt,
 
-                    //cette date permettra d'eviter le spam d'envoie de code
-                    'verification_code_sent_at' => $verificationCodeSentAt,
-                    //Donnée habituelle de l'utilisateur
-                    "email" => $email,
-                    "password_hash" => $passwordHash,
-                    "rue" => $rue,
-                    "code_postal" => $code_postal,
-                    "ville" => $ville,
-                    "nom" => $nom,
-                    "prenom" => $prenom,
-                    "telephone" => $telephone,
-                    "role" => 'client'
-                ]);
+                //cette date permettra d'eviter le spam d'envoie de code
+                'verification_code_sent_at' => $verificationCodeSentAt,
+                //Donnée habituelle de l'utilisateur
+                "email" => $email,
+                "password_hash" => $passwordHash,
+                "rue" => $rue,
+                "code_postal" => $code_postal,
+                "ville" => $ville,
+                "nom" => $nom,
+                "prenom" => $prenom,
+                "telephone" => $telephone,
+                "role" => 'client'
+            ]);
 
-                //Construit le nom qui sera affiché dans le champ destinataire.
-                $recipientName = trim($prenom . ' ' . $nom);
+            //Construit le nom qui sera affiché dans le champ destinataire.
+            $recipientName = trim($prenom . ' ' . $nom);
 
-                //protege le prenom avant de l'inserer dans le contenu HTML
-                $safeFirstName = htmlspecialchars(
-                    $prenom,
-                    ENT_QUOTES,
-                    'UTF-8'
-                );
-                // sujet visible dans le mail
-                $subject = 'votre code de verification - Vite & Gourmand';
+            //protege le prenom avant de l'inserer dans le contenu HTML
+            $safeFirstName = htmlspecialchars(
+                $prenom,
+                ENT_QUOTES,
+                'UTF-8'
+            );
+            // sujet visible dans le mail
+            $subject = 'votre code de verification - Vite & Gourmand';
 
-                //version HTML du message
-                // $verificationCode contient le code lisible, jamais son hash.
-                $htmlContent = "
+            //version HTML du message
+            // $verificationCode contient le code lisible, jamais son hash.
+            $htmlContent = "
                     <h1>Confirmation de votre inscription </h1>
 
                     <p> Bonjour {$safeFirstName},</p>
@@ -867,35 +864,35 @@ if (!preg_match('/^[a-f0-9]{64}$/i', $submittedResetToken)){
 
                     <p> Si vous n'êtes pas à l'origine de cette création de compte, veuillez ignorer ce message.;</p>";
 
-                // Version text pour les logiciel qui n'affiche aps le HTML
-                $textContent =
-                    "Bonjour {$prenom},\n\n" .
-                    "Votre code de verification est : {$verificationCode}\n" .
-                    "Ce code est valable pendant une durée de 15 Minutes. \n\n" .
-                    "Si vous n'êtes pas a l'origine de cette creation de compte veuillez ignorer ce message";
+            // Version text pour les logiciel qui n'affiche aps le HTML
+            $textContent =
+                "Bonjour {$prenom},\n\n" .
+                "Votre code de verification est : {$verificationCode}\n" .
+                "Ce code est valable pendant une durée de 15 Minutes. \n\n" .
+                "Si vous n'êtes pas a l'origine de cette creation de compte veuillez ignorer ce message";
 
-                //le destinataire  et le contenu propres a la verification
-                $mailSent = sendMail(
-                    $email,
-                    $recipientName,
-                    $subject,
-                    $htmlContent,
-                    $textContent
-                );
+            //le destinataire  et le contenu propres a la verification
+            $mailSent = sendMail(
+                $email,
+                $recipientName,
+                $subject,
+                $htmlContent,
+                $textContent
+            );
 
-                // on memorise uniquement de l'adresse du compte qui attend sa verification
-                //ce n'est pas encore une session utilisateur connectée
-                $_SESSION['pending_verification_email'] = $email;
+            // on memorise uniquement de l'adresse du compte qui attend sa verification
+            //ce n'est pas encore une session utilisateur connectée
+            $_SESSION['pending_verification_email'] = $email;
 
-                //on redirige uniquement si le mail a bien été envoyée
-                if ($mailSent) {
-                    header('location: /index.php?verification=pending');
-                    exit();
-                }
-                $error = 'Votre compte a été créé, mais le mail de vérification n’a pas pu être envoyé.';
+            //on redirige uniquement si le mail a bien été envoyée
+            if ($mailSent) {
+                header('location: /index.php?verification=pending');
+                exit();
             }
+            $error = 'Votre compte a été créé, mais le mail de vérification n’a pas pu être envoyé.';
         }
     }
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -909,9 +906,9 @@ $passwordResetUser = false;
 
 // verifie si user arrive depuis un lien mail
 $passwordResetChangeRequested =
-($_GET['password_reset'] ?? '') === 'change';
+    ($_GET['password_reset'] ?? '') === 'change';
 
-if($passwordResetChangeRequested){
+if ($passwordResetChangeRequested) {
     //recupere le jeton lisible present dasn l'adresse du navigateur
     $passwordResetToken = trim($_GET['token'] ?? '');
 
@@ -924,20 +921,20 @@ if($passwordResetChangeRequested){
      */
 
 
-if(!preg_match('/^[a-f0-9]{64}$/i' , $passwordResetToken)){
-    $passwordResetTokenError =
-    'Ce lien est invalide ou expiré.';
-}else {
-    /**
-     * on reproduit le hash du jeton recu
-     *
-     * la BDD n'enregistrant que le hash
-     */
-    $passwordResetTokenHash =
-    hash('sha256', $passwordResetToken);
+    if (!preg_match('/^[a-f0-9]{64}$/i', $passwordResetToken)) {
+        $passwordResetTokenError =
+            'Ce lien est invalide ou expiré.';
+    } else {
+        /**
+         * on reproduit le hash du jeton recu
+         *
+         * la BDD n'enregistrant que le hash
+         */
+        $passwordResetTokenHash =
+            hash('sha256', $passwordResetToken);
 
-    // recherche du compte associe a l'empreinte du jeton
-    $stmt=$pdo->prepare("
+        // recherche du compte associe a l'empreinte du jeton
+        $stmt = $pdo->prepare("
     SELECT
         ID,
         email,
@@ -949,31 +946,31 @@ if(!preg_match('/^[a-f0-9]{64}$/i' , $passwordResetToken)){
         LIMIT 1
     ");
 
-    $stmt->execute([
-        'token_hash' => $passwordResetTokenHash
-    ]);
+        $stmt->execute([
+            'token_hash' => $passwordResetTokenHash
+        ]);
 
-    $passwordResetUser =
-    $stmt->fetch(PDO::FETCH_ASSOC);
+        $passwordResetUser =
+            $stmt->fetch(PDO::FETCH_ASSOC);
 
-    /**
-     * Le lien est refusé si:
-     * -aucun compte ne correspond;
-     * -aucune expiration n'est enregistré
-     * -la date est depassée
-     */
-    if(
-        !$passwordResetUser ||
-        empty($passwordResetUser['password_reset_expires_at']) ||
-        strtotime($passwordResetUser['password_reset_expires_at']) <= time()
-    ){
-        $passwordResetTokenError =
-        'Ce lien de reinitialisation est invalide ou a expiré.';
-    }else{
-        //toute les verification sont reussi
-        $passwordResetTokenValid = true;
+        /**
+         * Le lien est refusé si:
+         * -aucun compte ne correspond;
+         * -aucune expiration n'est enregistré
+         * -la date est depassée
+         */
+        if (
+            !$passwordResetUser ||
+            empty($passwordResetUser['password_reset_expires_at']) ||
+            strtotime($passwordResetUser['password_reset_expires_at']) <= time()
+        ) {
+            $passwordResetTokenError =
+                'Ce lien de reinitialisation est invalide ou a expiré.';
+        } else {
+            //toute les verification sont reussi
+            $passwordResetTokenValid = true;
+        }
     }
-}
 }
 ///////////////////////////////////////////////////////////////////////////////////
 //                              RECUPERER LES DERNIERS AVIS VALIDER              //

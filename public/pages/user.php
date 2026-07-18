@@ -81,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_avis'])) {
         $commandeCible = $stmt->fetch();
 
         // controle de la commande et du statut
-        if ($commandeCible && in_array((int) $commandeCible['statut'],[3, 4, 5], true)){
+        if ($commandeCible && in_array((int) $commandeCible['statut'], [3, 4, 5], true)) {
             // on verifie qu'aucun avis n'existe pas deja pour cette commande
             $stmt = $pdo->prepare("
         SELECT ID
@@ -275,7 +275,7 @@ $modeEdition = isset($_GET['edit']) && $_GET['edit'] == 1;
                                     <td><?php
                                         // gestion de la colonnes 'avis' et un seul avis peux etre poser par commande
                                         //l'avis peut etre poser que si mon client a recu sa commande donc statut terminer
-                                        if (in_array((int) $commande['statut'],[3, 4, 5], true) && empty($commande['avis_id'])): ?>
+                                        if (in_array((int) $commande['statut'], [3, 4, 5], true) && empty($commande['avis_id'])): ?>
                                             <!--je vais integrer l'id de la commande a mon bouton -->
                                             <button type="button" class="btnAvis" data-commande-id="<?php echo (int) $commande['ID']; ?>">Laisser un avis </button>
                                             <!-- si un avis a deja etait deposer on informe l'utilisateur  -->
@@ -294,30 +294,30 @@ $modeEdition = isset($_GET['edit']) && $_GET['edit'] == 1;
                 <?php endif; ?>
             </section>
             <!--Regroupe les actions et le statut du compte sur une meme ligne-->
-                <div class="profile_actions">
+            <div class="profile_actions">
 
-                        <a class="button-link btnModifierProfil"
-                            href="user.php?edit=1">Modifier mes informations
-                        </a>
+                <a class="button-link btnModifierProfil"
+                    href="user.php?edit=1">Modifier mes informations
+                </a>
 
-                        <!--Le lien reviens a l'accuil avec le parametre deja utilisé par le systeme de reinitialisation
+                <!--Le lien reviens a l'accuil avec le parametre deja utilisé par le systeme de reinitialisation
 
                         je veux afficher direct le modal mot de passe oublié --->
 
-                        <a href="/index.php?password_reset=request" class="button-link btnPasswordReset">
-                            Modifier mon mot de passe
-                        </a>
-                    <?php
-                    // je recupere le staut de veif du compte
-                    //si la donnée est absente je considere par securité que le compte n'est pas verifié
-                    $emailVerified = (int) ($user['email_verified'] ?? 0);?>
-                    <?php if ($emailVerified === 1):  ?>
+                <a href="/index.php?password_reset=request" class="button-link btnPasswordReset">
+                    Modifier mon mot de passe
+                </a>
+                <?php
+                // je recupere le staut de veif du compte
+                //si la donnée est absente je considere par securité que le compte n'est pas verifié
+                $emailVerified = (int) ($user['email_verified'] ?? 0); ?>
+                <?php if ($emailVerified === 1):  ?>
                     <!--Information visuelle uniquement
                     pour dire que le compte est verifier-->
                     <span class="account_verified">
                         ✓ Compte validé
                     </span>
-                    <?php endif; ?>
+                <?php endif; ?>
             </div>
 
 

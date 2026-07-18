@@ -35,6 +35,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_statut'])) {
 
     if ($commandeId > 0 && in_array($newStatut, $statutsAutorisee, true)) {
         // on prepare la requete SQL pour modifier un satut de commande cible 
+
+        /**
+         * On recupere la commande avant de modifier son statut
+         * 
+         * Cette requ$ete nous donnera ensuite:
+         * -l'ancien staut de la commande
+         * -l'adresse mail du client
+         * -son nom et son prenom pour l'email personnaliser 
+         * 
+         * la jointure relie commande.users a users.ID.
+         */
+
+        $stmtCommandeClient = $pdo->prepare("
+        SELECT
+            commande.ID,
+            commande.statut AS ancien_statut,
+            users.nom,
+            users.prenom,
+            users.email
+            FROM commande
+            INNER JOIN users ON commande.user_id = users.ID
+            WHERE commande.ID = :commande_id
+        ");
+        // j'envoie l'id separement de la requete preparer
+        $stmtCommandeClient ->execute([
+            'commande_id' => $commandeId
+        ]);
+
+        //fetch() recupere la commande et son client sous un tableau
+        $commandeClient = $stmtCommandeClient->fetch();
+
+        /**
+         * si aucune commande ne correspond a cette ID on stop 
+         * on evite d'envoyer un mail pour une cmd inexistante
+         */
+
+        
+        if(!$commandeClient){
+            error_log(
+                'Changement de statut impossible: commande introuvable. ' . 
+                $commandeId
+            );
+            header('Location: admin.php');
+            exit();
+        }
+
+        if((int) $commandeClient['ancien_statut'] === $newStatut){
+            header('Location: admin.php');
+            exit();
+        }
+
         $stmt = $pdo->prepare("
         UPDATE commande 
         SET statut = :statut
@@ -44,10 +95,108 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_statut'])) {
         // on execute la mise a jour SQL avec 
         // - le nouveau statut choisi 
         //- l'ID de la commande 
-        $stmt->execute([
+        $miseAJourReussi = $stmt ->execute([
             'statut' => $newStatut,
             'id' => $commandeId
         ]);
+
+        if(!$miseAJourReussi || $stmt -> rowCount() !== 1){
+            error_log(
+                'Echec du changement de statut pour la commande ID : ' . 
+                $commandeId
+            );
+
+            header('Location: admin.php');
+            exit();
+        }
+
+        /**
+         * la modif SQL est confirmée
+         * je vais gerer le mail d'information du client 
+         */
+
+        // recuperer les libellés dans functions
+        $libellesStatuts = getLibellesStatutsCommande();
+
+        /**
+         * transformation du num status en texte lisible 
+         * et par securité on vas ajouter un valeur de secours
+         */
+
+        $libellesNouveauStatut =$libellesStatuts[$newStatut] ?? 'Statut mis à jour';
+
+        //Construit le nom complet utilisé par PHPMailer
+        $nomCompletClient = trim(
+            $commandeClient['prenom'] . ' ' . $commandeClient['nom']
+        );
+        /**
+         * comme toujours on protege les info du client avant de les inserer
+         */
+
+        $prenomClientHtml = htmlspecialchars(
+            $commandeClient['prenom'],
+            ENT_QUOTES,
+            'UTF-8'
+        );
+
+        $statutClientHtml = htmlspecialchars(
+            $libellesNouveauStatut,
+            ENT_QUOTES,
+            'UTF-8'
+        );
+
+        //sUJET DU MAIL 
+        $sujetMail = 'Mise a jour de votre statut de commande n°' . 
+        $commandeId;
+
+        $contenuHtml= '
+        <p>Bonjour ' . $prenomClientHtml . '</p>
+        <p> Le statut de votre commande n°'
+        . $commandeId
+        . 'vient d\'etre mis à jour. </p>
+
+        <p> nouveau statut :' 
+        . $statutClientHtml . '
+        </p> 
+
+
+        <p>Merci de votre commande.</p>
+        <p> L\'équipe Vite & Gourmand </p>
+        ';
+
+        // version text pour les logiciel qui n'affiche pas le HTML
+        // note a moi meme PHP_EOL correspond a un retour a la ligne adapte au systeme d'exploitation
+        $contenuTexte = 
+        'Bonjour' . $commandeClient['prenom'] . ',' . PHP_EOL
+        . PHP_EOL
+        . ' statut de votre commande n°' . $commandeId
+        . ' vient d\'être mis à jour' . PHP_EOL
+        . 'Nouveau statut : ' . $libellesNouveauStatut . PHP_EOL
+        . PHP_EOL
+        .'Merci de votre confiance' . PHP_EOL
+        .'L\'équipe Vite & Gourmand';
+
+/**
+ * sendMail() renvoie false si PHPMailer rencontre une erreur 
+ * La commande reste malgré tout modifié dans MySQL 
+ * un probleme SMTP ne doit pas annuler l'action metier
+ */
+
+$$mailEnvoye = sendMail(
+    $commandeClient['email'],
+    $nomCompletClient,
+    $sujetMail,
+    $contenuHtml,
+    $contenuTexte
+);
+
+// echec technique journalisé
+if(!$mailEnvoye){
+    error_log(
+        'Echec du amil de changement de statut pour la comande ID '
+        . $commandeId
+    );
+}
 
         // une fois la modif SQL faite, 
         // on enregistre aussi un log dans MONGODB 
