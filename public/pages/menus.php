@@ -1,15 +1,16 @@
 <?php
 
-// on charge la connexion a la base de données pour pouvoir faire 
+// on charge la connexion a la base de données pour pouvoir faire
+require_once __DIR__ . '/../../src/configs/session.php';
 require_once __DIR__ . '/../../src/configs/db.php';
 require_once __DIR__ . '/../../src/models/Menu.php';
 
-//on prepare une requete pour recup mes menus actif 
-// on trie les colonnes pour afficher ce dont j'ai besoin 
+//on prepare une requete pour recup mes menus actif
+// on trie les colonnes pour afficher ce dont j'ai besoin
 $stmt = $pdo->prepare("
 SELECT ID, titre, description, prix, nb_personne,img_cover
 FROM menus
-WHERE actif = 1 
+WHERE actif = 1
 ORDER BY ID ASC
 ");
 
@@ -127,8 +128,8 @@ foreach($menusData as $menuData){
         <?php foreach ($menus as $menu): ?>
             <div class="menu_list_card">
                 <div class="menu_list_image">
-                    <img 
-                    src="../<?php echo htmlspecialchars($menu->getImagePath()); ?>" 
+                    <img
+                    src="../<?php echo htmlspecialchars($menu->getImagePath()); ?>"
                     alt="<?php echo htmlspecialchars($menu->titre); ?>">
                 </div>
                 <div class="menu_list_content">

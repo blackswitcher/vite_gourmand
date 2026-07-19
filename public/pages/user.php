@@ -26,6 +26,16 @@ $stmt = $pdo->prepare("
         commande.ID,
         commande.date_creation,
         commande.statut,
+        commande.nom_livraison,
+        commande.prenom_livraison,
+        commande.email_livraison,
+        commande.telephone_livraison,
+        commande.rue_livraison,
+        commande.code_postal_livraison,
+        commande.ville_livraison,
+        commande.date_livraison,
+        commande.heure_livraison,
+        commande.frais_livraison,
         commande.total,
         avis.ID AS avis_id
     FROM commande

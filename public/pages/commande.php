@@ -107,11 +107,11 @@ foreach($champsLivraisonObligatoire as $valeurLivraison){
 }
 
 /**
- * filter_var() verifie le format general de l'adresse mail 
- * 
+ * filter_var() verifie le format general de l'adresse mail
+ *
  * la focntion retourne false lorsque le format est invalide
- * La comparaison transforme clairement le resultat en booleen 
- * 
+ * La comparaison transforme clairement le resultat en booleen
+ *
  */
 
 $emailLivraisonValide = filter_var(
@@ -119,7 +119,43 @@ $emailLivraisonValide = filter_var(
     FILTER_VALIDATE_EMAIL
 ) !== false;
 
+/**
+ * createFromFormat() tente de construire une vrai date
+ * a partir du format envoyé par le champ HTML date.
+ */
 
+$dateLivraisonObjet = DateTime::createFromFormat(
+    '!Y-m-d',
+    $dateLivraison
+);
+
+/**
+ * ensuite on tente d'eviter des date impossible comme le 31 fevrier
+ *
+ */
+
+$dateLivraisonValide =
+    $dateLivraisonObjet !== false
+    && $dateLivraisonObjet->format('Y-m-d') === $dateLivraison;
+
+
+/**
+ * la date ne peux etre anterieur au jour actuelle
+ */
+
+$dateLivraisonNonPassee = $dateLivraisonValide && $dateLivraisonObjet >= new DateTime('today');
+
+/**
+ * on fait pareil avec l'heure
+ *
+ */
+
+$heureLivraisonObject = DateTime::createFromFormat(
+    '!H:i',
+    $heureLivraison
+);
+
+$heureLivraisonValide = $heureLivraisonObject !== false && $heureLivraisonObject -> format('H:i') === $heureLivraison;
 
 
 $commandeValidee = $_SESSION['commande_validee'] ?? false;
@@ -205,23 +241,64 @@ if (
     !$panierVide &&
     $profilComplet &&
     $livraisonComplete &&
-    $emailLivraisonValide
+    $emailLivraisonValide &&
+    $dateLivraisonNonPassee &&
+    $heureLivraisonValide
 ) {
     // validation d'une commande
     try {
         // on demarre une transaction pour que la commande et ses lignes soient enregistrees ensemble
         $pdo->beginTransaction();
 
-        // on insere d'abord la commande principale
+        // On enregistre la commande ainsi su'une copie des info de livraison
+        // elle ne seront pas lier a un changement d'info dans le profil
+
         $stmt = $pdo->prepare("
-    INSERT into commande (user_id, statut, total)
-    Values (:user_id, :statut, :total)
-    ");
+        INSERT INTO commande (
+        user_id,
+        statut,
+        total,
+        nom_livraison,
+        prenom_livraison,
+        email_livraison,
+        telephone_livraison,
+        rue_livraison,
+        code_postal_livraison,
+        ville_livraison,
+        date_livraison,
+        heure_livraison,
+        frais_livraison
+        ) VALUES (
+            :user_id,
+            :statut,
+            :total,
+            :nom_livraison,
+            :prenom_livraison,
+            :email_livraison,
+            :telephone_livraison,
+            :rue_livraison,
+            :code_postal_livraison,
+            :ville_livraison,
+            :date_livraison,
+            :heure_livraison,
+            :frais_livraison
+        )
+            ");
 
         $stmt->execute([
-            'user_id' => $user['ID'],
+            'user_id'=> $user['ID'],
             'statut' => 0,
-            'total' => $totalGlobal
+            'total' => $totalGlobal,
+            'nom_livraison' => $nomLivraison,
+            'prenom_livraison' => $prenomLivraison,
+            'email_livraison' => $emailLivraison,
+            'telephone_livraison' => $telephoneLivraison,
+            'rue_livraison' => $rueLivraison,
+            'code_postal_livraison' => $codePostalLivraison,
+            'ville_livraison' => $villeLivraison,
+            'date_livraison' => $dateLivraison,
+            'heure_livraison' => $heureLivraison,
+            'frais_livraison' => $fraisLivraison
         ]);
 
         // on recupere l'id de la commande qui vient d'etre creee
@@ -271,6 +348,60 @@ if ($userConnecte && !$profilComplet) {
     isset($_POST['valider_commande']) &&
     !$livraisonComplete ){
     $messageErreurCommande = 'Toutes les informations de livraison sont obligatoires';
+    }
+
+
+    /**
+     * ce controle s'execute uniquement lorsque tout les champs sont
+     * remplie mais que le format du mail est invalide
+     */
+
+    if (
+        $_SERVER['REQUEST_METHOD'] === 'POST' &&
+        isset($_POST['valider_commande']) &&
+        $livraisonComplete &&
+        !$emailLivraisonValide
+    ){
+        $messageErreurCommande = 'L\'adresse mail de livraison n\'est pas valide.';
+    }
+
+        if (
+        $_SERVER['REQUEST_METHOD'] === 'POST' &&
+        isset($_POST['valider_commande']) &&
+        $livraisonComplete &&
+        $emailLivraisonValide &&
+        !$dateLivraisonValide
+    ){
+        $messageErreurCommande = 'La date de livraison n\'est pas valide.';
+    }
+
+    /**
+     * le format est correct mais la date est antérieur
+     */
+
+    if(
+        $_SERVER['REQUEST_METHOD']  === 'POST' &&
+        isset($_POST['valider_commande']) &&
+        $livraisonComplete &&
+        $emailLivraisonValide &&
+        $dateLivraisonValide &&
+        !$dateLivraisonNonPassee
+    ){
+        $messageErreurCommande =
+        'La date de livraison ne peut pas être passée.';
+    }
+
+        if(
+        $_SERVER['REQUEST_METHOD']  === 'POST' &&
+        isset($_POST['valider_commande']) &&
+        $livraisonComplete &&
+        $emailLivraisonValide &&
+        $dateLivraisonValide &&
+        $dateLivraisonNonPassee &&
+        !$heureLivraisonValide
+    ){
+        $messageErreurCommande =
+        'l\'heure de livraison n\' pas le format attendu.';
     }
 ?>
 

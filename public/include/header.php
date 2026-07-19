@@ -20,7 +20,7 @@ $passwordResetToken = $passwordResetToken
     </div>
     <div>
         <nav>
-            <ul class="menu">
+            <ul class="menu">   
                 <li><a class="navBouton" href="/index.php">Accueil</a></li>
                 <li><a class="navBouton" href="/pages/menus.php">Services</a></li>
                 <?php if (isset($_SESSION['user'])): ?>
@@ -54,7 +54,7 @@ $passwordResetToken = $passwordResetToken
                         <button id="btnInscription" type="button">Inscription</button>
                     </div>
                     <div>
-                        <form method="POST" action="index.php">
+                        <form method="POST" action="/index.php">
                             <input type="hidden" name="action" id="actionForm" value="connexion">
                             <!--email -->
                             <div class="formulaire">
