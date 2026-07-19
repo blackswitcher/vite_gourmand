@@ -3,7 +3,7 @@
 require_once __DIR__ . '/../../src/configs/session.php';
 require_once __DIR__ . '/../../src/configs/db.php';
 /** @var \MongoDB\Collection $mongoCollection */
-// on charge les functions 
+// on charge les functions
 require_once __DIR__ . '/../../src/functions/functions.php';
 
 // on verifie que user est connecte
@@ -14,17 +14,30 @@ if (!isset($_SESSION['user'])) {
 
 $user = $_SESSION['user'];
 
-// on limite maintenant l'acces au role concerner 
+// on limite maintenant l'acces au role concerner
 if ($user['role'] !== 'admin' && $user['role'] !== 'employe') {
     header('Location: /index.php');
     exit();
 }
+/**
+ * Chaque statut indique uniquement le statut suivant autorisé
+ * une valeur absente ou une liste vide interdit la transition.
+ */
+
+$reglesTransition = [
+    0 => [1],
+    1 => [2],
+    2 => [3],
+    3 => [4],
+    4 => [5],
+    5 => []
+];
 ///////////////////////////////////////////////////////////////////////////////////
 //                              CHANGER LE STATUT D'UNE COMMANDE                 //
 ///////////////////////////////////////////////////////////////////////////////////
 
 
-// MAJ du statut de commande 
+// MAJ du statut de commande
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_statut'])) {
     $commandeId = (int)($_POST['commande_id'] ?? 0);
     $newStatut = (int)($_POST['statut'] ?? -1);
@@ -34,16 +47,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_statut'])) {
     $statutsAutorisee = [0, 1, 2, 3, 4, 5];
 
     if ($commandeId > 0 && in_array($newStatut, $statutsAutorisee, true)) {
-        // on prepare la requete SQL pour modifier un satut de commande cible 
+        // on prepare la requete SQL pour modifier un satut de commande cible
 
         /**
          * On recupere la commande avant de modifier son statut
-         * 
+         *
          * Cette requ$ete nous donnera ensuite:
          * -l'ancien staut de la commande
          * -l'adresse mail du client
-         * -son nom et son prenom pour l'email personnaliser 
-         * 
+         * -son nom et son prenom pour l'email personnaliser
+         *
          * la jointure relie commande.users a users.ID.
          */
 
@@ -59,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_statut'])) {
             WHERE commande.ID = :commande_id
         ");
         // j'envoie l'id separement de la requete preparer
-        $stmtCommandeClient ->execute([
+        $stmtCommandeClient->execute([
             'commande_id' => $commandeId
         ]);
 
@@ -67,43 +80,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_statut'])) {
         $commandeClient = $stmtCommandeClient->fetch();
 
         /**
-         * si aucune commande ne correspond a cette ID on stop 
+         * si aucune commande ne correspond a cette ID on stop
          * on evite d'envoyer un mail pour une cmd inexistante
          */
 
-        
-        if(!$commandeClient){
+
+        if (!$commandeClient) {
             error_log(
-                'Changement de statut impossible: commande introuvable. ' . 
-                $commandeId
+                'Changement de statut impossible: commande introuvable. ' .
+                    $commandeId
             );
             header('Location: admin.php');
             exit();
         }
 
-        if((int) $commandeClient['ancien_statut'] === $newStatut){
+        if ((int) $commandeClient['ancien_statut'] === $newStatut) {
             header('Location: admin.php');
             exit();
         }
 
+
+        $ancienStatut = (int) $commandeClient['ancien_statut'];
+
+        $transitionAutorisee = in_array(
+            $newStatut,
+            $reglesTransition[$ancienStatut] ?? [],
+            true
+        );
         $stmt = $pdo->prepare("
-        UPDATE commande 
+        UPDATE commande
         SET statut = :statut
         WHERE ID = :id
     ");
 
-        // on execute la mise a jour SQL avec 
-        // - le nouveau statut choisi 
-        //- l'ID de la commande 
-        $miseAJourReussi = $stmt ->execute([
+        /**
+         * la verification coté serveur
+         * donc modifié manuellement ne permet pas
+         * de contourner la regle
+         */
+
+        if (!$transitionAutorisee) {
+            error_log(
+                'transition de statut refusée pour la commande ID'
+                    . $commandeId
+                    . ' : '
+                    . $ancienStatut
+                    . ' vers '
+                    . $newStatut
+            );
+
+            header('Location: admin.php');
+            exit();
+        }
+
+        // on execute la mise a jour SQL avec
+        // - le nouveau statut choisi
+        //- l'ID de la commande
+        $miseAJourReussi = $stmt->execute([
             'statut' => $newStatut,
             'id' => $commandeId
         ]);
 
-        if(!$miseAJourReussi || $stmt -> rowCount() !== 1){
+        if (!$miseAJourReussi || $stmt->rowCount() !== 1) {
             error_log(
-                'Echec du changement de statut pour la commande ID : ' . 
-                $commandeId
+                'Echec du changement de statut pour la commande ID : ' .
+                    $commandeId
             );
 
             header('Location: admin.php');
@@ -112,18 +153,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_statut'])) {
 
         /**
          * la modif SQL est confirmée
-         * je vais gerer le mail d'information du client 
+         * je vais gerer le mail d'information du client
          */
 
         // recuperer les libellés dans functions
         $libellesStatuts = getLibellesStatutsCommande();
 
         /**
-         * transformation du num status en texte lisible 
+         * transformation du num status en texte lisible
          * et par securité on vas ajouter un valeur de secours
          */
 
-        $libellesNouveauStatut =$libellesStatuts[$newStatut] ?? 'Statut mis à jour';
+        $libellesNouveauStatut = $libellesStatuts[$newStatut] ?? 'Statut mis à jour';
 
         //Construit le nom complet utilisé par PHPMailer
         $nomCompletClient = trim(
@@ -145,19 +186,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_statut'])) {
             'UTF-8'
         );
 
-        //sUJET DU MAIL 
-        $sujetMail = 'Mise a jour de votre statut de commande n°' . 
-        $commandeId;
+        //sUJET DU MAIL
+        $sujetMail = 'Mise a jour de votre statut de commande n°' .
+            $commandeId;
 
-        $contenuHtml= '
+        $contenuHtml = '
         <p>Bonjour ' . $prenomClientHtml . '</p>
         <p> Le statut de votre commande n°'
-        . $commandeId
-        . 'vient d\'etre mis à jour. </p>
+            . $commandeId
+            . 'vient d\'etre mis à jour. </p>
 
-        <p> nouveau statut :' 
-        . $statutClientHtml . '
-        </p> 
+        <p> nouveau statut :'
+            . $statutClientHtml . '
+        </p>
 
 
         <p>Merci de votre commande.</p>
@@ -166,60 +207,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_statut'])) {
 
         // version text pour les logiciel qui n'affiche pas le HTML
         // note a moi meme PHP_EOL correspond a un retour a la ligne adapte au systeme d'exploitation
-        $contenuTexte = 
-        'Bonjour' . $commandeClient['prenom'] . ',' . PHP_EOL
-        . PHP_EOL
-        . ' statut de votre commande n°' . $commandeId
-        . ' vient d\'être mis à jour' . PHP_EOL
-        . 'Nouveau statut : ' . $libellesNouveauStatut . PHP_EOL
-        . PHP_EOL
-        .'Merci de votre confiance' . PHP_EOL
-        .'L\'équipe Vite & Gourmand';
+        $contenuTexte =
+            'Bonjour' . $commandeClient['prenom'] . ',' . PHP_EOL
+            . PHP_EOL
+            . ' statut de votre commande n°' . $commandeId
+            . ' vient d\'être mis à jour' . PHP_EOL
+            . 'Nouveau statut : ' . $libellesNouveauStatut . PHP_EOL
+            . PHP_EOL
+            . 'Merci de votre confiance' . PHP_EOL
+            . 'L\'équipe Vite & Gourmand';
 
-/**
- * sendMail() renvoie false si PHPMailer rencontre une erreur 
- * La commande reste malgré tout modifié dans MySQL 
- * un probleme SMTP ne doit pas annuler l'action metier
- */
+        /**
+         * sendMail() renvoie false si PHPMailer rencontre une erreur
+         * La commande reste malgré tout modifié dans MySQL
+         * un probleme SMTP ne doit pas annuler l'action metier
+         */
 
-$$mailEnvoye = sendMail(
-    $commandeClient['email'],
-    $nomCompletClient,
-    $sujetMail,
-    $contenuHtml,
-    $contenuTexte
-);
+        $mailEnvoye = sendMail(
+            $commandeClient['email'],
+            $nomCompletClient,
+            $sujetMail,
+            $contenuHtml,
+            $contenuTexte
+        );
 
-// echec technique journalisé
-if(!$mailEnvoye){
-    error_log(
-        'Echec du amil de changement de statut pour la comande ID '
-        . $commandeId
-    );
-}
+        // echec technique journalisé
+        if (!$mailEnvoye) {
+            error_log(
+                'Echec du amil de changement de statut pour la comande ID '
+                    . $commandeId
+            );
+        }
 
-        // une fois la modif SQL faite, 
-        // on enregistre aussi un log dans MONGODB 
+        // une fois la modif SQL faite,
+        // on enregistre aussi un log dans MONGODB
         $mongoCollection->insertOne([
             //type d action faite dans l'admin
             'action' => 'Modification_statut_commande',
 
-            // role de la personne connectée 
+            // role de la personne connectée
             'role' => $user['role'],
 
-            //identifiant SQL de user ID 
+            //identifiant SQL de user ID
             'adminId' => (int) $user['ID'],
 
             //email de personne connectée
             'adminEmail' => $user['email'],
 
-            //type d'element touche par l'action 
+            //type d'element touche par l'action
             'targetType' => 'commande',
 
-            // id de la cible 
+            // id de la cible
             'targetId' => $commandeId,
 
-            // date du log format MONGODB 
+            // date du log format MONGODB
             'createdAt' => new \MongoDB\BSON\UTCDateTime(),
 
             //detail utiles pour comprendre rapidement d'action
@@ -233,7 +274,7 @@ if(!$mailEnvoye){
     }
 }
 
-// on prepare les commandes avec les information du client 
+// on prepare les commandes avec les information du client
 $stmt = $pdo->prepare("
     SELECT
         commande.ID,
@@ -263,7 +304,7 @@ $adminLogs = $mongoCollection->find(
         // on vas les trier du plus recent au plus ancien
         'sort' => ['createdAt' => -1],
 
-        // on limite a 10 resultats pour garder un affichage simple 
+        // on limite a 10 resultats pour garder un affichage simple
         'limit' => 10
     ]
 )->toArray();
@@ -316,7 +357,7 @@ $utilisateurs = $stmt->fetchAll();
 //                          GESTION DES AVIS                                   //
 /////////////////////////////////////////////////////////////////////////////////
 
-// recuperation des avis 'en attente' 
+// recuperation des avis 'en attente'
 // si mon statut = 0 avis non traité par le staff
 
 $stmt = $pdo->prepare("
@@ -338,11 +379,11 @@ $stmt->execute();
 
 $avisAttente = $stmt->fetchAll();
 
-// MODERER UN AVIS 
-// si on clique sur "valider" 
+// MODERER UN AVIS
+// si on clique sur "valider"
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['valider_avis'])) {
-    // on recupere l'identifiant de l'avis envoye par le formulaire 
+    // on recupere l'identifiant de l'avis envoye par le formulaire
     $avisId = (int) ($_POST['avis_id'] ?? 0);
 
     // on verifier que l'id est valide avant de faire la mise a jour
@@ -350,22 +391,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['valider_avis'])) {
         // on prepare la requete SQL qui passe l'avis en statut "valider"
         $stmt = $pdo->prepare("
         UPDATE avis
-        SET statut = 1 
+        SET statut = 1
         WHERE ID = :id
         ");
 
-        // on execute la mise a jour SQL sur l'avis cible 
+        // on execute la mise a jour SQL sur l'avis cible
         $stmt->execute([
             'id' => $avisId
         ]);
 
-        // une fois l'avis valide en SQL 
-        //on enregistre aussi l'action dans MongoDB 
+        // une fois l'avis valide en SQL
+        //on enregistre aussi l'action dans MongoDB
         $mongoCollection->insertOne([
             //typed'action admin efectuee
             'action' => 'validation d\'avis',
 
-            //role de la personne 
+            //role de la personne
             'role' => $user['role'],
 
             // identifiant SQL de l'utilisateur connecte
@@ -374,16 +415,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['valider_avis'])) {
             //email de la personne
             'adminEmail' => $user['email'],
 
-            //type d'element  
+            //type d'element
             'targetType' => 'avis',
 
             //Id de l'avis modifier
             'targetId'  => $avisId,
 
-            //date du log 
+            //date du log
             'createdAt' => new \MongoDB\BSON\UTCDateTime(),
 
-            //detail utilse pour comprendre rapidement 
+            //detail utilse pour comprendre rapidement
             'details' => [
                 'message' => 'avis validé'
             ]
@@ -398,7 +439,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['valider_avis'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['refuser_avis'])) {
     // on recupere l'identifiant de l'avis envoyé par le formulaire
     $avisId = (int) ($_POST['avis_id'] ?? 0);
-    // on verifier que l'id est valide avant de modifier l'avis 
+    // on verifier que l'id est valide avant de modifier l'avis
     if ($avisId > 0) {
         // on prepare la requete qui passe l'avis en "reusé"
         $stmt = $pdo->prepare("
@@ -412,31 +453,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['refuser_avis'])) {
             'id' => $avisId
         ]);
 
-        // une fois l'avis refusé sur SQL 
-        // on enregistre l'action dans mongo db 
+        // une fois l'avis refusé sur SQL
+        // on enregistre l'action dans mongo db
         $mongoCollection->insertOne([
-            //type d'action 
+            //type d'action
             'action' => 'refus d\'avis',
 
-            //role de la personne 
+            //role de la personne
             'role' => $user['role'],
 
             // ID SQL du user
             'adminId' => (int) $user['ID'],
 
-            //email de user 
+            //email de user
             'adminEmail' => $user['email'],
 
             //type d'element
             'targetType' => 'avis',
 
-            //Id avis cible 
+            //Id avis cible
             'targetId' => $avisId,
 
-            // affichage de date + heure 
+            // affichage de date + heure
             'createdAt' => new \MongoDB\BSON\UTCDateTime(),
 
-            // message de detail 
+            // message de detail
             'details' => [
                 'message' => 'avis refusé'
             ]
@@ -519,8 +560,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajout_employe'])) {
                 'role' => 'employe'
             ]);
 
-            // une fois employe ajout en SQL 
-            // on enregistre l'action dans MongoDB 
+            // une fois employe ajout en SQL
+            // on enregistre l'action dans MongoDB
             $mongoCollection->insertOne([
                 //type d'action
                 'action' => 'ajout_employe',
@@ -528,20 +569,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajout_employe'])) {
                 // role de l'actionneur
                 'role' => $user['role'],
 
-                //Id de l'actionneur 
+                //Id de l'actionneur
                 'adminId' => $user['ID'],
 
                 //email de l'actionneur
                 'AdminEmail' => $user['email'],
 
-                //type d'element visé 
+                //type d'element visé
                 'targetType' => 'employe',
 
-                //on stocke mail du nouvelle employe 
-                // car on a pas encore son ID SQL a ce niveau 
+                //on stocke mail du nouvelle employe
+                // car on a pas encore son ID SQL a ce niveau
                 'targetId' => $email,
 
-                //on ajoute l'heure et la date 
+                //on ajoute l'heure et la date
                 'createdAt' => new \MongoDB\BSON\UTCDateTime(),
 
                 // details utile pour comprendre rapidement l'action
@@ -566,7 +607,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajout_employe'])) {
 // Le but est que le bloc ce lance si:
 // → j'ai envoye un fromulaire POST
 // → Le bouton "supprimer_employe" a été activer
-// → la personne connecter est un admin 
+// → la personne connecter est un admin
 
 if (
     $_SERVER['REQUEST_METHOD'] === 'POST' &&
@@ -574,11 +615,11 @@ if (
     $user['role'] === 'admin'
 ) {
     // je recupere ID envoyé par le formulaire
-    // (int) force un entier pour eviter de devoir manipuler un texte 
+    // (int) force un entier pour eviter de devoir manipuler un texte
 
     $utilisateurId = (int) ($_POST['utilisateur_id'] ?? 0);
 
-    // j'ai besoin de recuperer l'utilisateur qui sera cibler 
+    // j'ai besoin de recuperer l'utilisateur qui sera cibler
     // mais je dois verifier son existance et le role qui lui ai assigner
 
     $stmt = $pdo->prepare(("
@@ -597,7 +638,7 @@ if (
     $utilisateurCible = $stmt->fetch();
 
     //j'ai besoin de verifier:
-    //si l'utilisateur existe 
+    //si l'utilisateur existe
     // si son role fait par des role gerable pour cette page puisque ici on gere pas les clients
     // array key ($roleAutorises) recuepre les clés du tableau
     // ici [employer et admin]
@@ -608,7 +649,7 @@ if (
         in_array($utilisateurCible['role'], array_keys($roleAutorises), true) &&
         $utilisateurId !== (int) $user['ID']
     ) {
-        // IMPORTANT 
+        // IMPORTANT
         // si la personne cibler est un admin je dois etre sur qu'il s'agissent pas du dernier
 
         if ($utilisateurCible['role'] === 'admin') {
@@ -622,10 +663,10 @@ if (
 
             $stmt->execute();
 
-            //on recupere le resultat de la requete 
+            //on recupere le resultat de la requete
             $resultat = $stmt->fetch();
 
-            // puis on le transforme en entier 
+            // puis on le transforme en entier
             $totalAdmins = (int) $resultat['total_admins'];
 
 
@@ -645,10 +686,10 @@ if (
                     'id' => $utilisateurId
                 ]);
 
-                // une fois l'utilisateur supprimer en SQL 
-                // on enregistre l'action dans mMongoDB 
+                // une fois l'utilisateur supprimer en SQL
+                // on enregistre l'action dans mMongoDB
                 $mongoCollection->insertOne([
-                    //type d'action 
+                    //type d'action
                     'action' => 'suppression_employe',
 
                     //role de l'actionneur
@@ -657,25 +698,25 @@ if (
                     //identifiant SQL de l'utilisateur
                     'adminId' => (int) $user['ID'],
 
-                    //email actionneur 
+                    //email actionneur
                     'adminEmail' => $user['email'],
 
-                    //role de la cible 
+                    //role de la cible
                     'targetType' => 'admin',
 
-                    //ID de la cible 
+                    //ID de la cible
                     'targetId' => $utilisateurId,
 
-                    // date et heure d'action 
+                    // date et heure d'action
                     'createdAt' => new \MongoDB\BSON\UTCDateTime(),
 
-                    // detail utile a afficher 
+                    // detail utile a afficher
                     'details' => [
                         'message' => 'employé supprimé'
                     ]
                 ]);
 
-                // Apres la suppression je dois recharger ma page 
+                // Apres la suppression je dois recharger ma page
                 // et mettre a jour ma liste affiché
                 header('Location: admin.php');
                 exit();
@@ -693,10 +734,10 @@ if (
             $stmt->execute([
                 'id' => $utilisateurId
             ]);
-            // une fois l'utilisateur supprimer en SQL 
-            // on enregistre l'action dans mMongoDB 
+            // une fois l'utilisateur supprimer en SQL
+            // on enregistre l'action dans mMongoDB
             $mongoCollection->insertOne([
-                //type d'action 
+                //type d'action
                 'action' => 'suppression_employe',
 
                 //role de l'actionneur
@@ -705,24 +746,24 @@ if (
                 //identifiant SQL de l'utilisateur
                 'adminId' => (int) $user['ID'],
 
-                //email actionneur 
+                //email actionneur
                 'adminEmail' => $user['email'],
 
-                //role de la cible 
+                //role de la cible
                 'targetType' => 'employe',
 
-                //ID de la cible 
+                //ID de la cible
                 'targetId' => $utilisateurId,
 
-                // date et heure d'action 
+                // date et heure d'action
                 'createdAt' => new \MongoDB\BSON\UTCDateTime(),
 
-                // detail utile a afficher 
+                // detail utile a afficher
                 'details' => [
                     'message' => 'employé supprimé'
                 ]
             ]);
-            // puis comme pour au dessus on recharge la liste 
+            // puis comme pour au dessus on recharge la liste
             header('Location: admin.php');
             exit();
         }
@@ -768,7 +809,7 @@ if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST['ajouter_menu'])) {
         $imgCoverMenu !== "" &&
         $themeIdMenu > 0
     ) {
-        // on prepare la requete SQL pour insere le menu 
+        // on prepare la requete SQL pour insere le menu
         $stmt = $pdo->prepare("
             INSERT INTO menus (titre, description, prix, nb_personne, img_cover, actif, created_at, theme_id)
             VALUES (:titre, :description, :prix, :nb_personne, :img_cover, :actif, NOW(), :theme_id)
@@ -785,34 +826,34 @@ if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST['ajouter_menu'])) {
             'actif' => $actifMenu,
             'theme_id' => $themeIdMenu
         ]);
-        
+
 
         $mongoCollection->insertOne([
-        //type d'action 
-        'action' => 'menu ajouter',
+            //type d'action
+            'action' => 'menu ajouter',
 
-        // role de l'actionneur
-        'role' => $user['role'],
+            // role de l'actionneur
+            'role' => $user['role'],
 
-        //ID SQL de l'actionneur 
-        'adminId' => (int) $user['ID'],
+            //ID SQL de l'actionneur
+            'adminId' => (int) $user['ID'],
 
-        // email de l'actionneur 
-        'adminEmail' => $user['email'],
+            // email de l'actionneur
+            'adminEmail' => $user['email'],
 
-        //type de cibel 
-        'targetType' => 'menu',
+            //type de cibel
+            'targetType' => 'menu',
 
-        // ID de la cible 
-        'targetId' => $titreMenu,
+            // ID de la cible
+            'targetId' => $titreMenu,
 
-        //date 
-        'createdAt' => new \MongoDB\BSON\UTCDateTime(),
+            //date
+            'createdAt' => new \MongoDB\BSON\UTCDateTime(),
 
-        //detail de l'action 
-        'details'=>[
-            'message' => 'menu ajouté'
-        ]
+            //detail de l'action
+            'details' => [
+                'message' => 'menu ajouté'
+            ]
 
         ]);
 
@@ -827,12 +868,12 @@ if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST['ajouter_menu'])) {
 //                      SUPPRIMER UN MENU                                       //
 //////////////////////////////////////////////////////////////////////////////////
 
-// si on clique sur le bouton supprimer d'un menu 
+// si on clique sur le bouton supprimer d'un menu
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['supprimer_menu'])) {
-    // on doit recuperer l'idée du menu envoyé par le formulaire 
+    // on doit recuperer l'idée du menu envoyé par le formulaire
     $menuId = (int) ($_POST['menu_id'] ?? 0);
 
-    //on verifie que l'id est bien valide avant de suuprimer 
+    //on verifie que l'id est bien valide avant de suuprimer
     if ($menuId > 0) {
 
         // on prepare la requete SQL pour supprimer le menu choisi
@@ -847,50 +888,50 @@ WHERE ID = :id
             'id' => $menuId
         ]);
 
-$menuASupprimer = $stmt->fetch();
+        $menuASupprimer = $stmt->fetch();
 
-$titreMenuSupprime = $menuASupprimer['titre'] ?? 'menu inconnu';
+        $titreMenuSupprime = $menuASupprimer['titre'] ?? 'menu inconnu';
 
 
-$stmt = $pdo-> prepare("
+        $stmt = $pdo->prepare("
         DELETE FROM menus
         WHERE ID = :id
 ");
 
-$stmt-> execute([
-    'id' => $menuId
-]);
+        $stmt->execute([
+            'id' => $menuId
+        ]);
 
-// une fois le menu supprimer en SQL 
-// on enregistre l'action dans MONGODB 
-    $mongoCollection -> insertOne([
-        // type d'action 
-        'action'=>'menu supprimer',
-        
-        //role de l'actionneur
-        'role' => $user['role'],
+        // une fois le menu supprimer en SQL
+        // on enregistre l'action dans MONGODB
+        $mongoCollection->insertOne([
+            // type d'action
+            'action' => 'menu supprimer',
 
-        //identifiant actionneur
-        'adminId' => (int) $user['ID'],
+            //role de l'actionneur
+            'role' => $user['role'],
 
-        //email actionneur
-        'adminEmail' => $user['email'],
+            //identifiant actionneur
+            'adminId' => (int) $user['ID'],
 
-        //type d'action
-        'targetType' => 'menu',
+            //email actionneur
+            'adminEmail' => $user['email'],
 
-        //ID SQL du menu 
-        'targetId' => $titreMenuSupprime,
+            //type d'action
+            'targetType' => 'menu',
 
-        //date de l'action
-        'createdAt' => new \MongoDB\BSON\UTCDateTime(),
+            //ID SQL du menu
+            'targetId' => $titreMenuSupprime,
 
-        //detail 
-        'details'=>[
-            'message' => 'menu supprimé'
-        ]
+            //date de l'action
+            'createdAt' => new \MongoDB\BSON\UTCDateTime(),
 
-]);
+            //detail
+            'details' => [
+                'message' => 'menu supprimé'
+            ]
+
+        ]);
 
 
         header('Location: admin.php');
@@ -942,14 +983,41 @@ $stmt-> execute([
                                 <form method="POST" action="">
                                     <input type="hidden" name="commande_id" value="<?php echo (int) $commande['ID']; ?>">
 
-                                    <select name="statut">
-                                        <?php foreach ($libellesStatuts as $valeurStatut => $libelleStatut): ?>
-                                            <option value="<?php echo (int) $valeurStatut; ?>" <?php echo ((int) $commande['statut'] === (int) $valeurStatut) ? 'selected' : ''; ?>>
-                                                <?php echo htmlspecialchars($libelleStatut); ?>
+                                    <?php
+                                    /**
+                                     * je recupere le statut enregistre de la commande
+                                     */
+
+                                    $statutActuel = (int) $commande['statut'];
+
+                                    /**
+                                     * on fourni uniquement le statut suivant autorisé
+                                     * pour le statut 5, le tableau sera vide
+                                     */
+
+                                    $statutSuivant = $reglesTransition[$statutActuel] ?? [];
+
+                                    /**
+                                     * la liste afficher contient
+                                     * -le statut actuel
+                                     * -le statut de l'etape suivante
+                                     */
+
+                                    $statutAffiches = array_merge(
+                                        [$statutActuel],
+                                        $statutSuivant
+                                    );
+                                    ?>
+                                    <select name="statut" id="">
+                                        <?php
+                                        foreach ($statutAffiches as $valeurStatut): ?>
+                                            <?php $libellesStatut = $libellesStatuts[$valeurStatut] ?? 'Statut inconnu'; ?>
+                                            <option value="<?php echo (int) $valeurStatut ?>"
+                                                <?php echo $statutActuel === (int) $valeurStatut ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($libellesStatut); ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
-
                                     <button type="submit" name="modifier_statut"> Mettre a jour </button>
                                 </form>
                             </td>
