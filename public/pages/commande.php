@@ -3,20 +3,129 @@
 
 require_once __DIR__ . '/../../src/configs/db.php';
 
-//on charge la session 
+//on charge la session
 require_once __DIR__ . '/../../src/configs/session.php';
 //on vas preparer des variable par default
 $menusPanier = [];
 $totalGlobal = 0;
 $messageErreurCommande = '';
 
-// on verifie que l'utilisateur est connecter 
+// on verifie que l'utilisateur est connecter
 $userConnecte = isset($_SESSION['user']);
 $user = $_SESSION['user'] ?? null;
+/**
+ * preparation des info de livraison
+ *
+ * si le formulaire viens d'etre envoyer on conserve les valeurs saisies
+ * dans $_POST afin de ne pas vider les champs en cas d'erreur
+ *
+ * Lors du premier affichage, les coordonnées de users
+ * servent de valeur par default
+ */
+
+$nomLivraison = trim(
+    (string) ($_POST['nom_livraison'] ?? ($user['nom'] ?? ''))
+);
+
+$prenomLivraison = trim(
+    (string) ($_POST['prenom_livraison'] ?? ($user['prenom'] ?? ''))
+);
+
+$emailLivraison = trim(
+    (string) ($_POST['email_livraison'] ?? ($user['email'] ?? ''))
+);
+
+$telephoneLivraison = trim(
+    (string) ($_POST['telephone_livraison'] ?? ($user['telephone'] ?? ''))
+);
+
+$rueLivraison = trim(
+    (string) ($_POST['rue_livraison'] ?? ($user['rue'] ?? ''))
+);
+
+$codePostalLivraison = trim(
+    (string) ($_POST['code_postal_livraison'] ?? ($user['code_postal'] ?? ''))
+);
+
+$villeLivraison = trim (
+    (string) ($_POST['ville_livraison'] ?? ($user['ville'] ?? ''))
+);
+
+/**
+ * attention ma date et mon heure ne viennent pas du profil
+ * on demandera au client pour chaque commande avec un
+ * minimum de delai
+ */
+
+$dateLivraison = trim(
+    (string) ($_POST['date_livraison'] ?? '')
+);
+
+$heureLivraison = trim(
+    (string) ($_POST['heure_livraison'] ?? '')
+);
+
+
+/**
+ * les frais de livraison seront calculés coté serveur plus tard
+ * Le navigateur ne pourra donc pas imposer son tarif
+ */
+
+$fraisLivraison = 0.00;
+
+/**
+ * tableau des valeurs pour la livraison
+ *
+ * les clés servent à comprendre la données controlées
+ * les valeurs correspondent aux info envoyé et nettoyé
+ */
+
+$champsLivraisonObligatoire = [
+    'nom' => $nomLivraison,
+    'prenom' => $prenomLivraison,
+    'email' => $emailLivraison,
+    'telephone' => $telephoneLivraison,
+    'rue' => $rueLivraison,
+    'code_postal' => $codePostalLivraison,
+    'ville' => $villeLivraison,
+    'date' => $dateLivraison,
+    'heure' => $heureLivraison
+];
+
+/**
+ * on considere que la livraison est complete
+ * la boucle passera a false si une seule champs est vide
+ */
+
+$livraisonComplete = true;
+
+foreach($champsLivraisonObligatoire as $valeurLivraison){
+    if($valeurLivraison === ''){
+        $livraisonComplete = false;
+        break;
+    }
+}
+
+/**
+ * filter_var() verifie le format general de l'adresse mail 
+ * 
+ * la focntion retourne false lorsque le format est invalide
+ * La comparaison transforme clairement le resultat en booleen 
+ * 
+ */
+
+$emailLivraisonValide = filter_var(
+    $emailLivraison,
+    FILTER_VALIDATE_EMAIL
+) !== false;
+
+
+
+
 $commandeValidee = $_SESSION['commande_validee'] ?? false;
 unset($_SESSION['commande_validee']);
 
-// on vas verifier que les infos du client sont bien toute renseigner pour valider une commande 
+// on vas verifier que les infos du client sont bien toute renseigner pour valider une commande
 $champsObligatoireCommande = [
     'nom',
     'prenom',
@@ -30,7 +139,7 @@ $champsObligatoireCommande = [
 // par defaut on vas mettre le profil complet car les infos sont en require a l'inscription
 $profilComplet = true;
 
-// j'ai besoin de verifeir chaque champs l'un apres l'autre 
+// j'ai besoin de verifeir chaque champs l'un apres l'autre
 if ($userConnecte) {
     foreach ($champsObligatoireCommande as $champ) {
         if (empty(trim((string) ($user[$champ] ?? '')))) {
@@ -40,19 +149,19 @@ if ($userConnecte) {
     }
 }
 
-//si le panier est vide ou n'existe pas on arrete proprement 
+//si le panier est vide ou n'existe pas on arrete proprement
 if (!isset($_SESSION['panier']) || empty($_SESSION['panier'])) {
     $panierVide = true;
 } else {
     $panierVide = false;
 
-    // j'ia besoin de recupere les ID des menus selectionner 
+    // j'ia besoin de recupere les ID des menus selectionner
     // pour ca je vais recuperer la clé des tableaux
     $idsMenus = array_keys($_SESSION['panier']);
 
     //on vas recuperer le int dnas la string avec array_map
     $idsMenus = array_map('intval', $idsMenus);
-    // apres on doit garde uniquement ce qui est superieur a 0 
+    // apres on doit garde uniquement ce qui est superieur a 0
     $idsMenus = array_filter($idsMenus, function ($id) {
         return $id > 0;
     });
@@ -62,9 +171,9 @@ if (!isset($_SESSION['panier']) || empty($_SESSION['panier'])) {
         $panierVide = true;
     } else {
         //on vas creer autant de "?" que necessaire pour les utiliser a notre guise avec une requete
-        //je connais pas a l'avance le nombre d'ids mais je peux pas faire trop de requete SQL   
+        //je connais pas a l'avance le nombre d'ids mais je peux pas faire trop de requete SQL
         $placeholders = implode(',', array_fill(0, Count($idsMenus), '?'));
-        //on prepare un requete SQL 
+        //on prepare un requete SQL
         $stmt = $pdo->prepare("
         SELECT ID, titre, prix
         FROM menus
@@ -94,11 +203,13 @@ if (
     isset($_POST['valider_commande']) &&
     $userConnecte &&
     !$panierVide &&
-    $profilComplet
+    $profilComplet &&
+    $livraisonComplete &&
+    $emailLivraisonValide
 ) {
     // validation d'une commande
     try {
-        // on demarre une transaction pour que la commande et ses lignes soient enregistrees ensemble 
+        // on demarre une transaction pour que la commande et ses lignes soient enregistrees ensemble
         $pdo->beginTransaction();
 
         // on insere d'abord la commande principale
@@ -135,7 +246,7 @@ if (
         }
         // si tout s'est bien passe, on valide la transaction
         $pdo->commit();
-        //une fois la commande enregistree, on vide le panier 
+        //une fois la commande enregistree, on vide le panier
         unset($_SESSION['panier']);
         $_SESSION['commande_validee'] = true;
 
@@ -150,7 +261,17 @@ if (
 
 if ($userConnecte && !$profilComplet) {
     $messageErreurCommande = 'Merci de completer vos information avant de pouvoir valider votre commande.';
-}
+    }
+    /**
+     * le controle est necessaire meme avec les attribut pour la securite
+     * on pourrais fabriquer un requete POST sans passer par le formulaire
+     */
+
+    if( $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    isset($_POST['valider_commande']) &&
+    !$livraisonComplete ){
+    $messageErreurCommande = 'Toutes les informations de livraison sont obligatoires';
+    }
 ?>
 
 <!DOCTYPE html>
@@ -199,7 +320,7 @@ if ($userConnecte && !$profilComplet) {
                         //quantité stocker en session pour ce menu
                         $quantite = $_SESSION['panier'][$menu['ID']];
 
-                        // prix unitaire du menu 
+                        // prix unitaire du menu
                         $prixUnitaire = (float) $menu['prix'];
 
                         // total de la ligne
@@ -221,19 +342,137 @@ if ($userConnecte && !$profilComplet) {
 
             <?php if ($userConnecte): ?>
                 <h2>Information du client</h2>
-
-                <div class="commande_infos_client">
-                    <p>Nom: <?php echo htmlspecialchars($user['nom']); ?></p>
-                    <p>Prénom: <?php echo htmlspecialchars($user['prenom']); ?> </p>
-                    <p>Email: <?php echo htmlspecialchars($user['email']); ?></p>
-                    <p>Téléphone: <?php echo htmlspecialchars($user['telephone']) ?></p>
-                    <p>Adresse: <?php echo htmlspecialchars($user['rue']); ?></p>
-                    <p>Code Postal: <?php echo htmlspecialchars($user['code_postal']); ?></p>
-                    <p>Ville: <?php echo htmlspecialchars($user['ville']); ?></p>
-                </div>
-
                 <div class="cmdForm">
-                    <form method="POST" action="">
+
+                <form action="" method="POST">
+            <!--Identité du destinataire -->
+            <div>
+                <label for="nom_livraison">Nom</label>
+
+                <input type="text"
+                id='nom_livraison'
+                name="nom_livraison"
+                value="<?php echo htmlspecialchars(
+                    $nomLivraison,
+                    ENT_QUOTES,
+                    'UTF-8'
+                ); ?>"
+                required>
+            </div>
+            <div>
+                <label for="prenom_livraison">Prénom</label>
+
+                <input type="text"
+                id='prenom_livraison'
+                name="prenom_livraison"
+                value="<?php echo htmlspecialchars(
+                    $prenomLivraison,
+                    ENT_QUOTES,
+                    'UTF-8'
+                ); ?>"
+                required>
+            </div>
+                        <!--coordonnées utilisée pour cette commande  -->
+            <div>
+                <label for="email_livraison">Email</label>
+
+                <input type="email"
+                id='email_livraison'
+                name="email_livraison"
+                value="<?php echo htmlspecialchars(
+                    $emailLivraison,
+                    ENT_QUOTES,
+                    'UTF-8'
+                ); ?>"
+                required>
+            </div>
+
+                        <!--téléphone du destinataire -->
+            <div>
+                <label for="telephone_livraison">Télephone</label>
+
+                <input type="tel"
+                id='telephone_livraison'
+                name="telephone_livraison"
+                value="<?php echo htmlspecialchars(
+                    $telephoneLivraison,
+                    ENT_QUOTES,
+                    'UTF-8'
+                ); ?>"
+                required>
+            </div>
+
+                        <!--Adress propre a la cmd -->
+            <div>
+                <label for="rue_livraison">numéro et rue</label>
+
+                <input type="text"
+                id='rue_livraison'
+                name="rue_livraison"
+                value="<?php echo htmlspecialchars(
+                    $rueLivraison,
+                    ENT_QUOTES,
+                    'UTF-8'
+                ); ?>"
+                required>
+            </div>
+
+                        <div>
+                <label for="code_postal_livraison">Code postale</label>
+
+                <input type="text"
+                id='code_postal_livraison'
+                name="code_postal_livraison"
+                value="<?php echo htmlspecialchars(
+                    $codePostalLivraison,
+                    ENT_QUOTES,
+                    'UTF-8'
+                ); ?>"
+                required>
+            </div>
+
+                        <div>
+                <label for="ville_livraison">ville</label>
+
+                <input type="text"
+                id='ville_livraison'
+                name="ville_livraison"
+                value="<?php echo htmlspecialchars(
+                    $villeLivraison,
+                    ENT_QUOTES,
+                    'UTF-8'
+                ); ?>"
+                required>
+            </div>
+            <!--Moment de la livraison -->
+                        <div>
+                <label for="date_livraison">date de livraison</label>
+
+                <input type="date"
+                id='date_livraison'
+                name="date_livraison"
+                value="<?php echo htmlspecialchars(
+                    $dateLivraison,
+                    ENT_QUOTES,
+                    'UTF-8'
+                ); ?>"
+                required>
+
+                            <div>
+                <label for="heure_livraison">Heure de livraison</label>
+
+
+                <input type="time"
+                id='heure_livraison'
+                name="heure_livraison"
+                value="<?php echo htmlspecialchars(
+                    $heureLivraison,
+                    ENT_QUOTES,
+                    'UTF-8'
+                ); ?>"
+                required>
+            </div>
+            </div>
                         <p>
                             <button type="submit" name="valider_commande"
                                 <?php echo !$profilComplet ? 'disabled' : ''; ?>>
