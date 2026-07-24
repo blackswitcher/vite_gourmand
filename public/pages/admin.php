@@ -281,6 +281,16 @@ $stmt = $pdo->prepare("
         commande.date_creation,
         commande.statut,
         commande.total,
+        commande.nom_livraison,
+        commande.prenom_livraison,
+        commande.email_livraison,
+        commande.telephone_livraison,
+        commande.rue_livraison,
+        commande.code_postal_livraison,
+        commande.ville_livraison,
+        commande.date_livraison,
+        commande.heure_livraison,
+        commande.frais_livraison,
         users.nom,
         users.prenom,
         users.email
@@ -968,6 +978,7 @@ WHERE ID = :id
                         <th>Client</th>
                         <th>Email</th>
                         <th>Date</th>
+                        <th>Livraison</th>
                         <th>Statut</th>
                         <th>Total</th>
                     </tr>
@@ -979,6 +990,60 @@ WHERE ID = :id
                             <td><?php echo htmlspecialchars($commande['prenom'] . ' ' . $commande['nom']); ?></td>
                             <td><?php echo htmlspecialchars($commande['email']); ?></td>
                             <td><?php echo date('d/m/Y à H:i', strtotime($commande['date_creation'])); ?></td>
+                            <td><?php if (!empty($commande['date_livraison']) && !empty($commande['heure_livraison'])) : ?>
+
+                                <!--Destinataire reel de cette commande-->
+                            <p>
+                                <?php echo htmlspecialchars(trim(
+                                    ($commande['prenom_livraison'] ?? '')
+                                    . ' '
+                                    .($commande['nom_livraison'])
+                                )); ?>
+                            </p>
+                            <!--Coordonnées utilisées pour la livraison-->
+                            <p>
+                                <?php echo htmlspecialchars(
+                                    $commande['email_livraison'] ?? ''
+                                );?>
+                            </p>
+                            <p>
+                                <?php echo htmlspecialchars(
+                                    $commande['telephone_livraison']
+                                ); ?>
+                            </p>
+                            <p>
+                            <!--Adresse figée de la commande -->
+                            <?php echo htmlspecialchars(trim(
+                                $commande['rue_livraison']
+                                . ' '
+                                .$commande['code_postal_livraison']
+                                . ' '
+                                .$commande['ville_livraison']
+                            )); ?>
+                            </p>
+
+                            <!--Date et heure demandées-->
+                            <p>
+                                Le
+                                <?php  echo date (
+                                    'd/m/Y' ,
+                                    strtotime($commande['date_livraison'])
+                                ); ?> à
+                                <?php echo htmlspecialchars(
+                                    substr((string) $commande['heure_livraison'], 0, 5)
+                                ); ?>
+                            </p>
+                            <p>
+                                Frais:
+                                <?php echo number_format(
+                                    (float) $commande['frais_livraison'],
+                                    2, ',', ' '
+                                ); ?> €
+                            </p>
+                            <?php else:?>
+                            <p>Information indisponible pour cette commande</p>
+                            <?php endif; ?>
+                            </td>
                             <td>
                                 <form method="POST" action="">
                                     <input type="hidden" name="commande_id" value="<?php echo (int) $commande['ID']; ?>">

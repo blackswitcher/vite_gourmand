@@ -272,6 +272,7 @@ $modeEdition = isset($_GET['edit']) && $_GET['edit'] == 1;
                                 <th>Date</th>
                                 <th>Statut</th>
                                 <th>Total</th>
+                                <th>Livraison</th>
                                 <th>Avis</th>
                             </tr>
                         </thead>
@@ -282,6 +283,63 @@ $modeEdition = isset($_GET['edit']) && $_GET['edit'] == 1;
                                     <td><?php echo date('d/m/Y à H:i', strtotime($commande['date_creation'])); ?></td>
                                     <td><?php echo htmlspecialchars($libellesStatuts[$commande['statut']] ?? 'Statut Inconnu'); ?></td> <!-- si le statut existe on le met sinon on place statut inconnu--->
                                     <td><?php echo number_format((float) $commande['total'], 2, ',', ' '); ?> € </td>
+                                    <td><?php if (
+                                        !empty($commande['date_livraison'])&&
+                                        !empty($commande['heure_livraison'])
+                                    ): ?>
+
+                            <!--Identité du destinataire -->
+                            <p>
+                                <?php echo htmlspecialchars(trim(
+                                    ($commande['prenom_livraison'] ?? '')
+                                    . ' '
+                                    . ($commande['nom_livraison'] ?? '')
+                                )); ?>
+                            </p>
+                                <!-- Coordonnées de la livraison-->
+                                <p>
+                                    <?php echo htmlspecialchars($commande['email_livraison'] ?? ''); ?>
+                                </p>
+                                <p>
+                                    <?php echo htmlspecialchars($commande['telephone_livraison'] ?? ''); ?>
+                                </p>
+                            <!--Adresse figée de la commande-->
+                                <p>
+                                    <?php echo htmlspecialchars(trim(
+                                        ($commande['rue_livraison'] ?? '')
+                                        . ' '
+                                        . ($commande['code_postal_livraison'] ?? '')
+                                        . ' '
+                                        .($commande['ville_livraison'] ?? '')
+                                        )); ?>
+                                </p>
+
+                                <!--gestion de la livraison -->
+                                <p>
+                                    Le <?php echo date(
+                                        'd/m/Y',
+                                        strtotime ($commande['date_livraison'])
+                                    ); ?>
+                                    à <?php echo htmlspecialchars(
+                                        substr((string) $commande['heure_livraison'], 0, 5)
+                                    ); ?>
+                                </p>
+                            <!--Frais de livraison calculées et enregistré-->
+                                <p>
+                                    Frais de livraison :
+                                    <?php  echo number_format(
+                                        (float) $commande['frais_livraison'],
+                                        2,
+                                        ',',
+                                        ' '
+                                    ); ?> €
+                                </p>
+                                <?php else: ?>
+                                    <!--Les anciennes commande n'ont pas de livraison
+                                    pour eviter les erreur  d'affichage -->
+                                    <p>Informations indisponibles pour cette commande.</p>
+                                <?php endif; ?>
+                                </td>
                                     <td><?php
                                         // gestion de la colonnes 'avis' et un seul avis peux etre poser par commande
                                         //l'avis peut etre poser que si mon client a recu sa commande donc statut terminer
