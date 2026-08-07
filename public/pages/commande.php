@@ -5,10 +5,30 @@ require_once __DIR__ . '/../../src/configs/db.php';
 
 //on charge la session
 require_once __DIR__ . '/../../src/configs/session.php';
+
+// Charge les fonctions de géocodage, d’itinéraire et de calcul des frais.
+require_once __DIR__ . '/../../src/functions/functions.php';
 //on vas preparer des variable par default
 $menusPanier = [];
 $totalGlobal = 0;
 $messageErreurCommande = '';
+
+/**
+ * Deux actions differente
+ * obtenir le prix de la livraison
+ * confirmer definitivement la commande
+ */
+
+$calculLivraisonDemande=
+isset($_POST['calculer_livraison']);
+
+$confirmationCommandeDemandee =
+isset($_POST['confirmer_commande']);
+
+$traitementCommandeDemande =
+    $calculLivraisonDemande ||
+    $confirmationCommandeDemandee;
+
 
 // on verifie que l'utilisateur est connecter
 $userConnecte = isset($_SESSION['user']);
@@ -70,8 +90,23 @@ $heureLivraison = trim(
  * les frais de livraison seront calculés coté serveur plus tard
  * Le navigateur ne pourra donc pas imposer son tarif
  */
+// Valeurs calculées côté serveur avant l’enregistrement.
+$distanceLivraison = null;
+$fraisLivraison = null;
+$calculLivraisonValide = false;
 
-$fraisLivraison = 0.00;
+/*
+ * Adresse complète envoyée au service de géocodage.
+ * Les virgules aident l’API à distinguer la rue, la ville et le pays.
+ */
+$adresseLivraisonComplete = trim(
+    $rueLivraison
+    . ', '
+    . $codePostalLivraison
+    . ' '
+    . $villeLivraison
+    . ', France'
+);
 
 /**
  * tableau des valeurs pour la livraison
@@ -120,6 +155,13 @@ $emailLivraisonValide = filter_var(
 ) !== false;
 
 /**
+ * Le code postal doit contenir 5 chiffres
+ */
+
+$codePostalLivraisonValide = preg_match('/^\d{5}$/', $codePostalLivraison) === 1;
+
+
+/**
  * createFromFormat() tente de construire une vrai date
  * a partir du format envoyé par le champ HTML date.
  */
@@ -157,6 +199,21 @@ $heureLivraisonObject = DateTime::createFromFormat(
 
 $heureLivraisonValide = $heureLivraisonObject !== false && $heureLivraisonObject -> format('H:i') === $heureLivraison;
 
+/**
+ * on rassemble la date et l'heure afin de verifier que le creaneau est bien dans le futur
+ *
+ */
+
+$dateHeureLivraisonObject = DateTime::createFromFormat(
+    '!Y-m-d H:i',
+    $dateLivraison . ' ' . $heureLivraison
+);
+
+$dateHeureLivraisonFutur =
+    $dateLivraisonValide &&
+    $heureLivraisonValide &&
+    $dateHeureLivraisonObject !== false &&
+    $dateHeureLivraisonObject > new DateTime();
 
 $commandeValidee = $_SESSION['commande_validee'] ?? false;
 unset($_SESSION['commande_validee']);
@@ -234,16 +291,105 @@ foreach ($menusPanier as $menu) {
     $sousTotal = $prixUnitaire * $quantité;
     $totalGlobal += $sousTotal;
 }
+/**
+ * Calcul des frais uniquement lorsque le formulaire de livraison contient
+ * des donnees valides
+ */
+
+if(
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    $traitementCommandeDemande &&
+    $livraisonComplete &&
+    $emailLivraisonValide &&
+    $codePostalLivraisonValide &&
+    $dateLivraisonNonPassee &&
+    $heureLivraisonValide &&
+    $dateHeureLivraisonFutur
+){
+    /**
+     * Dans bordeaux la liv est gratuite aucun calcul
+     * strcasecmp compare les villes mais ne prend pas en compte les majuscule
+     * ca evite les diff genre bordeaux !== Bordeaux
+     */
+    if(strcasecmp(trim($villeLivraison), 'Bordeaux') === 0){
+        $distanceLivraison = 0.00;
+        $fraisLivraison = calculerFraisLivraison(
+            $villeLivraison,
+            null
+        );
+        $calculLivraisonValide = $fraisLivraison !== null;
+    }else{
+        /**
+         * point de depart du restaurant
+         */
+        $adresseDepartLivraison =
+        'Place de la Bourse, 33000 bordeaux, france';
+        // transformation des adresse en coordonées GPS
+        $coordonnéesDepart = geocoderAdressORS(
+            $adresseDepartLivraison
+        );
+
+        $coordonneesArrivee = geocoderAdressORS(
+            $adresseLivraisonComplete
+        );
+
+        /**
+         * le calcul peux se faire que si les adresse sont geocoder
+         */
+
+        if(
+            $coordonnéesDepart !== null &&
+            $coordonneesArrivee !== null
+        ) {
+            $distanceLivraison = calculerDistanceRoutiereORS(
+                $coordonnéesDepart,
+                $coordonneesArrivee
+            );
+            /**
+             * les frais sont calculer uniquement lorsqu'une distance routiere a reelmeent ete obtenue
+             *
+             */
+            if($distanceLivraison !== null){
+                $fraisLivraison = calculerFraisLivraison(
+                    $villeLivraison,
+                    $distanceLivraison
+                );
+                $calculLivraisonValide=
+                $fraisLivraison !== null;
+            }
+        }
+    }
+}
+
+/**
+ * le total definitif contient les frais de livraison
+ * par le serveur
+ */
+
+$totalCommande = $totalGlobal;
+
+if(
+    $calculLivraisonValide &&
+    $fraisLivraison !== null
+){
+    $totalCommande = round(
+        $totalGlobal + $fraisLivraison,
+        2
+    );
+}
 if (
     $_SERVER['REQUEST_METHOD'] === 'POST' &&
-    isset($_POST['valider_commande']) &&
+    $confirmationCommandeDemandee &&
     $userConnecte &&
     !$panierVide &&
     $profilComplet &&
     $livraisonComplete &&
     $emailLivraisonValide &&
+    $codePostalLivraisonValide &&
     $dateLivraisonNonPassee &&
-    $heureLivraisonValide
+    $heureLivraisonValide &&
+    $dateHeureLivraisonFutur &&
+    $calculLivraisonValide
 ) {
     // validation d'une commande
     try {
@@ -267,6 +413,7 @@ if (
         ville_livraison,
         date_livraison,
         heure_livraison,
+        distance_livraison,
         frais_livraison
         ) VALUES (
             :user_id,
@@ -281,6 +428,7 @@ if (
             :ville_livraison,
             :date_livraison,
             :heure_livraison,
+            :distance_livraison,
             :frais_livraison
         )
             ");
@@ -288,7 +436,7 @@ if (
         $stmt->execute([
             'user_id'=> $user['ID'],
             'statut' => 0,
-            'total' => $totalGlobal,
+            'total' => $totalCommande,
             'nom_livraison' => $nomLivraison,
             'prenom_livraison' => $prenomLivraison,
             'email_livraison' => $emailLivraison,
@@ -298,6 +446,7 @@ if (
             'ville_livraison' => $villeLivraison,
             'date_livraison' => $dateLivraison,
             'heure_livraison' => $heureLivraison,
+            'distance_livraison' => $distanceLivraison,
             'frais_livraison' => $fraisLivraison
         ]);
 
@@ -345,7 +494,7 @@ if ($userConnecte && !$profilComplet) {
      */
 
     if( $_SERVER['REQUEST_METHOD'] === 'POST' &&
-    isset($_POST['valider_commande']) &&
+    $traitementCommandeDemande &&
     !$livraisonComplete ){
     $messageErreurCommande = 'Toutes les informations de livraison sont obligatoires';
     }
@@ -358,16 +507,33 @@ if ($userConnecte && !$profilComplet) {
 
     if (
         $_SERVER['REQUEST_METHOD'] === 'POST' &&
-        isset($_POST['valider_commande']) &&
+        $traitementCommandeDemande &&
         $livraisonComplete &&
         !$emailLivraisonValide
     ){
         $messageErreurCommande = 'L\'adresse mail de livraison n\'est pas valide.';
     }
 
+    /**
+     * si tous les champs sont okay mais le code postale c'est pas bon alors
+     * on renvoie une erreur
+     */
+        if (
+            $_SERVER['REQUEST_METHOD'] === 'POST' &&
+            $traitementCommandeDemande &&
+            $livraisonComplete &&
+            $emailLivraisonValide &&
+            !$codePostalLivraisonValide
+        ){
+            $messageErreurCommande = 'Le code postal doit contenir 5 chiffres.';
+        }
+
+        /**
+         * si touts les champs sont okay mais pas la date de livraison
+         */
         if (
         $_SERVER['REQUEST_METHOD'] === 'POST' &&
-        isset($_POST['valider_commande']) &&
+        $traitementCommandeDemande &&
         $livraisonComplete &&
         $emailLivraisonValide &&
         !$dateLivraisonValide
@@ -381,7 +547,7 @@ if ($userConnecte && !$profilComplet) {
 
     if(
         $_SERVER['REQUEST_METHOD']  === 'POST' &&
-        isset($_POST['valider_commande']) &&
+        $traitementCommandeDemande &&
         $livraisonComplete &&
         $emailLivraisonValide &&
         $dateLivraisonValide &&
@@ -393,7 +559,7 @@ if ($userConnecte && !$profilComplet) {
 
         if(
         $_SERVER['REQUEST_METHOD']  === 'POST' &&
-        isset($_POST['valider_commande']) &&
+        $traitementCommandeDemande &&
         $livraisonComplete &&
         $emailLivraisonValide &&
         $dateLivraisonValide &&
@@ -401,7 +567,46 @@ if ($userConnecte && !$profilComplet) {
         !$heureLivraisonValide
     ){
         $messageErreurCommande =
-        'l\'heure de livraison n\' pas le format attendu.';
+        'l\'heure de livraison n\'a pas le format attendu.';
+    }
+
+    /**
+     * la date et l'heure sont valide separerment mais leur combinaison
+     * correspond a un créaneau deja passée
+     */
+
+    if(
+        $_SERVER['REQUEST_METHOD'] === 'POST' &&
+        $traitementCommandeDemande &&
+        $livraisonComplete &&
+        $emailLivraisonValide &&
+        $codePostalLivraisonValide &&
+        $dateLivraisonValide &&
+        $dateLivraisonNonPassee &&
+        $heureLivraisonValide &&
+        !$dateHeureLivraisonFutur
+    ){
+        $messageErreurCommande =
+        'La date et l\'heure de livraison doivent correspondre à un creneau futur.';
+    }
+    /**
+     * Les information sont valides mais le calcule de livraison
+     * n'a pas pu etre effectuer
+     */
+    if(
+        $_SERVER['REQUEST_METHOD'] === 'POST' &&
+        isset($_POST['valide_commande']) &&
+        $livraisonComplete &&
+        $emailLivraisonValide &&
+        $codePostalLivraisonValide &&
+        $dateLivraisonValide &&
+        $dateLivraisonNonPassee &&
+        $heureLivraisonValide &&
+        $dateHeureLivraisonFutur &&
+        !$calculLivraisonValide
+    ){
+        $messageErreurCommande =
+        'Impossible de calculer la livraison. verifiez l\'adresse indiquée';
     }
 ?>
 
@@ -605,11 +810,62 @@ if ($userConnecte && !$profilComplet) {
             </div>
             </div>
                         <p>
-                            <button type="submit" name="valider_commande"
+                            <button type="submit" name="calculer_livraison"
                                 <?php echo !$profilComplet ? 'disabled' : ''; ?>>
-                                Valider ma commande
+                                Calculer la livraison
                             </button>
                         </p>
+                        <?php
+                        if(
+                            $calculLivraisonValide &&
+                            $fraisLivraison !== null
+                        ): ?>
+                        <div class="resume_livraison">
+                            <h3>Résumé</h3>
+                            <p>
+                                Sous-total des menus :
+                                <?php echo number_format(
+                                    $totalGlobal,
+                                    2,
+                                    ',',
+                                    ' '
+                                ); ?> €
+                            </p>
+
+                            <p>
+                                Distance de livraison :
+                                <?php  echo number_format(
+                                    (float) $distanceLivraison,
+                                    2,
+                                    ',',
+                                    ' '
+                                ); ?> Km
+                            </p>
+
+                            <p>
+                                Frais de livraison :
+                                <?php echo number_format(
+                                    $fraisLivraison,
+                                    2,
+                                    ',',
+                                    ' '
+                                ); ?> €
+                            </p>
+                            <p>
+                                total a payer :
+                                <?php echo number_format(
+                                    $totalCommande,
+                                    2,
+                                    ',',
+                                    ' '
+                                ); ?> €
+                            </p>
+                            <button type="submit"
+                                    name="confirmer_commande">
+                                confirmer ma commande
+                            </button>
+                        </div>
+                        <?php endif; ?>
                     </form>
                 </div>
             <?php else: ?>

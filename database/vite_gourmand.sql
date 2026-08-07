@@ -48,7 +48,19 @@ CREATE TABLE `commande` (
   `user_id` int(10) UNSIGNED NOT NULL,
   `date_creation` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `statut` tinyint(3) UNSIGNED NOT NULL,
-  `total` decimal(8,2) NOT NULL DEFAULT '0.00'
+  `total` decimal(8,2) NOT NULL DEFAULT '0.00',
+  -- Copie figée des informations de livraison.
+  `nom_livraison` varchar(255) DEFAULT NULL,
+  `prenom_livraison` varchar(255) DEFAULT NULL,
+  `email_livraison` varchar(255) DEFAULT NULL,
+  `telephone_livraison` varchar(255) DEFAULT NULL,
+  `rue_livraison` varchar(255) DEFAULT NULL,
+  `code_postal_livraison` varchar(255) DEFAULT NULL,
+  `ville_livraison` varchar(255) DEFAULT NULL,
+  `date_livraison` date DEFAULT NULL,
+  `heure_livraison` time DEFAULT NULL,
+  `distance_livraison` decimal(8,2) DEFAULT NULL,
+  `frais_livraison` decimal(8,2) NOT NULL DEFAULT '0.00'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
