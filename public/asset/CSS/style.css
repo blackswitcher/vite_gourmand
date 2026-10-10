@@ -70,6 +70,18 @@ ul li {
 }
 
 /*-------------gestion de mes boutons dans mon navigateur -----------------*/
+header nav > ul.menu{
+    align-items: center;
+}
+
+button.navBouton{
+    appearance: none;
+    background: transparent;
+    border: none;
+    font:inherit;
+    cursor:pointer;
+}
+
 .navBouton {
     color: black;
     font-weight: bold;

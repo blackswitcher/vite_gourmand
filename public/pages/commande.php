@@ -19,16 +19,57 @@ $messageErreurCommande = '';
  * confirmer definitivement la commande
  */
 
-$calculLivraisonDemande=
-isset($_POST['calculer_livraison']);
+$calculLivraisonDemande =
+    isset($_POST['calculer_livraison']);
 
 $confirmationCommandeDemandee =
-isset($_POST['confirmer_commande']);
+    isset($_POST['confirmer_commande']);
 
 $traitementCommandeDemande =
     $calculLivraisonDemande ||
     $confirmationCommandeDemandee;
 
+
+    // On recupere les jetons du formulaire et de la session 
+    $csrfTokenRecu = $_POST['csrf_token'] ?? '';
+    $csrfTokenSession = $_SESSION['csrf_token'] ?? '';
+
+    // Les deux jetons doivent être des chaine non vides et identiques.
+    $csrfTokenValide = 
+    is_string($csrfTokenRecu)
+    && is_string($csrfTokenSession)
+    && $csrfTokenRecu !== ''
+    && $csrfTokenSession !== ''
+    && hash_equals($csrfTokenSession, $csrfTokenRecu);
+
+    // on bloque toute les requete POST invalide avant de traiter le devis 
+    if(
+        $_SERVER['REQUEST_METHOD'] === 'POST'
+        && !$csrfTokenValide
+    ){
+        http_response_code(403);
+        exit('Requete non autorisée. Rechargez la page puis réessayez.');
+    }
+
+/**
+ * le devis calculé sera conservé en session
+ * entre
+ * le calcule de la livraison
+ * et la confirmation de commande
+ */
+
+
+$devisLivraison = $_SESSION['devis_livraison'] ?? null;
+
+/**
+ * un nouveau calcule remplacera obligatoirement l'ancien devis
+ *
+ */
+
+if ($calculLivraisonDemande){
+    unset($_SESSION['devis_livraison']);
+    $devisLivraison = null;
+}
 
 // on verifie que l'utilisateur est connecter
 $userConnecte = isset($_SESSION['user']);
@@ -67,7 +108,7 @@ $codePostalLivraison = trim(
     (string) ($_POST['code_postal_livraison'] ?? ($user['code_postal'] ?? ''))
 );
 
-$villeLivraison = trim (
+$villeLivraison = trim(
     (string) ($_POST['ville_livraison'] ?? ($user['ville'] ?? ''))
 );
 
@@ -96,18 +137,62 @@ $fraisLivraison = null;
 $calculLivraisonValide = false;
 
 /*
- * Adresse complète envoyée au service de géocodage.
+ *  complète envoyée au service de géocodage.
  * Les virgules aident l’API à distinguer la rue, la ville et le pays.
  */
 $adresseLivraisonComplete = trim(
     $rueLivraison
-    . ', '
-    . $codePostalLivraison
-    . ' '
-    . $villeLivraison
-    . ', France'
+        . ', '
+        . $codePostalLivraison
+        . ' '
+        . $villeLivraison
+        . ', France'
 );
 
+/**
+ * on classe le panier pour obten ir toujours la meme empreinte
+ * indépendamment de l'ordre de ses elements
+*/
+
+$panierPourDevis =
+is_array($_SESSION['panier'] ?? null)
+    ? $_SESSION['panier'] // operateur de condition si c'est bien vrai
+    : [];// sinon tableau vide
+
+    //on appel ca un operateur terniaire il sert a choisir entre 2 valuer pour un variable
+    // ? valeur si vrai
+    // : valeur si faux
+
+    ksort($panierPourDevis); // k -> key sort-> trie  on trie selon les key
+
+    /**
+     * toute les informations susceptible de modifier le devis
+     *
+     */
+    $donneesEmpreinteDevis = [
+        'user_id' => $user['ID'] ?? null,
+        'nom' => $nomLivraison,
+        'prenom' => $prenomLivraison,
+        'email' => $emailLivraison,
+        'telephone' => $telephoneLivraison,
+        'rue' => $rueLivraison,
+        'code_postal' => $codePostalLivraison,
+        'ville' => $villeLivraison,
+        'date' => $dateLivraison,
+        'heure' => $heureLivraison,
+        'panier' => $panierPourDevis
+    ];
+
+    $jsonEmpreinteDevis = json_encode( // transforme un valeur php un tableau
+                                    //en chaine de caractere format json
+        $donneesEmpreinteDevis,
+        JSON_UNESCAPED_UNICODE //permet de conserve les caractere unicode
+        //comme kes accents
+    );
+    $empreinteDevisActuelle =
+    $jsonEmpreinteDevis !== false
+    ? hash('sha256', $jsonEmpreinteDevis)
+    : '';
 /**
  * tableau des valeurs pour la livraison
  *
@@ -134,8 +219,8 @@ $champsLivraisonObligatoire = [
 
 $livraisonComplete = true;
 
-foreach($champsLivraisonObligatoire as $valeurLivraison){
-    if($valeurLivraison === ''){
+foreach ($champsLivraisonObligatoire as $valeurLivraison) {
+    if ($valeurLivraison === '') {
         $livraisonComplete = false;
         break;
     }
@@ -197,7 +282,7 @@ $heureLivraisonObject = DateTime::createFromFormat(
     $heureLivraison
 );
 
-$heureLivraisonValide = $heureLivraisonObject !== false && $heureLivraisonObject -> format('H:i') === $heureLivraison;
+$heureLivraisonValide = $heureLivraisonObject !== false && $heureLivraisonObject->format('H:i') === $heureLivraison;
 
 /**
  * on rassemble la date et l'heure afin de verifier que le creaneau est bien dans le futur
@@ -296,7 +381,7 @@ foreach ($menusPanier as $menu) {
  * des donnees valides
  */
 
-if(
+if (
     $_SERVER['REQUEST_METHOD'] === 'POST' &&
     $traitementCommandeDemande &&
     $livraisonComplete &&
@@ -305,25 +390,25 @@ if(
     $dateLivraisonNonPassee &&
     $heureLivraisonValide &&
     $dateHeureLivraisonFutur
-){
+) {
     /**
      * Dans bordeaux la liv est gratuite aucun calcul
      * strcasecmp compare les villes mais ne prend pas en compte les majuscule
      * ca evite les diff genre bordeaux !== Bordeaux
      */
-    if(strcasecmp(trim($villeLivraison), 'Bordeaux') === 0){
+    if (strcasecmp(trim($villeLivraison), 'Bordeaux') === 0) {
         $distanceLivraison = 0.00;
         $fraisLivraison = calculerFraisLivraison(
             $villeLivraison,
             null
         );
         $calculLivraisonValide = $fraisLivraison !== null;
-    }else{
+    } else {
         /**
          * point de depart du restaurant
          */
         $adresseDepartLivraison =
-        'Place de la Bourse, 33000 bordeaux, france';
+            'Place de la Bourse, 33000 bordeaux, france';
         // transformation des adresse en coordonées GPS
         $coordonnéesDepart = geocoderAdressORS(
             $adresseDepartLivraison
@@ -337,7 +422,7 @@ if(
          * le calcul peux se faire que si les adresse sont geocoder
          */
 
-        if(
+        if (
             $coordonnéesDepart !== null &&
             $coordonneesArrivee !== null
         ) {
@@ -349,13 +434,13 @@ if(
              * les frais sont calculer uniquement lorsqu'une distance routiere a reelmeent ete obtenue
              *
              */
-            if($distanceLivraison !== null){
+            if ($distanceLivraison !== null) {
                 $fraisLivraison = calculerFraisLivraison(
                     $villeLivraison,
                     $distanceLivraison
                 );
-                $calculLivraisonValide=
-                $fraisLivraison !== null;
+                $calculLivraisonValide =
+                    $fraisLivraison !== null;
             }
         }
     }
@@ -368,18 +453,74 @@ if(
 
 $totalCommande = $totalGlobal;
 
-if(
+if (
     $calculLivraisonValide &&
     $fraisLivraison !== null
-){
+) {
     $totalCommande = round(
         $totalGlobal + $fraisLivraison,
         2
     );
 }
+/**
+ * lors du premier clic on conserve le devis  calculé
+ * avec l'empreinte des information utilisé
+ *
+ */
+
+if(
+    $calculLivraisonDemande &&
+    $csrfTokenValide &&
+    $calculLivraisonValide &&
+    $distanceLivraison !== null &&
+    $fraisLivraison !== null &&
+    $empreinteDevisActuelle !== ''
+){
+    $devisLivraison = [
+        'empreinte' => $empreinteDevisActuelle,
+        'distance'=> (float) $distanceLivraison,
+        'frais' => (float) $fraisLivraison,
+        'total' => (float) $totalCommande
+    ];
+
+    $_SESSION['devis_livraison'] =
+    $devisLivraison;
+}
+
+/**
+ * le devis reste valide seulement si
+ * son empreinte correspond au info actuelle
+ *
+ * les montant recalculé correspondent aux montant
+ */
+
+$devisLivraisonValide =
+    is_array($devisLivraison) &&
+    isset(
+        $devisLivraison['empreinte'],
+        $devisLivraison['distance'],
+        $devisLivraison['frais'],
+        $devisLivraison['total']
+    ) &&
+    $empreinteDevisActuelle !== '' &&
+    hash_equals(
+        (string) $devisLivraison['empreinte'],
+        $empreinteDevisActuelle
+    ) &&
+    round((float) $devisLivraison['distance'], 2)
+        === round((float) $distanceLivraison, 2)
+    &&
+    round((float) $devisLivraison['frais'], 2)
+        === round((float) $fraisLivraison, 2)
+    &&
+    round((float) $devisLivraison['total'], 2)
+        ===round((float) $totalCommande, 2);
+
+
 if (
     $_SERVER['REQUEST_METHOD'] === 'POST' &&
     $confirmationCommandeDemandee &&
+    $csrfTokenValide &&
     $userConnecte &&
     !$panierVide &&
     $profilComplet &&
@@ -389,7 +530,8 @@ if (
     $dateLivraisonNonPassee &&
     $heureLivraisonValide &&
     $dateHeureLivraisonFutur &&
-    $calculLivraisonValide
+    $calculLivraisonValide &&
+    $devisLivraisonValide
 ) {
     // validation d'une commande
     try {
@@ -434,7 +576,7 @@ if (
             ");
 
         $stmt->execute([
-            'user_id'=> $user['ID'],
+            'user_id' => $user['ID'],
             'statut' => 0,
             'total' => $totalCommande,
             'nom_livraison' => $nomLivraison,
@@ -472,8 +614,156 @@ if (
         }
         // si tout s'est bien passe, on valide la transaction
         $pdo->commit();
+
+        //Renouvelle le jeton apres la validation definitive 
+
+        $_SESSION['csrf_token'] =
+        bin2hex(random_bytes(32));
+        /**
+         * La transaction est maintenant validée:
+         * la commande existe réellement en base
+         * on peut preparer son mail de confirmation
+         */
+        $nomCompletLivraison = trim(
+            $prenomLivraison . ' ' . $nomLivraison
+        );
+
+        $sujetConfirmation =
+            'Confirmation de votre commande n°' . $commandeId;
+
+            //preparation des valeurs affichées dans le mail
+            $nomCompletmail = htmlspecialchars(
+                $nomCompletLivraison,
+                ENT_QUOTES,
+                'UTF-8'
+            );
+
+            $adresseLivraisonMail = htmlspecialchars(
+                trim(
+                    $rueLivraison
+                    .', '
+                    . $codePostalLivraison
+                    . ', '
+                    . $villeLivraison
+                ),
+                ENT_QUOTES,
+                'UTF-8'
+            );
+
+            $dateLivraisonMail = date(
+                'd/m/Y',
+                strtotime($dateLivraison)
+            );
+            $heureLivraisonMail =
+            substr(
+                $heureLivraison,
+                0,
+                5
+            );
+            $distanceLivraisonMail = number_format(
+                (float) $distanceLivraison,
+                2,
+                ',',
+                ' '
+            );
+
+            $fraisLivraisonMail = number_format(
+                (float) $fraisLivraison,
+                2,
+                ',',
+                ' '
+                );
+
+            $totalCommandeMail = number_format(
+                (float) $totalCommande,
+                2,
+                ',',
+                ' '
+            );
+
+            /**
+             * Version HTML du mail de confirmation
+             * les données du client sont proteger avant leur insertion
+             */
+            $contenuHtml = '
+            <h1>Confirmation de votre commande</h1>
+
+            <p> Bonjour ' . $nomCompletmail.  ',</p>
+
+            <p>
+            Votre commande n°' . (int) $commandeId . ' a bien été enregistrée </p>
+
+            <ul>
+            <li>
+                Livraison : ' . $dateLivraisonMail .
+                ' à ' .$heureLivraisonMail . '
+            </li>
+
+            <li>
+                Adresse : '  .$adresseLivraisonMail . '
+            </li>
+            <li>
+                Distance : ' . $distanceLivraisonMail . 'km
+            </li>
+
+            <li>
+                Frais de livraison : ' . $fraisLivraisonMail . '€
+            </li>
+
+            <li>
+                Total à payer : ' . $totalCommandeMail . '€
+            </li>
+            </ul>
+
+            <p> Merci de voitre confiance </p> ';
+
+        $contenuTexte =
+        'Bonjour' . $nomCompletLivraison . ',' . PHP_EOL . PHP_EOL
+        . ' votre commande n°' . $commandeId
+        .' a bien été enregistrée' . PHP_EOL
+        . 'Livraison : ' . $dateLivraisonMail
+        . ' à ' . $heureLivraisonMail . PHP_EOL
+        . 'Adresse : '
+        . trim(
+            $rueLivraison
+            . ', '
+            . $codePostalLivraison
+            . ' '
+            . $villeLivraison
+        )
+        . PHP_EOL
+        . 'Distance : ' . $distanceLivraisonMail . 'km' . PHP_EOL
+        . 'Frais de Livraison : ' . $fraisLivraisonMail . ' €' . PHP_EOL
+        . 'Total à payer : ' . $totalCommandeMail . ' €' . PHP_EOL . PHP_EOL
+        . 'Merci de votre confiance';
+
+
+        try{
+            $mailEnvoye = sendMail(
+                $emailLivraison,
+                $nomCompletLivraison,
+                $sujetConfirmation,
+                $contenuHtml,
+                $contenuTexte
+            );
+            if (!$mailEnvoye){
+                error_log(
+                    'Échec de l\'envoie du mail de confirmation pour la commande ID : '
+                    . $commandeId
+                );
+            }
+            } catch(Throwable $erreurMail) {
+                error_log(
+                    'Erreur pendant l\'envoie du mail de confirmation pour la commande ID :'
+                    . $commandeId
+                    . ' _ '
+                    . $erreurMail -> getMessage()
+                );
+            }
+
         //une fois la commande enregistree, on vide le panier
         unset($_SESSION['panier']);
+        unset($_SESSION['devis_livraison']);
         $_SESSION['commande_validee'] = true;
 
         header('Location: commande.php');
@@ -487,127 +777,153 @@ if (
 
 if ($userConnecte && !$profilComplet) {
     $messageErreurCommande = 'Merci de completer vos information avant de pouvoir valider votre commande.';
-    }
-    /**
-     * le controle est necessaire meme avec les attribut pour la securite
-     * on pourrais fabriquer un requete POST sans passer par le formulaire
-     */
+}
+/**
+ * le controle est necessaire meme avec les attribut pour la securite
+ * on pourrais fabriquer un requete POST sans passer par le formulaire
+ */
 
-    if( $_SERVER['REQUEST_METHOD'] === 'POST' &&
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
     $traitementCommandeDemande &&
-    !$livraisonComplete ){
+    !$livraisonComplete
+) {
     $messageErreurCommande = 'Toutes les informations de livraison sont obligatoires';
-    }
+}
 
 
-    /**
-     * ce controle s'execute uniquement lorsque tout les champs sont
-     * remplie mais que le format du mail est invalide
-     */
+/**
+ * ce controle s'execute uniquement lorsque tout les champs sont
+ * remplie mais que le format du mail est invalide
+ */
 
-    if (
-        $_SERVER['REQUEST_METHOD'] === 'POST' &&
-        $traitementCommandeDemande &&
-        $livraisonComplete &&
-        !$emailLivraisonValide
-    ){
-        $messageErreurCommande = 'L\'adresse mail de livraison n\'est pas valide.';
-    }
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    $traitementCommandeDemande &&
+    $livraisonComplete &&
+    !$emailLivraisonValide
+) {
+    $messageErreurCommande = 'L\'adresse mail de livraison n\'est pas valide.';
+}
 
-    /**
-     * si tous les champs sont okay mais le code postale c'est pas bon alors
-     * on renvoie une erreur
-     */
-        if (
-            $_SERVER['REQUEST_METHOD'] === 'POST' &&
-            $traitementCommandeDemande &&
-            $livraisonComplete &&
-            $emailLivraisonValide &&
-            !$codePostalLivraisonValide
-        ){
-            $messageErreurCommande = 'Le code postal doit contenir 5 chiffres.';
-        }
+/**
+ * si tous les champs sont okay mais le code postale c'est pas bon alors
+ * on renvoie une erreur
+ */
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    $traitementCommandeDemande &&
+    $livraisonComplete &&
+    $emailLivraisonValide &&
+    !$codePostalLivraisonValide
+) {
+    $messageErreurCommande = 'Le code postal doit contenir 5 chiffres.';
+}
 
-        /**
-         * si touts les champs sont okay mais pas la date de livraison
-         */
-        if (
-        $_SERVER['REQUEST_METHOD'] === 'POST' &&
-        $traitementCommandeDemande &&
-        $livraisonComplete &&
-        $emailLivraisonValide &&
-        !$dateLivraisonValide
-    ){
-        $messageErreurCommande = 'La date de livraison n\'est pas valide.';
-    }
+/**
+ * si touts les champs sont okay mais pas la date de livraison
+ */
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    $traitementCommandeDemande &&
+    $livraisonComplete &&
+    $emailLivraisonValide &&
+    !$dateLivraisonValide
+) {
+    $messageErreurCommande = 'La date de livraison n\'est pas valide.';
+}
 
-    /**
-     * le format est correct mais la date est antérieur
-     */
+/**
+ * le format est correct mais la date est antérieur
+ */
 
-    if(
-        $_SERVER['REQUEST_METHOD']  === 'POST' &&
-        $traitementCommandeDemande &&
-        $livraisonComplete &&
-        $emailLivraisonValide &&
-        $dateLivraisonValide &&
-        !$dateLivraisonNonPassee
-    ){
-        $messageErreurCommande =
+if (
+    $_SERVER['REQUEST_METHOD']  === 'POST' &&
+    $traitementCommandeDemande &&
+    $livraisonComplete &&
+    $emailLivraisonValide &&
+    $dateLivraisonValide &&
+    !$dateLivraisonNonPassee
+) {
+    $messageErreurCommande =
         'La date de livraison ne peut pas être passée.';
-    }
+}
 
-        if(
-        $_SERVER['REQUEST_METHOD']  === 'POST' &&
-        $traitementCommandeDemande &&
-        $livraisonComplete &&
-        $emailLivraisonValide &&
-        $dateLivraisonValide &&
-        $dateLivraisonNonPassee &&
-        !$heureLivraisonValide
-    ){
-        $messageErreurCommande =
+if (
+    $_SERVER['REQUEST_METHOD']  === 'POST' &&
+    $traitementCommandeDemande &&
+    $livraisonComplete &&
+    $emailLivraisonValide &&
+    $dateLivraisonValide &&
+    $dateLivraisonNonPassee &&
+    !$heureLivraisonValide
+) {
+    $messageErreurCommande =
         'l\'heure de livraison n\'a pas le format attendu.';
-    }
+}
 
-    /**
-     * la date et l'heure sont valide separerment mais leur combinaison
-     * correspond a un créaneau deja passée
-     */
+/**
+ * la date et l'heure sont valide separerment mais leur combinaison
+ * correspond a un créaneau deja passée
+ */
 
-    if(
-        $_SERVER['REQUEST_METHOD'] === 'POST' &&
-        $traitementCommandeDemande &&
-        $livraisonComplete &&
-        $emailLivraisonValide &&
-        $codePostalLivraisonValide &&
-        $dateLivraisonValide &&
-        $dateLivraisonNonPassee &&
-        $heureLivraisonValide &&
-        !$dateHeureLivraisonFutur
-    ){
-        $messageErreurCommande =
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    $traitementCommandeDemande &&
+    $livraisonComplete &&
+    $emailLivraisonValide &&
+    $codePostalLivraisonValide &&
+    $dateLivraisonValide &&
+    $dateLivraisonNonPassee &&
+    $heureLivraisonValide &&
+    !$dateHeureLivraisonFutur
+) {
+    $messageErreurCommande =
         'La date et l\'heure de livraison doivent correspondre à un creneau futur.';
-    }
-    /**
-     * Les information sont valides mais le calcule de livraison
-     * n'a pas pu etre effectuer
-     */
-    if(
-        $_SERVER['REQUEST_METHOD'] === 'POST' &&
-        isset($_POST['valide_commande']) &&
-        $livraisonComplete &&
-        $emailLivraisonValide &&
-        $codePostalLivraisonValide &&
-        $dateLivraisonValide &&
-        $dateLivraisonNonPassee &&
-        $heureLivraisonValide &&
-        $dateHeureLivraisonFutur &&
-        !$calculLivraisonValide
-    ){
-        $messageErreurCommande =
+}
+
+if(
+    $_SERVER['REQUEST_METHOD'] === 'POST'
+    && $traitementCommandeDemande
+    && !$csrfTokenValide
+){
+    $messageErreurCommande = 
+    'La session de securité a expiré. Rechargez la page puis réessayez. ';
+}
+
+/**
+ * Les information sont valides mais le calcule de livraison
+ * n'a pas pu etre effectuer
+ */
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    $traitementCommandeDemande &&
+    $livraisonComplete &&
+    $emailLivraisonValide &&
+    $codePostalLivraisonValide &&
+    $dateLivraisonValide &&
+    $dateLivraisonNonPassee &&
+    $heureLivraisonValide &&
+    $dateHeureLivraisonFutur &&
+    !$calculLivraisonValide
+) {
+    $messageErreurCommande =
         'Impossible de calculer la livraison. verifiez l\'adresse indiquée';
-    }
+}
+/**
+ * le calcule focntionne mais les info ne correspondent pas
+ * au devis presente au client
+ */
+
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST' &&
+    $confirmationCommandeDemandee &&
+    $calculLivraisonValide &&
+    !$devisLivraisonValide
+){
+    $messageErreurCommande =
+        'le devis a changé . Veuillez recalculer la livraison avant de confirme. ';
+}
 ?>
 
 <!DOCTYPE html>
@@ -680,135 +996,142 @@ if ($userConnecte && !$profilComplet) {
                 <h2>Information du client</h2>
                 <div class="cmdForm">
 
-                <form action="" method="POST">
-            <!--Identité du destinataire -->
-            <div>
-                <label for="nom_livraison">Nom</label>
+                    <form action="" method="POST">
+                        <input type="hidden"
+                            name="csrf_token"
+                            value="<?=  htmlspecialchars(
+                                (string) ($_SESSION['csrf_token'] ?? ''),
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>">
+                        <!--Identité du destinataire -->
+                        <div>
+                            <label for="nom_livraison">Nom</label>
 
-                <input type="text"
-                id='nom_livraison'
-                name="nom_livraison"
-                value="<?php echo htmlspecialchars(
-                    $nomLivraison,
-                    ENT_QUOTES,
-                    'UTF-8'
-                ); ?>"
-                required>
-            </div>
-            <div>
-                <label for="prenom_livraison">Prénom</label>
+                            <input type="text"
+                                id='nom_livraison'
+                                name="nom_livraison"
+                                value="<?php echo htmlspecialchars(
+                                            $nomLivraison,
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        ); ?>"
+                                required>
+                        </div>
+                        <div>
+                            <label for="prenom_livraison">Prénom</label>
 
-                <input type="text"
-                id='prenom_livraison'
-                name="prenom_livraison"
-                value="<?php echo htmlspecialchars(
-                    $prenomLivraison,
-                    ENT_QUOTES,
-                    'UTF-8'
-                ); ?>"
-                required>
-            </div>
+                            <input type="text"
+                                id='prenom_livraison'
+                                name="prenom_livraison"
+                                value="<?php echo htmlspecialchars(
+                                            $prenomLivraison,
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        ); ?>"
+                                required>
+                        </div>
                         <!--coordonnées utilisée pour cette commande  -->
-            <div>
-                <label for="email_livraison">Email</label>
+                        <div>
+                            <label for="email_livraison">Email</label>
 
-                <input type="email"
-                id='email_livraison'
-                name="email_livraison"
-                value="<?php echo htmlspecialchars(
-                    $emailLivraison,
-                    ENT_QUOTES,
-                    'UTF-8'
-                ); ?>"
-                required>
-            </div>
+                            <input type="email"
+                                id='email_livraison'
+                                name="email_livraison"
+                                value="<?php echo htmlspecialchars(
+                                            $emailLivraison,
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        ); ?>"
+                                required>
+                        </div>
 
                         <!--téléphone du destinataire -->
-            <div>
-                <label for="telephone_livraison">Télephone</label>
+                        <div>
+                            <label for="telephone_livraison">Télephone</label>
 
-                <input type="tel"
-                id='telephone_livraison'
-                name="telephone_livraison"
-                value="<?php echo htmlspecialchars(
-                    $telephoneLivraison,
-                    ENT_QUOTES,
-                    'UTF-8'
-                ); ?>"
-                required>
-            </div>
+                            <input type="tel"
+                                id='telephone_livraison'
+                                name="telephone_livraison"
+                                value="<?php echo htmlspecialchars(
+                                            $telephoneLivraison,
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        ); ?>"
+                                required>
+                        </div>
 
                         <!--Adress propre a la cmd -->
-            <div>
-                <label for="rue_livraison">numéro et rue</label>
+                        <div>
+                            <label for="rue_livraison">numéro et rue</label>
 
-                <input type="text"
-                id='rue_livraison'
-                name="rue_livraison"
-                value="<?php echo htmlspecialchars(
-                    $rueLivraison,
-                    ENT_QUOTES,
-                    'UTF-8'
-                ); ?>"
-                required>
-            </div>
+                            <input type="text"
+                                id='rue_livraison'
+                                name="rue_livraison"
+                                value="<?php echo htmlspecialchars(
+                                            $rueLivraison,
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        ); ?>"
+                                required>
+                        </div>
 
                         <div>
-                <label for="code_postal_livraison">Code postale</label>
+                            <label for="code_postal_livraison">Code postale</label>
 
-                <input type="text"
-                id='code_postal_livraison'
-                name="code_postal_livraison"
-                value="<?php echo htmlspecialchars(
-                    $codePostalLivraison,
-                    ENT_QUOTES,
-                    'UTF-8'
-                ); ?>"
-                required>
-            </div>
+                            <input type="text"
+                                id='code_postal_livraison'
+                                name="code_postal_livraison"
+                                value="<?php echo htmlspecialchars(
+                                            $codePostalLivraison,
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        ); ?>"
+                                required>
+                        </div>
 
                         <div>
-                <label for="ville_livraison">ville</label>
+                            <label for="ville_livraison">ville</label>
 
-                <input type="text"
-                id='ville_livraison'
-                name="ville_livraison"
-                value="<?php echo htmlspecialchars(
-                    $villeLivraison,
-                    ENT_QUOTES,
-                    'UTF-8'
-                ); ?>"
-                required>
-            </div>
-            <!--Moment de la livraison -->
+                            <input type="text"
+                                id='ville_livraison'
+                                name="ville_livraison"
+                                value="<?php echo htmlspecialchars(
+                                            $villeLivraison,
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        ); ?>"
+                                required>
+                        </div>
+                        <!--Moment de la livraison -->
                         <div>
-                <label for="date_livraison">date de livraison</label>
+                            <label for="date_livraison">date de livraison</label>
 
-                <input type="date"
-                id='date_livraison'
-                name="date_livraison"
-                value="<?php echo htmlspecialchars(
-                    $dateLivraison,
-                    ENT_QUOTES,
-                    'UTF-8'
-                ); ?>"
-                required>
+                            <input type="date"
+                                id='date_livraison'
+                                name="date_livraison"
+                                value="<?php echo htmlspecialchars(
+                                            $dateLivraison,
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        ); ?>"
+                                required>
 
                             <div>
-                <label for="heure_livraison">Heure de livraison</label>
+                                <label for="heure_livraison">Heure de livraison</label>
 
 
-                <input type="time"
-                id='heure_livraison'
-                name="heure_livraison"
-                value="<?php echo htmlspecialchars(
-                    $heureLivraison,
-                    ENT_QUOTES,
-                    'UTF-8'
-                ); ?>"
-                required>
-            </div>
-            </div>
+                                <input type="time"
+                                    id='heure_livraison'
+                                    name="heure_livraison"
+                                    value="<?php echo htmlspecialchars(
+                                                $heureLivraison,
+                                                ENT_QUOTES,
+                                                'UTF-8'
+                                            ); ?>"
+                                    required>
+                            </div>
+                        </div>
                         <p>
                             <button type="submit" name="calculer_livraison"
                                 <?php echo !$profilComplet ? 'disabled' : ''; ?>>
@@ -816,55 +1139,55 @@ if ($userConnecte && !$profilComplet) {
                             </button>
                         </p>
                         <?php
-                        if(
+                        if (
                             $calculLivraisonValide &&
                             $fraisLivraison !== null
                         ): ?>
-                        <div class="resume_livraison">
-                            <h3>Résumé</h3>
-                            <p>
-                                Sous-total des menus :
-                                <?php echo number_format(
-                                    $totalGlobal,
-                                    2,
-                                    ',',
-                                    ' '
-                                ); ?> €
-                            </p>
+                            <div class="resume_livraison">
+                                <h3>Résumé</h3>
+                                <p>
+                                    Sous-total des menus :
+                                    <?php echo number_format(
+                                        $totalGlobal,
+                                        2,
+                                        ',',
+                                        ' '
+                                    ); ?> €
+                                </p>
 
-                            <p>
-                                Distance de livraison :
-                                <?php  echo number_format(
-                                    (float) $distanceLivraison,
-                                    2,
-                                    ',',
-                                    ' '
-                                ); ?> Km
-                            </p>
+                                <p>
+                                    Distance de livraison :
+                                    <?php echo number_format(
+                                        (float) $distanceLivraison,
+                                        2,
+                                        ',',
+                                        ' '
+                                    ); ?> Km
+                                </p>
 
-                            <p>
-                                Frais de livraison :
-                                <?php echo number_format(
-                                    $fraisLivraison,
-                                    2,
-                                    ',',
-                                    ' '
-                                ); ?> €
-                            </p>
-                            <p>
-                                total a payer :
-                                <?php echo number_format(
-                                    $totalCommande,
-                                    2,
-                                    ',',
-                                    ' '
-                                ); ?> €
-                            </p>
-                            <button type="submit"
+                                <p>
+                                    Frais de livraison :
+                                    <?php echo number_format(
+                                        $fraisLivraison,
+                                        2,
+                                        ',',
+                                        ' '
+                                    ); ?> €
+                                </p>
+                                <p>
+                                    total a payer :
+                                    <?php echo number_format(
+                                        $totalCommande,
+                                        2,
+                                        ',',
+                                        ' '
+                                    ); ?> €
+                                </p>
+                                <button type="submit"
                                     name="confirmer_commande">
-                                confirmer ma commande
-                            </button>
-                        </div>
+                                    confirmer ma commande
+                                </button>
+                            </div>
                         <?php endif; ?>
                     </form>
                 </div>

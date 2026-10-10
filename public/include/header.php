@@ -36,7 +36,20 @@ $passwordResetToken = $passwordResetToken
                     <?php endif; ?>
                 <?php endif; ?>
                 <li> <?php if (isset($_SESSION['user'])): ?>
-                        <a href="/index.php?logout=1" class="navBouton">Déconnexion</a>
+                        
+                    <form method="POST" action="/index.php">
+                        <input type="hidden" name="action" value="deconnexion">
+                        <input type="hidden" name="csrf_token" value="<?php 
+                        echo htmlspecialchars(
+                            $_SESSION['csrf_token'],
+                            ENT_QUOTES,
+                            'UTF-8'
+                        )?>">
+
+                        <button type="submit" class="navBouton">
+                            Déconnexion
+                        </button>
+                    </form>          
                     <?php else: ?>
                         <a class="navBouton" id="modalConnexion">Connexion</a>
                     <?php endif; ?>
@@ -56,6 +69,13 @@ $passwordResetToken = $passwordResetToken
                     <div>
                         <form method="POST" action="/index.php">
                             <input type="hidden" name="action" id="actionForm" value="connexion">
+                            <input type="hidden"
+                            name="csrf_token"
+                            value="<?=  htmlspecialchars(
+                                (string) ($_SESSION['csrf_token'] ?? ''),
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>">
                             <!--email -->
                             <div class="formulaire">
                                 <label for="email">Mail</label>
@@ -132,6 +152,14 @@ $passwordResetToken = $passwordResetToken
                         <input type="hidden"
                             name="action"
                             value="request_password_reset">
+                            <input type="hidden"
+                            name="csrf_token"
+                            value="<?=  htmlspecialchars(
+                                (string) ($_SESSION['csrf_token'] ?? ''),
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>">
+
                         <div class="formulaire">
                             <label for="passwordResetEmail">
                                 Adresse mail
@@ -196,6 +224,13 @@ Ce modal existe uniquement lorsque user viens depuis le lien reinitialisation
                                 <input type="hidden"
                                     name="action"
                                     value="change_password">
+                                <input type="hidden"
+                            name="csrf_token"
+                            value="<?=  htmlspecialchars(
+                                (string) ($_SESSION['csrf_token'] ?? ''),
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>">
                                 <!--Le jeton est renvoyé au serveur
                 double verification de PHP un champs caché peut etre modifier par users-->
                                 <input
@@ -321,6 +356,13 @@ Ce modal existe uniquement lorsque user viens depuis le lien reinitialisation
                                 type="hidden"
                                 name="action"
                                 value="verify_email_code">
+                                                            <input type="hidden"
+                            name="csrf_token"
+                            value="<?=  htmlspecialchars(
+                                (string) ($_SESSION['csrf_token'] ?? ''),
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>">
                             <div class="formulaire">
                                 <label for="verificationCode">
                                     Code à six chiffres
@@ -358,6 +400,13 @@ Ce modal existe uniquement lorsque user viens depuis le lien reinitialisation
                                     type="hidden"
                                     name="action"
                                     value="resend_verification_code">
+                                                                <input type="hidden"
+                            name="csrf_token"
+                            value="<?=  htmlspecialchars(
+                                (string) ($_SESSION['csrf_token'] ?? ''),
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>">
                                 <!--Javascript retirera disabled apres le delai visuel
                         PHP verifiera quand meme les 30 sec coté serveur -->
                                 <button

@@ -20,6 +20,28 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // on recupere l'id du menu envoye par Javascript
 $menuId = $_POST['menu_id'] ?? null;
 
+//verification CSRF commune a toutes les actions de cette page
+    $csrfTokenRecu = $_POST['csrf_token'] ?? '';
+    $csrfTokenSession = $_SESSION['csrf_token'] ?? '';
+
+    $csrfTokenValide = 
+        is_string($csrfTokenRecu)
+        && is_string($csrfTokenSession)
+        && $csrfTokenRecu !== ''
+        && $csrfTokenSession !== ''
+        && hash_equals($csrfTokenSession, $csrfTokenRecu);
+
+    if(!$csrfTokenValide){
+        http_response_code(403);
+
+        echo json_encode([
+            'success' => false,
+            'message' => 'Requête non autorisée. Rechargez la page puis réessayez.'
+        ]);
+        exit();
+    }
+
+
 // on verifie que c'est bien un entier valide 
 if (!$menuId || !filter_var($menuId, FILTER_VALIDATE_INT)) {
     echo json_encode([

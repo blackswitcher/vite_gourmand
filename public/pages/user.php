@@ -1,4 +1,4 @@
-<?php
+<!-- <?php
 // connexion a la BDD
 
 require_once __DIR__ . '/../../src/configs/db.php';
@@ -35,6 +35,7 @@ $stmt = $pdo->prepare("
         commande.ville_livraison,
         commande.date_livraison,
         commande.heure_livraison,
+        commande.distance_livraison,
         commande.frais_livraison,
         commande.total,
         avis.ID AS avis_id
@@ -62,6 +63,23 @@ $libellesStatuts = getLibellesStatutsCommande();
 // on charge ca si le form du modal a ete envoyé
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_avis'])) {
+
+    $csrfTokenRecu = $_POST['csrf_token'] ?? '';
+    $csrfTokenSession = $_SESSION['csrf_token'] ?? '';
+
+    $csrfTokenValide = 
+    is_string($csrfTokenRecu)
+    && is_string($csrfTokenSession)
+    && $csrfTokenRecu !== ''
+    && $csrfTokenSession !== ''
+    && hash_equals($csrfTokenSession, $csrfTokenRecu);
+
+    if(!$csrfTokenValide){
+        http_response_code(403);
+        exit('Requête non autorisée. Rechargez la page puis réessayez.');
+    }
+
+
 
     // on recupere les données du formulaire
     $commandeId = (int) ($_POST['commande_id'] ?? 0);
@@ -155,14 +173,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_avis'])) {
 //                          MODIFIER MON PROFIL                                   //
 ////////////////////////////////////////////////////////////////////////////////////
 
+$csrfTokenProfilRecu = (string)
+($_POST['csrf_token'] ?? '');
+
+$csrfTokenProfilValide =
+    $csrfTokenProfilRecu !== '' &&
+    isset($_SESSION['csrf_token']) &&
+    hash_equals(
+        (string) $_SESSION['csrf_token'],
+        $csrfTokenProfilRecu
+    );
+
+    if (
+        $_SERVER['REQUEST_METHOD'] === 'POST' &&
+        isset($_POST['modifier_profil']) &&
+        !$csrfTokenProfilValide
+    ){
+        $error = 'La session de securité a expiré.
+        Rechargez la page puis réessayer.';
+    }
+
+    
 //si le formulaire de modif est envoyé
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_profil'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_profil']) && $csrfTokenProfilValide) {
     $nom = trim($_POST['nom'] ?? '');
     $prenom = trim($_POST['prenom'] ?? '');
     $telephone = trim($_POST['telephone'] ?? '');
     $rue = trim($_POST['rue'] ?? '');
     $code_postal = trim($_POST['code_postal'] ?? '');
     $ville = trim($_POST['ville'] ?? '');
+    
 
     //on verifier que tous les champs soit remplis
     if (
@@ -284,62 +324,72 @@ $modeEdition = isset($_GET['edit']) && $_GET['edit'] == 1;
                                     <td><?php echo htmlspecialchars($libellesStatuts[$commande['statut']] ?? 'Statut Inconnu'); ?></td> <!-- si le statut existe on le met sinon on place statut inconnu--->
                                     <td><?php echo number_format((float) $commande['total'], 2, ',', ' '); ?> € </td>
                                     <td><?php if (
-                                        !empty($commande['date_livraison'])&&
-                                        !empty($commande['heure_livraison'])
-                                    ): ?>
+                                            !empty($commande['date_livraison']) &&
+                                            !empty($commande['heure_livraison'])
+                                        ): ?>
 
-                            <!--Identité du destinataire -->
-                            <p>
-                                <?php echo htmlspecialchars(trim(
-                                    ($commande['prenom_livraison'] ?? '')
-                                    . ' '
-                                    . ($commande['nom_livraison'] ?? '')
-                                )); ?>
-                            </p>
-                                <!-- Coordonnées de la livraison-->
-                                <p>
-                                    <?php echo htmlspecialchars($commande['email_livraison'] ?? ''); ?>
-                                </p>
-                                <p>
-                                    <?php echo htmlspecialchars($commande['telephone_livraison'] ?? ''); ?>
-                                </p>
-                            <!--Adresse figée de la commande-->
-                                <p>
-                                    <?php echo htmlspecialchars(trim(
-                                        ($commande['rue_livraison'] ?? '')
-                                        . ' '
-                                        . ($commande['code_postal_livraison'] ?? '')
-                                        . ' '
-                                        .($commande['ville_livraison'] ?? '')
-                                        )); ?>
-                                </p>
+                                            <!--Identité du destinataire -->
+                                            <p>
+                                                <?php echo htmlspecialchars(trim(
+                                                    ($commande['prenom_livraison'] ?? '')
+                                                        . ' '
+                                                        . ($commande['nom_livraison'] ?? '')
+                                                )); ?>
+                                            </p>
+                                            <!-- Coordonnées de la livraison-->
+                                            <p>
+                                                <?php echo htmlspecialchars($commande['email_livraison'] ?? ''); ?>
+                                            </p>
+                                            <p>
+                                                <?php echo htmlspecialchars($commande['telephone_livraison'] ?? ''); ?>
+                                            </p>
+                                            <!--Adresse figée de la commande-->
+                                            <p>
+                                                <?php echo htmlspecialchars(trim(
+                                                    ($commande['rue_livraison'] ?? '')
+                                                        . ' '
+                                                        . ($commande['code_postal_livraison'] ?? '')
+                                                        . ' '
+                                                        . ($commande['ville_livraison'] ?? '')
+                                                )); ?>
+                                            </p>
 
-                                <!--gestion de la livraison -->
-                                <p>
-                                    Le <?php echo date(
-                                        'd/m/Y',
-                                        strtotime ($commande['date_livraison'])
-                                    ); ?>
-                                    à <?php echo htmlspecialchars(
-                                        substr((string) $commande['heure_livraison'], 0, 5)
-                                    ); ?>
-                                </p>
-                            <!--Frais de livraison calculées et enregistré-->
-                                <p>
-                                    Frais de livraison :
-                                    <?php  echo number_format(
-                                        (float) $commande['frais_livraison'],
-                                        2,
-                                        ',',
-                                        ' '
-                                    ); ?> €
-                                </p>
-                                <?php else: ?>
-                                    <!--Les anciennes commande n'ont pas de livraison
+                                            <!--gestion de la livraison -->
+                                            <p>
+                                                Le <?php echo date(
+                                                        'd/m/Y',
+                                                        strtotime($commande['date_livraison'])
+                                                    ); ?>
+                                                à <?php echo htmlspecialchars(
+                                                        substr((string) $commande['heure_livraison'], 0, 5)
+                                                    ); ?>
+                                            </p>
+                                                <!--Distance de livraison calculé et enregistré-->
+                                            <p>
+                                            Distance de livraison :
+                                            <?php echo number_format(
+                                                (float) $commande['distance_livraison'],
+                                                2,
+                                                ',',
+                                                ' '
+                                            ); ?> km
+                                            </p>
+                                            <!--Frais de livraison calculées et enregistré-->
+                                            <p>
+                                                Frais de livraison :
+                                                <?php echo number_format(
+                                                    (float) $commande['frais_livraison'],
+                                                    2,
+                                                    ',',
+                                                    ' '
+                                                ); ?> €
+                                            </p>
+                                        <?php else: ?>
+                                            <!--Les anciennes commande n'ont pas de livraison
                                     pour eviter les erreur  d'affichage -->
-                                    <p>Informations indisponibles pour cette commande.</p>
-                                <?php endif; ?>
-                                </td>
+                                            <p>Informations indisponibles pour cette commande.</p>
+                                        <?php endif; ?>
+                                    </td>
                                     <td><?php
                                         // gestion de la colonnes 'avis' et un seul avis peux etre poser par commande
                                         //l'avis peut etre poser que si mon client a recu sa commande donc statut terminer
@@ -394,6 +444,12 @@ $modeEdition = isset($_GET['edit']) && $_GET['edit'] == 1;
             <div class="user_profile">
                 <h1>Modifier Mon Profil</h1>
                 <form method="POST" action="">
+                    <input type="hidden" name="csrf_token" value="<?php 
+                    htmlspecialchars(
+                        (string) $_SESSION['csrf_token'],
+                        ENT_QUOTES,
+                        'UTF-8'
+                    ) ?>">
                     <div class="formulaire">
                         <!--adresse-->
                         <label for="adresse">Adresse</label>
@@ -432,6 +488,13 @@ $modeEdition = isset($_GET['edit']) && $_GET['edit'] == 1;
             <h2>Laisser un avis</h2>
 
             <form method="POST" action="">
+                                        <input type="hidden"
+                            name="csrf_token"
+                            value="<?=  htmlspecialchars(
+                                (string) ($_SESSION['csrf_token'] ?? ''),
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>">
                 <!--- ce champ caché stockera l'ID de la commande
             ca vas se remplir au premier clic sur le bouton --->
                 <input type="hidden" name="commande_id" id="commande_id_avis">
@@ -460,4 +523,4 @@ $modeEdition = isset($_GET['edit']) && $_GET['edit'] == 1;
     <script src="../asset/JS/app.js"></script>
 </body>
 
-</html>
+</html> -->

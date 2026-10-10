@@ -11,15 +11,65 @@ require_once $projectRoot . '/src/configs/db.php';
 require_once $projectRoot . '/src/functions/functions.php';
 /** @var \MongoDB\Collection $mongoCollection */
 
+//verification CSRF commune a toutes les actions de cette page 
+if(
+    $_SERVER['REQUEST_METHOD'] === 'POST'
+){
+    $csrfTokenRecu = $_POST['csrf_token'] ?? '';
+    $csrfTokenSession = $_SESSION['csrf_token'] ?? '';
+
+    $csrfTokenValide = 
+    is_string($csrfTokenRecu)
+    && is_string($csrfTokenSession)
+    && $csrfTokenRecu !== ''
+    && $csrfTokenSession !== ''
+    && hash_equals($csrfTokenSession, $csrfTokenRecu);
+
+    if(!$csrfTokenValide){
+        http_response_code(403);
+        exit('Requête non autorisée. Rechargez la page puis réessayez.');
+    }
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////////
 //                          GESTION DE LA CONNEXION                              //
 ///////////////////////////////////////////////////////////////////////////////////
 
-// gerer la deconnexion automatique
-if (isset($_GET['logout'])) {
-    unset($_SESSION['user']);
+// Déconnexion uniquement en POST avec contrôle CSRF.
+if (
+    $_SERVER['REQUEST_METHOD'] === 'POST'
+    && ($_POST['action'] ?? '') === 'deconnexion'
+) {
+    $csrfTokenRecu = (string) ($_POST['csrf_token'] ?? '');
+    $csrfTokenSession = (string) ($_SESSION['csrf_token'] ?? '');
+
+    if (
+        $csrfTokenSession === ''
+        || !hash_equals($csrfTokenSession, $csrfTokenRecu)
+    ) {
+        http_response_code(403);
+        exit('Requête non autorisée.');
+    }
+
+    $_SESSION = [];
+
+    if (ini_get('session.use_cookies')) {
+        $parametresCookie = session_get_cookie_params();
+
+        setcookie(
+            session_name(),
+            '',
+            time() - 42000,
+            $parametresCookie['path'],
+            $parametresCookie['domain'],
+            $parametresCookie['secure'],
+            $parametresCookie['httponly']
+        );
+    }
+
+    session_destroy();
+
     header('Location: /index.php');
     exit();
 }

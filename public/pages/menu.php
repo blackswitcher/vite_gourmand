@@ -102,6 +102,25 @@ $allergenes = $stmtAllergenes->fetchAll(PDO::FETCH_COLUMN);
 
 // si on clique sur ajouter alors on traite l'ajout
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajouter_panier'])) {
+    
+//verification CSRF commune a toutes les actions de cette page 
+
+    $csrfTokenRecu = $_POST['csrf_token'] ?? '';
+    $csrfTokenSession = $_SESSION['csrf_token'] ?? '';
+
+    $csrfTokenValide = 
+    is_string($csrfTokenRecu)
+    && is_string($csrfTokenSession)
+    && $csrfTokenRecu !== ''
+    && $csrfTokenSession !== ''
+    && hash_equals($csrfTokenSession, $csrfTokenRecu);
+
+    if(!$csrfTokenValide){
+        http_response_code(403);
+        exit('Requête non autorisée. Rechargez la page puis réessayez.');
+    }
+
+
     // si le panier n'existe pas on le crée 
     if (!isset($_SESSION['panier'])) {
         $_SESSION['panier'] = [];
@@ -205,7 +224,13 @@ $imagesGalerie = $stmtGalerie->fetchAll();
                     </div>
 
                     <div class="bouton_appliquer">
-                        <form id="formAjoutPanier">
+                        <form id="formAjoutPanier" method="POST">
+                            <input type="hidden" name="csrf_token"
+                                value="<?php echo htmlspecialchars(
+                                    $_SESSION['csrf_token'],
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                ); ?>">
                             <input type="hidden" name="menu_id" value="<?php echo (int) $menu->id; ?>">
                             <button type="submit">Ajouter au panier</button>
                         </form>

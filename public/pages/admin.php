@@ -19,6 +19,27 @@ if ($user['role'] !== 'admin' && $user['role'] !== 'employe') {
     header('Location: /index.php');
     exit();
 }
+
+//verification CSRF commune a toutes les actions de cette page 
+if(
+    $_SERVER['REQUEST_METHOD'] === 'POST'
+){
+    $csrfTokenRecu = $_POST['csrf_token'] ?? '';
+    $csrfTokenSession = $_SESSION['csrf_token'] ?? '';
+
+    $csrfTokenValide = 
+    is_string($csrfTokenRecu)
+    && is_string($csrfTokenSession)
+    && $csrfTokenRecu !== ''
+    && $csrfTokenSession !== ''
+    && hash_equals($csrfTokenSession, $csrfTokenRecu);
+
+    if(!$csrfTokenValide){
+        http_response_code(403);
+        exit('Requête non autorisée. Rechargez la page puis réessayez.');
+    }
+}
+
 /**
  * Chaque statut indique uniquement le statut suivant autorisé
  * une valeur absente ou une liste vide interdit la transition.
@@ -41,7 +62,6 @@ $reglesTransition = [
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['modifier_statut'])) {
     $commandeId = (int)($_POST['commande_id'] ?? 0);
     $newStatut = (int)($_POST['statut'] ?? -1);
-
 
     // on prepare la liste des statuts autorisée
     $statutsAutorisee = [0, 1, 2, 3, 4, 5];
@@ -290,6 +310,7 @@ $stmt = $pdo->prepare("
         commande.ville_livraison,
         commande.date_livraison,
         commande.heure_livraison,
+        commande.distance_livraison,
         commande.frais_livraison,
         users.nom,
         users.prenom,
@@ -1033,6 +1054,15 @@ WHERE ID = :id
                                     substr((string) $commande['heure_livraison'], 0, 5)
                                 ); ?>
                             </p>
+                                <p>
+                                    Distance:
+                                    <?php echo number_format(
+                                        (float) $commande['distance_livraison'],
+                                        2,
+                                        ',',
+                                        ' '
+                                    ); ?> km
+                                </p>
                             <p>
                                 Frais:
                                 <?php echo number_format(
@@ -1046,6 +1076,13 @@ WHERE ID = :id
                             </td>
                             <td>
                                 <form method="POST" action="">
+                                    <input type="hidden"
+                                    name="csrf_token"
+                                    value="<?php echo htmlspecialchars(
+                                        $_SESSION['csrf_token'],
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    ); ?>">
                                     <input type="hidden" name="commande_id" value="<?php echo (int) $commande['ID']; ?>">
 
                                     <?php
@@ -1136,6 +1173,12 @@ WHERE ID = :id
                                     <td>
                                         <!-- FROMULAIRE POUR ACCEPTER OU REJETER UN COMMENTAIRE -->
                                         <form method="POST" action="">
+                                            <input type="hidden" name="csrf_token"
+                                            value="<?php echo htmlspecialchars(
+                                                $_SESSION['csrf_token'],
+                                                ENT_QUOTES,
+                                                'UTF-8'
+                                            ); ?>">
                                             <!-- je dois savoir quelle avis je traite-->
                                             <input type="hidden" name="avis_id" value="<?php echo (int) $avis['ID']; ?>">
 
@@ -1181,6 +1224,12 @@ WHERE ID = :id
                                     <td><?php echo htmlspecialchars($utilisateur['ville']); ?></td>
                                     <td>
                                         <form method="POST" action="">
+                                            <input type="hidden" name="csrf_token"
+                                            value="<?php echo htmlspecialchars(
+                                                $_SESSION['csrf_token'],
+                                                ENT_QUOTES,
+                                                'UTF-8'
+                                            ); ?>">
                                             <input type="hidden" name="utilisateur_id" value="<?php echo (int) $utilisateur['ID']; ?>">
                                             <select name="role">
                                                 <?php foreach ($roleAutorises as $valeurRole => $libelleRole): ?>
@@ -1194,6 +1243,12 @@ WHERE ID = :id
                                     </td>
                                     <td>
                                         <form method="POST" action="">
+                                                                                        <input type="hidden" name="csrf_token"
+                                            value="<?php echo htmlspecialchars(
+                                                $_SESSION['csrf_token'],
+                                                ENT_QUOTES,
+                                                'UTF-8'
+                                            ); ?>">
                                             <input type="hidden" name="utilisateur_id" value="<?php echo (int) $utilisateur['ID']; ?>">
                                             <button type="submit" name="supprimer_employer">Supprimer</button>
                                         </form>
@@ -1221,6 +1276,12 @@ WHERE ID = :id
             <?php endif; ?>
 
             <form method="POST" action="">
+                <input type="hidden" name="csrf_token"
+                value="<?php echo htmlspecialchars(
+                    $_SESSION['csrf_token'],
+                    ENT_QUOTES,
+                    'UTF-8'
+                ); ?>">
                 <div>
                     <label for="nom">Nom</label>
                     <input type="text" name="nom" id="nom">
@@ -1358,6 +1419,12 @@ WHERE ID = :id
                             <!--Supprimer un menu -->
                             <td>
                                 <form method="POST" action="">
+                                                    <input type="hidden" name="csrf_token"
+                value="<?php echo htmlspecialchars(
+                    $_SESSION['csrf_token'],
+                    ENT_QUOTES,
+                    'UTF-8'
+                ); ?>">
                                     <!-- on envoie l'identifiant du menu caché au moment du clic -->
                                     <input type="hidden" name="menu_id" value="<?php echo (int) $menuAdmin['ID']; ?>">
 
@@ -1385,6 +1452,12 @@ WHERE ID = :id
             <?php endif; ?>
 
             <form method="POST" action="">
+                <input type="hidden" name="csrf_token"
+                value="<?php echo htmlspecialchars(
+                    $_SESSION['csrf_token'],
+                    ENT_QUOTES,
+                    'UTF-8'
+                ); ?>">
                 <!-- titre du menu -->
                 <div>
                     <label for="titre_menu">Titre</label>
