@@ -41,17 +41,6 @@ if (
     $_SERVER['REQUEST_METHOD'] === 'POST'
     && ($_POST['action'] ?? '') === 'deconnexion'
 ) {
-    $csrfTokenRecu = (string) ($_POST['csrf_token'] ?? '');
-    $csrfTokenSession = (string) ($_SESSION['csrf_token'] ?? '');
-
-    if (
-        $csrfTokenSession === ''
-        || !hash_equals($csrfTokenSession, $csrfTokenRecu)
-    ) {
-        http_response_code(403);
-        exit('Requête non autorisée.');
-    }
-
     $_SESSION = [];
 
     if (ini_get('session.use_cookies')) {

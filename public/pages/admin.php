@@ -525,6 +525,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['refuser_avis'])) {
 $ajoutEmploye = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajout_employe'])) {
+
+    // seul un admin peut creer un employé
+
+    if ($user['role'] !== 'admin'){
+        http_response_code(403);
+        exit('Action réservée à un administrateur.');
+    }
+
     $nom = trim($_POST['nom'] ?? '');
     $prenom = trim($_POST['prenom'] ?? '');
     $email = trim($_POST['email'] ?? '');
@@ -1261,6 +1269,7 @@ WHERE ID = :id
             </section>
         <?php endif; ?>
     </section>
+    <?php if ($user['role'] === 'admin'): ?>
     <div class="ajouterEmployer">
         <button type="button" id="ouvrirModalEmploye">Ajouter un employer</button>
     </div>
@@ -1326,9 +1335,9 @@ WHERE ID = :id
             </form>
         </div>
     </div>
+    <?php endif; ?>
     <section class="section_menu">
         <h2>historique des actions admins</h2>
-
         <?php if (empty($adminLogs)): ?>
             <p>Aucun log admin disponible pour le moment.</p>
         <?php else: ?>

@@ -113,11 +113,27 @@ CREATE TABLE `menus` (
 --
 
 INSERT INTO `menus` (`ID`, `titre`, `description`, `prix`, `nb_personne`, `img_cover`, `actif`, `created_at`, `theme_id`) VALUES
-(1, 'Tradition', 'Un menu traditionnel et généreux,idéal pour les repas familiaux et événements simples', '120.00', 4, 'assetIMGcover_menucover_menu_classique.png', 1, '2026-01-14 14:26:07', NULL),
-(2, 'Festif Noel', 'Un menu raffiné aux saveurs de fêtes, parfait pour les repas de fin dâ€™année.', '210.00', 6, 'assetIMGcover_menucover_menu_noel.png', 1, '2026-01-14 14:26:07', NULL),
-(3, 'Formule végétarien à‰quilibé', 'Un menu sain et savoureux, sans viande, mettant en valeur des produits frais.', '75.00', 3, 'assetIMGcover_menucover_menu_VG.png', 1, '2026-01-14 14:26:07', NULL),
-(4, 'Formule Végan créatif', 'Une expérience culinaire 100% végétale, moderne et gourmande.', '120.00', 4, 'assetIMGcover_menucover_vegan.png', 1, '2026-01-14 14:26:07', NULL),
-(5, 'Formule sans gluten', 'Un menu conà§u pour les personnes intolérantes au gluten, avec des précautions strictes.', '70.00', 2, 'assetIMGcover_menucover_SSGluten.png', 1, '2026-01-14 14:26:07', NULL);
+(1, 'Tradition', 'Un menu traditionnel et généreux,idéal pour les repas familiaux et événements simples', '120.00', 4, 'asset/IMG/cover_menu/cover_menu_classique.png', 1, '2026-01-14 14:26:07',1),
+(2, 'Festif Noel', 'Un menu raffiné aux saveurs de fêtes, parfait pour les repas de fin d\'année.', '210.00', 6, 'asset/IMG/cover_menu/cover_menu_noel.png', 1, '2026-01-14 14:26:07', 2),
+(3, 'Formule végétarien équilibé', 'Un menu sain et savoureux, sans viande, mettant en valeur des produits frais.', '75.00', 3, 'asset/IMG/cover_menu/cover_menu_VG.png', 1, '2026-01-14 14:26:07', 1),
+(4, 'Formule Végan créatif', 'Une expérience culinaire 100% végétale, moderne et gourmande.', '120.00', 4, 'asset/IMG/cover_menu/cover_vegan.png', 1, '2026-01-14 14:26:07', 1),
+(5, 'Formule sans gluten', 'Un menu conà§u pour les personnes intolérantes au gluten, avec des précautions strictes.', '70.00', 2, 'asset/IMG/cover_menu/cover_SSGluten.png', 1, '2026-01-14 14:26:07', 1);
+INSERT INTO `menus` (`ID`, `titre`, `description`, `prix`, `nb_personne`, `img_cover`, `actif`, `created_at`, `theme_id`) VALUES (6, 'Pâques gourmand', 'Pour 6 personnes : mini-brioches au beurre, tartelettes chocolat et crème, fraises fraîches et jus de pomme.', 180.00, 6, 'asset/IMG/cover_menu/cover_menu_classique.png', 1, '2026-10-11 12:54:37', 4);
+INSERT INTO `menus` (`ID`, `titre`, `description`, `prix`, `nb_personne`, `img_cover`, `actif`, `created_at`, `theme_id`) VALUES (7, 'Pâques végétarien', 'Pour 6 personnes : muffins carotte et noix, tartelettes citron sans gélatine, salade de fruits et jus de pomme. Contient du lait et des œufs.', 168.00, 6, 'asset/IMG/cover_menu/cover_menu_VG.png', 1, '2026-10-11 12:54:37', 4);
+INSERT INTO `menus` (`ID`, `titre`, `description`, `prix`, `nb_personne`, `img_cover`, `actif`, `created_at`, `theme_id`) VALUES (8, 'Pâques vegan', 'Pour 6 personnes : muffins cacao au soja, biscuits amande et coco, fraises fraîches et jus de pomme. Sans ingrédients animaux.', 174.00, 6, 'asset/IMG/cover_menu/cover_vegan.png', 1, '2026-10-11 12:54:37', 4);
+INSERT INTO `menus` (`ID`, `titre`, `description`, `prix`, `nb_personne`, `img_cover`, `actif`, `created_at`, `theme_id`) VALUES (9, 'Pâques sans gluten', 'Pour 6 personnes : fondants chocolat à la farine de riz, financiers amande, fraises fraîches et jus de pomme. Recettes prévues avec ingrédients sans gluten et préparation séparée.', 192.00, 6, 'asset/IMG/cover_menu/cover_SSGluten.png', 1, '2026-10-11 12:54:37', 4);
+INSERT INTO `menus` (`ID`, `titre`, `description`, `prix`, `nb_personne`, `img_cover`, `actif`, `created_at`, `theme_id`) VALUES (10, 'Mariage douceur', 'Buffet pour 10 personnes : mini-éclairs vanille, tartelettes aux fruits, madeleines au beurre et citronnade.', 350.00, 10, 'asset/IMG/cover_menu/cover_menu_classique.png', 1, '2026-10-11 12:54:37', 3);
+INSERT INTO `menus` (`ID`, `titre`, `description`, `prix`, `nb_personne`, `img_cover`, `actif`, `created_at`, `theme_id`) VALUES (11, 'Mariage végétarien', 'Buffet pour 10 personnes : tartelettes aux fruits sans gélatine, mini-cakes citron, verrines de fromage blanc et citronnade. Contient du lait et des œufs.', 330.00, 10, 'asset/IMG/cover_menu/cover_menu_VG.png', 1, '2026-10-11 12:54:37', 3);
+INSERT INTO `menus` (`ID`, `titre`, `description`, `prix`, `nb_personne`, `img_cover`, `actif`, `created_at`, `theme_id`) VALUES (12, 'Mariage vegan', 'Buffet pour 10 personnes : mini-cakes citron au soja, verrines coco et mangue, biscuits aux amandes et citronnade. Sans ingrédients animaux.', 340.00, 10, 'asset/IMG/cover_menu/cover_vegan.png', 1, '2026-10-11 12:54:37', 3);
+INSERT INTO `menus` (`ID`, `titre`, `description`, `prix`, `nb_personne`, `img_cover`, `actif`, `created_at`, `theme_id`) VALUES (13, 'Mariage sans gluten', 'Buffet pour 10 personnes : fondants chocolat à la farine de riz, financiers amande, verrines de fruits et citronnade. Recettes prévues avec ingrédients sans gluten et préparation séparée.', 370.00, 10, 'asset/IMG/cover_menu/cover_SSGluten.png', 1, '2026-10-11 12:54:37', 3);
+INSERT INTO `menus` (`ID`, `titre`, `description`, `prix`, `nb_personne`, `img_cover`, `actif`, `created_at`, `theme_id`) VALUES (14, 'Anniversaire festif', 'Goûter pour 8 personnes : gâteau chocolat et crème, mini-cookies, salade de fruits et jus de pomme.', 200.00, 8, 'asset/IMG/cover_menu/cover_menu_classique.png', 1, '2026-10-11 12:54:37', 3);
+INSERT INTO `menus` (`ID`, `titre`, `description`, `prix`, `nb_personne`, `img_cover`, `actif`, `created_at`, `theme_id`) VALUES (15, 'Anniversaire végétarien', 'Goûter pour 8 personnes : gâteau citron sans gélatine, muffins aux fruits, salade de fruits et jus de pomme. Contient du lait et des œufs.', 192.00, 8, 'asset/IMG/cover_menu/cover_menu_VG.png', 1, '2026-10-11 12:54:37', 3);
+INSERT INTO `menus` (`ID`, `titre`, `description`, `prix`, `nb_personne`, `img_cover`, `actif`, `created_at`, `theme_id`) VALUES (16, 'Anniversaire vegan', 'Goûter pour 8 personnes : gâteau cacao au soja, cookies aux amandes sans beurre, salade de fruits et jus de pomme. Sans ingrédients animaux.', 200.00, 8, 'asset/IMG/cover_menu/cover_vegan.png', 1, '2026-10-11 12:54:37', 3);
+INSERT INTO `menus` (`ID`, `titre`, `description`, `prix`, `nb_personne`, `img_cover`, `actif`, `created_at`, `theme_id`) VALUES (17, 'Anniversaire sans gluten', 'Goûter pour 8 personnes : gâteau chocolat à la farine de riz, biscuits aux amandes, salade de fruits et jus de pomme. Recettes prévues avec ingrédients sans gluten et préparation séparée.', 216.00, 8, 'asset/IMG/cover_menu/cover_SSGluten.png', 1, '2026-10-11 12:54:37', 3);
+INSERT INTO `menus` (`ID`, `titre`, `description`, `prix`, `nb_personne`, `img_cover`, `actif`, `created_at`, `theme_id`) VALUES (18, 'Brunch du dimanche', 'Pour 4 personnes : croissants au beurre, pancakes, fromage blanc, fruits frais et jus de pomme.', 112.00, 4, 'asset/IMG/cover_menu/cover_menu_classique.png', 1, '2026-10-11 12:54:37', 1);
+INSERT INTO `menus` (`ID`, `titre`, `description`, `prix`, `nb_personne`, `img_cover`, `actif`, `created_at`, `theme_id`) VALUES (19, 'Brunch végétarien', 'Pour 4 personnes : pancakes, muffins aux fruits, fromage blanc et jus de pomme. Contient du lait et des œufs.', 104.00, 4, 'asset/IMG/cover_menu/cover_menu_VG.png', 1, '2026-10-11 12:54:37', 1);
+INSERT INTO `menus` (`ID`, `titre`, `description`, `prix`, `nb_personne`, `img_cover`, `actif`, `created_at`, `theme_id`) VALUES (20, 'Brunch vegan', 'Pour 4 personnes : pancakes au soja, granola aux amandes, fruits frais et jus de pomme. Sans ingrédients animaux.', 108.00, 4, 'asset/IMG/cover_menu/cover_vegan.png', 1, '2026-10-11 12:54:37', 1);
+INSERT INTO `menus` (`ID`, `titre`, `description`, `prix`, `nb_personne`, `img_cover`, `actif`, `created_at`, `theme_id`) VALUES (21, 'Brunch sans gluten', 'Pour 4 personnes : pancakes à la farine de riz, financiers amande, fruits frais et jus de pomme. Recettes prévues avec ingrédients sans gluten et préparation séparée.', 120.00, 4, 'asset/IMG/cover_menu/cover_SSGluten.png', 1, '2026-10-11 12:54:37', 1);
 
 -- --------------------------------------------------------
 
@@ -144,6 +160,29 @@ CREATE TABLE `menu_regime` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- --------------------------------------------------------
+
+
+--association des menus au regimes alimentaire
+-- 1 =ss gluten 2=végétarien 3=vegan
+
+INSERT INTO `menu_regime` (`menu_id`,`regimes_id`)
+VALUES
+(3,2),
+(4,3),
+(5,1),
+(7,2),
+(8,3),
+(9,1),
+(11,2),
+(12,3),
+(13,1),
+(15,2),
+(16,3),
+(17,1),
+(19,2),
+(20,3),
+(21,1);
+
 
 --
 -- Structure de la table `produits`
@@ -212,11 +251,18 @@ CREATE TABLE `users` (
   `nom` varchar(255) NOT NULL,
   `prenom` varchar(255) NOT NULL,
   `email` varchar(255) DEFAULT NULL,
+  `email_verified` tinyint(1) NOT NULL DEFAULT '1',
+  `verification_code_hash` varchar(255) DEFAULT NULL,
+  `verification_code_expires_at` datetime DEFAULT NULL,
+  `verification_code_sent_at` datetime DEFAULT NULL,
   `telephone` varchar(10) DEFAULT NULL,
   `ville` varchar(255) NOT NULL,
   `rue` varchar(255) NOT NULL,
   `code_postal` varchar(255) NOT NULL,
   `password_hash` varchar(255) NOT NULL,
+  `password_reset_token_hash` varchar(255) DEFAULT NULL,
+  `password_reset_expires_at` datetime DEFAULT NULL,
+  `password_reset_sent_at` datetime DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `role` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -475,6 +521,26 @@ INSERT INTO `menu_allergene` (`menu_id`, `allergene_id`) VALUES
 (4,5), -- formule vegan -> Fruit a coque
 (4,4); -- formule vegan -> Soja allergene_id
 
+-- Allergènes des recettes de démonstration des nouveaux menus.
+-- 1 = Gluten, 2 = Lait, 3 = Oeufs, 4 = Soja, 5 = Fruit a coque.
+
+INSERT INTO `menu_allergene` (`menu_id`, `allergene_id`) VALUES
+(6,1), (6,2), (6,3),
+(7,1), (7,2), (7,3), (7,5),
+(8,1), (8,4), (8,5),
+(9,2), (9,3), (9,5),
+(10,1), (10,2), (10,3),
+(11,1), (11,2), (11,3),
+(12,1), (12,4), (12,5),
+(13,2), (13,3), (13,5),
+(14,1), (14,2), (14,3),
+(15,1), (15,2), (15,3),
+(16,1), (16,4), (16,5),
+(17,2), (17,3), (17,5),
+(18,1), (18,2), (18,3),
+(19,1), (19,2), (19,3),
+(20,1), (20,4), (20,5),
+(21,2), (21,3), (21,5);
 
 SELECT ID, menu_id, img_path, alt, ordre
 FROM galerie_menu

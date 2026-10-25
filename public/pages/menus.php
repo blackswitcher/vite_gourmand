@@ -5,17 +5,254 @@ require_once __DIR__ . '/../../src/configs/session.php';
 require_once __DIR__ . '/../../src/configs/db.php';
 require_once __DIR__ . '/../../src/models/Menu.php';
 
-//on prepare une requete pour recup mes menus actif
-// on trie les colonnes pour afficher ce dont j'ai besoin
-$stmt = $pdo->prepare("
-SELECT ID, titre, description, prix, nb_personne,img_cover
-FROM menus
-WHERE actif = 1
-ORDER BY ID ASC
-");
+//Determiner la limite du curseur à partir des menus actifs
+$prixMaximumCatalogue = (int) ceil(
+    (float) $pdo->query(
+        "SELECT COALESCE(MAX(prix),0) FROM menus
+    WHERE actif = 1 "
+    )->fetchColumn()
+);
 
-// on execute la requete
-$stmt -> execute();
+//Récuperer les regimes dispo pour la liste des filtres. 
+
+$regimes = $pdo->query(
+    "SELECT regimes_id, nom
+    FROM regimes
+    ORDER BY nom ASC"
+)->fetchAll(PDO::FETCH_ASSOC);
+
+// reucperer les themes disponibles 
+$themes = $pdo->query(
+    "SELECT ID, nom
+    FROM themes
+    ORDER BY nom ASC"
+)->fetchAll(PDO::FETCH_ASSOC);
+
+//Sans filtre, afficher tous les menus actifs
+$prixMax = $prixMaximumCatalogue;
+
+//Verifier le prix recu dans l'URL
+if (isset($_GET['prixMax'])) {
+    $prixMaxRecu = $_GET['prixMax'];
+
+    if (!is_string($prixMaxRecu)) {
+        http_response_code(400);
+        exit('Prix maximum invalide.');
+    }
+    $prixMaxValide = filter_var(
+        $prixMaxRecu,
+        FILTER_VALIDATE_INT,
+        [
+            'options' => [
+                'min_range' => 0,
+                'max_range' => $prixMaximumCatalogue
+            ]
+        ]
+    );
+    if ($prixMaxValide === false) {
+        http_response_code(400);
+        exit('prix maximum invalide.');
+    }
+
+    //utiliser le prix recu une fois qu'il est validé 
+    $prixMax = $prixMaxValide;
+}
+
+//sans selection aucun filtre par regimes
+$regimeId = null;
+
+if (isset($_GET['regime'])) {
+    $regimeRecu = $_GET['regime'];
+
+    if (!is_string($regimeRecu)) {
+        http_response_code(400);
+        exit('regimes invalide.');
+    }
+
+    if ($regimeRecu !== '') {
+        $regimesIdValide = filter_var(
+            $regimeRecu,
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 1]]
+        );
+
+        //recupere les ID des regimes dispo 
+        $regimesAutorises = array_map(
+            'intval',
+            array_column($regimes, 'regimes_id')
+        );
+
+        if (
+            $regimesIdValide === false
+            || !in_array($regimesIdValide, $regimesAutorises, true)
+        ) {
+            http_response_code(400);
+            exit('Régime invalide');
+        }
+        $regimeId = $regimesIdValide;
+    }
+}
+//verifier le themes choisi.
+$themeId = null;
+
+if (isset($_GET['theme'])) {
+    $themeRecu = $_GET['theme'];
+
+    if (!is_string($themeRecu)) {
+        http_response_code(400);
+        exit('Thème invalide');
+    }
+
+    if ($themeRecu !== '') {
+        $themeIdValide = filter_var(
+            $themeRecu,
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 1]]
+        );
+
+        $themeAutorises = array_map(
+            'intval',
+            array_column($themes, 'ID')
+        );
+
+        if (
+            $themeIdValide === false
+            || !in_array(
+                $themeIdValide,
+                $themeAutorises,
+                true
+            )
+        ) {
+            http_response_code(400);
+            exit('thème invalide');
+        }
+        $themeId = $themeIdValide;
+    }
+}
+
+//verifier ke nombre de personne
+
+$nombrePersonne = null;
+
+if (isset($_GET['nb_personne'])) {
+    $nombreRecu = $_GET['nb_personne'];
+
+    if (!is_string($nombreRecu)) {
+        http_response_code(400);
+        exit('nombre de personne invalide');
+    }
+
+    if ($nombreRecu !== '') {
+        $nombreValide = filter_var(
+            $nombreRecu,
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 1]]
+        );
+
+        if ($nombreValide === false) {
+            http_response_code(400);
+            exit('Nombre de personne invalide.');
+        }
+
+        $nombrePersonne = $nombreValide;
+    }
+}
+
+//fourchette autorisées: minimum inclus, maximum exclu.
+$fourchettes = [
+    'moins_100' => [
+        'label' => 'moins de 100 €',
+        'min' => 0,
+        'max' => 100
+    ],
+    '100_200' => [
+        'label' => 'De 100 à moins de 200€',
+        'min' => 100,
+        'max' => 200
+    ],
+    '200_300' => [
+        'label' => 'De 200 à moins de 300€',
+        'min' => 200,
+        'max' => 300
+    ],
+    '300_plus'=> [
+    'label' => '300€ et plus',
+    'min' => '300',
+    'max' => null
+    ]
+];
+
+$fourchetteChoisie = '';
+
+if (isset($_GET['fourchette'])){
+    $fourchetteRecu = $_GET['fourchette'];
+
+    if(
+        !is_string($fourchetteRecu)
+        || (
+            $fourchetteRecu !== ''
+            && !array_key_exists($fourchetteRecu, $fourchettes)
+        )
+    ) {
+        http_response_code(400);
+        exit('fourchette de prix invalide');
+    }
+    $fourchetteChoisie = $fourchetteRecu;
+}
+
+
+//filtrer les menus par prix 
+$sql = 'SELECT ID, titre, description, prix, nb_personne, img_cover
+    FROM menus 
+    WHERE actif = 1 
+        AND prix <= :prix_max ';
+
+$parametres = [
+    'prix_max' => $prixMax
+];
+
+//Ajouter les filtre par regimes uniquement si un regime est choisi
+if ($regimeId !== null) {
+    $sql .= " AND EXISTS (
+        SELECT 1
+        FROM menu_regime
+        WHERE menu_regime.menu_id = menus.ID
+            AND menu_regime.regimes_id = :regime_id)";
+
+    $parametres['regime_id'] = $regimeId;
+}
+
+// ajouter le themes aux critere de recherche 
+
+if ($themeId !== null) {
+    $sql .= " AND menus.theme_id = :theme_id";
+    $parametres['theme_id'] = $themeId;
+}
+
+if ($nombrePersonne !== null) {
+    $sql .= " AND menus.nb_personne <= :nombre_personne";
+    $parametres['nombre_personne'] = $nombrePersonne;
+}
+
+//appliquer les brones de la fourchette choisie
+if ($fourchetteChoisie !== ''){
+    $bornes = $fourchettes[$fourchetteChoisie];
+
+    $sql .= " AND menus.prix >= :prix_min_fourchette";
+    $parametres['prix_min_fourchette'] = $bornes['min'];
+
+    if ($bornes['max'] !== null){
+        $sql .= " AND menus.prix < :prix_max_fourchette";
+        $parametres['prix_max_fourchette'] = $bornes['max'];
+    }
+}
+
+
+
+$sql .= " ORDER BY ID ASC";
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute($parametres);
 
 // fetchAll() retourne des lignes brutes de la base SQL sous forme de tableaux.
 // Ici, on transforme chaque ligne en objet Menu.
@@ -23,7 +260,7 @@ $stmt -> execute();
 // au lieu de travailler directement avec des tableaux SQL.
 $menusData = $stmt->fetchAll();
 $menus = [];
-foreach($menusData as $menuData){
+foreach ($menusData as $menuData) {
     $menus[] = Menu::fromDatabaseRow($menuData);
 }
 
@@ -41,7 +278,7 @@ foreach($menusData as $menuData){
 </head>
 
 <body>
-<?php require_once '../include/header.php';?>
+    <?php require_once '../include/header.php'; ?>
 
     <section>
         <div class="container_accueil">
@@ -62,99 +299,130 @@ foreach($menusData as $menuData){
         <div>
             <h3>Filtres</h3>
         </div>
-        <div class="container_filtre">
-            <div class="container_prix_max">
-                <label for="prixMax">Prix max</label>
-                <input type="range" id="prixMax" name="prixMax"
-                    class="inputRange" min="0" max="80" step="1">
-                <div class="test">
-                    <div class="container_prix">
-                        <span class="priceValue"><span id="prixMaxValue">
-                            </span>€
-                        </span>
+        <form method="GET" action="menus.php">
+            <div class="container_filtre">
+
+
+                <div class="container_prix_max">
+                    <label for="prixMax">Prix max</label>
+                    <input type="range" id="prixMax" name="prixMax"
+                        class="inputRange"
+                        min="0"
+                        max="<?php echo $prixMaximumCatalogue; ?>"
+                        step="1"
+                        value="<?php echo $prixMax; ?>">
+                    <div class="test">
+                        <div class="container_prix">
+                            <span class="priceValue"><span id="prixMaxValue">
+                                </span>€
+                            </span>
+                        </div>
                     </div>
                 </div>
+                <div class="container_select">
+                    <select name="regime" id="Régimes_liste">
+                        <option value="">Régimes</option>
+
+                        <?php foreach ($regimes as $regime):  ?>
+                            <option value="<?php echo (int) $regime['regimes_id']; ?>"
+                                <?php echo $regimeId === (int) $regime['regimes_id'] ? 'selected'
+                                    : ''; ?>>
+                                <?php echo htmlspecialchars($regime['nom']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="container_select">
+<select 
+name="fourchette" 
+class="fourchette_prix" 
+id="fourchette_price">
+<option value="">
+    Toutes les fourchettes
+</option>
+<?php foreach($fourchettes as $cle => $fourchette): ?>
+    <option 
+    value="<?php echo htmlspecialchars($cle); ?>"
+    <?php echo $fourchetteChoisie === $cle
+    ? 'selected'
+    : ''; ?>>
+    
+    <?php echo htmlspecialchars($fourchette['label']); ?>
+</option>
+<?php endforeach ?>
+</select>
+                </div>
+                <div class="container_select">
+                    <select name="theme" id="themes_selector">
+                        <option value=""> Tous les themes</option>
+
+                        <?php foreach ($themes as $theme): ?>
+                            <option
+                                value="<?php echo (int) $theme['ID'] ?>"
+                                <?php echo $themeId === (int) $theme['ID'] ? 'selected' : '' ?>>
+                                <?php echo htmlspecialchars($theme['nom']); ?>
+                            </option>
+                        <?php endforeach ?>
+                    </select>
+                </div>
+                <div class="container_select">
+                    <select name="nb_personne" id="nombre_personne">
+                        <option value="">Nombre de personnes</option>
+
+                        <?php foreach ([2, 4, 6, 8, 10, 20, 30] as $nombre): ?>
+                            <option
+                                value="<?php echo $nombre; ?>"
+                                <?php echo $nombrePersonne === $nombre ? 'selected' : ''; ?>>
+                                <?php echo $nombre; ?> personnes
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
             </div>
-            <div class="container_select">
-                <select name="Régimes" id="Régimes_liste">
-                    <option value="">Régimes</option>
-                    <option value="vegan">Végan</option>
-                    <option value="végétarien">Végétalien</option>
-                    <option value="sans_gluten">Sans gluten</option>
-                    <option value="sans_lactose">Sans lactose</option>
-                </select>
+            <div class="bouton_appliquer">
+                <button id="boutonAppliquer" type="submit">
+                    Appliquer les filtres
+                </button>
+                <a href="menus.php">Réinitialiser les filtres</a>
             </div>
-            <div class="container_select">
-                <select class="fourchette_prix" id="fourchette_price">
-                    <option value="">Fourchette de prix</option>
-                    <option value="0_10">de 0 à 20€</option>
-                    <option value="10_30">de 20 à 40€</option>
-                    <option value="30_50">de 40 à 60€</option>
-                    <option value="50_70">de 60 à 80€</option>
-                    <option value="80+">80+</option>
-                </select>
-            </div>
-            <div class="container_select">
-                <select name="theme" id="themes_selector">
-                    <option value="">Événement</option>
-                    <option value="mariage">Mariage</option>
-                    <option value="anniversaire">Anniversaire</option>
-                    <option value="entreprise">Entreprise</option>
-                    <option value="brunch">Brunch</option>
-                    <option value="famille">Famille</option>
-                    <option value="cocktail">Cocktail</option>
-                </select>
-            </div>
-            <div class="container_select">
-                <select name="nb_personne" id="nombre_personne">
-                    <option value="">Nombres de personnes</option>
-                    <option value="2">2 personnes</option>
-                    <option value="4">4 personnes</option>
-                    <option value="6">6 personnes</option>
-                    <option value="10">10 personnes</option>
-                    <option value="20">20 personnes</option>
-                    <option value="20+">+ 20 personnes</option>
-                </select>
-            </div>
+        </form>
+    </section>
+    <section>
+        <div class="container_card">
+
+        <?php if(empty($menus)): ?>
+            <p> Auncun menu ne correspond a vos critères </p>
+        <?php endif ?>
+            <?php foreach ($menus as $menu): ?>
+                <div class="menu_list_card">
+                    <div class="menu_list_image">
+                        <img
+                            src="../<?php echo htmlspecialchars($menu->getImagePath()); ?>"
+                            alt="<?php echo htmlspecialchars($menu->titre); ?>">
+                    </div>
+                    <div class="menu_list_content">
+                        <h3 class="menu_list_title"><?php echo htmlspecialchars($menu->titre); ?></h3>
+
+                        <p class="menu_list_desc">
+                            <?php echo htmlspecialchars($menu->description) ?>
+                        </p>
+                        <p class="menu_list_meta">
+                            Minimum : <?php echo htmlspecialchars($menu->getMinimumPersonnesTexte()); ?>
+                        </p>
+                        <p class="menu_list_price">
+                            Prix : <?php echo htmlspecialchars($menu->getPrixFormate()); ?>
+                        </p>
+                        <div class="menu_list_action">
+                            <a href="menu.php?id=<?php echo (int) $menu->id; ?>"> Voir le menu </a>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
         </div>
-        <div class="bouton_appliquer">
-            <button id="boutonAppliquer">
-                Appliquer les filtres
-            </button>
+        <div class="menu_detail">
+            <a href="commande.php">Commander</a>
         </div>
     </section>
-<section>
-        <div class="container_card">
-        <?php foreach ($menus as $menu): ?>
-            <div class="menu_list_card">
-                <div class="menu_list_image">
-                    <img
-                    src="../<?php echo htmlspecialchars($menu->getImagePath()); ?>"
-                    alt="<?php echo htmlspecialchars($menu->titre); ?>">
-                </div>
-                <div class="menu_list_content">
-                    <h3 class="menu_list_title"><?php echo htmlspecialchars($menu->titre); ?></h3>
-
-                    <p class="menu_list_desc">
-                        <?php echo htmlspecialchars($menu->description) ?>
-                    </p>
-                    <p class="menu_list_meta">
-                        Minimum : <?php echo htmlspecialchars($menu->getMinimumPersonnesTexte()); ?>
-                    </p>
-                    <p class="menu_list_price">
-                        Prix : <?php echo htmlspecialchars($menu->getPrixFormate()); ?>
-                    </p>
-                    <div class="menu_list_action">
-                        <a href="menu.php?id=<?php echo (int) $menu->id; ?>"> Voir le menu </a>
-                    </div>
-                </div>
-            </div>
-            <?php endforeach;?>
-        </div>
-            <div class="menu_detail">
-                <a href="commande.php">Commander</a>
-            </div>
-</section>
     <section class="modal_overlay hidden">
         <div class="modal_content">
             <div class="menu_modal">
@@ -212,7 +480,7 @@ foreach($menusData as $menuData){
             </div>
         </div>
     </section>
-    <?php require_once '../include/footer.php';?>
+    <?php require_once '../include/footer.php'; ?>
     <script src="../asset/JS/app.js"></script>
 </body>
 
