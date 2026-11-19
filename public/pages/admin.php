@@ -821,7 +821,280 @@ $stmt->execute();
 
 $menusAdmin = $stmt->fetchAll();
 
+//charger les themes proposé dans le formulaire 
+$themeAdmin = $pdo->query(
+    "SELECT ID,nom
+    FROM themes
+    ORDER BY nom ASC"
+)->fetchAll(PDO::FETCH_ASSOC);
 
+//charger les regimes disponibles pour le formulaire
+$regimesAdmin = $pdo->query(
+    "SELECT regimes_id, nom
+    FROM regimes
+    ORDER BY nom ASC"
+)->fetchAll(PDO::FETCH_ASSOC);
+
+//charger les allergènes disponibles 
+
+$allergenesAdmin = $pdo->query(
+    "SELECT ID, nom
+    FROM allergenes
+    ORDER BY nom ASC"
+) ->fetchAll(PDO::FETCH_ASSOC);
+
+// aucun menu selection au chargement de la page 
+$menuAModifier = null;
+
+$regimesMenuModification = [];
+$allergenesMenuModification = [];
+
+if(isset($_GET['modifier_menu'])){
+    $menuIdRecu = $_GET['modifier_menu'];
+
+    if (!is_string($menuIdRecu)){
+        http_response_code(400);
+        exit('Identifiant de menu invalide.');
+    }
+
+    $menuIdModification = filter_var(
+        $menuIdRecu,
+        FILTER_VALIDATE_INT,
+        ['options' => ['min_range'=>1]]
+    );
+
+    if ($menuIdModification === false){
+        http_response_code(400);
+        exit('Identification de menu invalide.');
+    }
+
+    // charger les informations du menu selectionne
+    $stmtMenuModification = $pdo->prepare(
+        "SELECT ID, titre, description, prix, nb_personne, img_cover, actif,
+        theme_id
+        FROM menus
+        WHERE ID = :menu_id"
+    );
+    $stmtMenuModification->execute([
+        'menu_id' => $menuIdModification
+    ]);
+    
+    $menuAModifier = $stmtMenuModification -> fetch(PDO::FETCH_ASSOC);
+        if($menuAModifier === false){
+            http_response_code(404);
+            exit('Menu introuvable.');
+        }
+
+        // charger les regimes associees au menu 
+        $stmtRegimesModification = $pdo-> prepare(
+            "SELECT regimes_id
+            FROM menu_regime
+            WHERE menu_id = :menu_id"
+        );
+
+        $stmtRegimesModification->execute([
+            'menu_id'=> $menuIdModification
+        ]);
+
+        $regimesMenuModification = array_map(
+            'intval' , 
+            $stmtRegimesModification->fetchAll(PDO::FETCH_COLUMN)
+        );
+
+        //charger les allergenes associe au menu 
+        $stmtAllergenesModification = $pdo->prepare(
+            "SELECT allergene_id
+            FROM menu_allergene
+            WHERE menu_id = :menu_id"
+        );
+
+        $stmtAllergenesModification ->execute([
+            'menu_id' => $menuIdModification
+        ]);
+
+        $allergenesMenuModification = array_map(
+            'intval',
+            $stmtAllergenesModification->fetchall(PDO::FETCH_COLUMN)
+        );
+}
+//////////////////////////////////////////////////////////////////////////////////
+//                                 MODIFIER UN MENU                             //
+//////////////////////////////////////////////////////////////////////////////////
+
+if(
+    $_SERVER['REQUEST_METHOD'] === 'POST'
+    && isset($_POST['modifier_menu'])
+){
+    $menuIdRecu = $_POST['menu_id'] ?? '';
+
+    if(!is_string($menuIdRecu)){
+        http_response_code(400);
+        exit('Identifiant de menu invalide.');
+    }
+
+    $menuIdModification = filter_var(
+        $menuIdRecu,
+        FILTER_VALIDATE_INT,
+        ['options' => ['min_range'=> 1]]
+    );
+
+    if ($menuIdModification === false){
+        http_response_code(400);
+        exit('Identifiant de menu invalide');
+    }
+    // verifier que le menu existe encore 
+    $stmtMenuExistant = $pdo->prepare(
+        "SELECT ID 
+        FROM menus
+        WHERE ID = :menu_id"
+    );
+
+    $stmtMenuExistant->execute([
+        'menu_id' => $menuIdModification
+    ]);
+    
+    if($stmtMenuExistant->fetchColumn() === false){
+        http_response_code(404);
+        exit('Menu introuvable.');
+    }
+
+    //Récuperer les champs texte
+    $titreRecu = $_POST['titre_menu'] ?? '';
+    $descriptionRecu = $_POST['description_menu'] ?? '';
+    $imageRecu = $_POST['img_cover_menu'] ?? '';
+
+    // Verifier leur type avant de les nettoyer 
+    if(
+        !is_string($titreRecu)
+        || !is_string($descriptionRecu)
+        || !is_string($imageRecu)
+    ){
+        http_response_code(400);
+        exit('Champs texte invalides.');
+    }
+
+    $titreMenu = trim($titreRecu);
+    $descriptionMenu = trim($descriptionRecu);
+    $imgCoverMenu = trim($imageRecu);
+
+    if(
+        $titreMenu === ''
+        || $descriptionMenu === ''
+        || $imgCoverMenu === ''
+    ){
+        http_response_code(400);
+        exit('Le titre, la description et le chemin de l\'image sont obligatoires.');
+    }
+// recuperer le prix et le nombre minimum de personnes.
+$prixRecu = $_POST['prix_menu'] ?? '';
+$nombreRecu = $_POST['nb_personne_menu'] ?? '';
+
+if (!is_string($prixRecu) || !is_string($nombreRecu)){
+    http_response_code(400);
+    exit('Prix ou nombre de personne invalide. ');
+}
+
+// prix: maximum a quatre chiffres avant la virgule et deux apres 
+if(!preg_match('/^[0-9]{1,4}(\.[0-9]{1,2})?$/', $prixRecu)){
+    http_response_code(400);
+    exit('Format du prix invalide.');
+}
+$prixMenu = $prixRecu;
+
+if((float) $prixMenu <= 0){
+    http_response_code(400);
+    exit('Le prix doit etre superieur a zero.');
+}
+
+$nbPersonneMenu = filter_var(
+    $nombreRecu,
+    FILTER_VALIDATE_INT,
+    ['options' => ['min_range' => 1]]
+);
+
+if($nbPersonneMenu === false ){
+    http_response_code(400);
+    exit('Le nombre de personnnes doit etre un entier positif.');
+}
+//verifier le theme recu 
+$themeRecu = $_POST['theme_id_menu'] ?? '';
+    
+        if(!is_string($themeRecu)){
+            http_response_code(400);
+            exit('Thème invalide.');
+        }
+
+        $themeIdMenu = filter_var(
+            $themeRecu,
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 1]]
+        );
+
+        $themeAutorises = array_map(
+            'intval',
+            array_column($themeAdmin, 'ID')
+        );
+
+        if (
+            $themeIdMenu === false
+            || !in_array($themeIdMenu, $themeAutorises, true)
+        ){
+            http_response_code(400);
+            exit('Thème invalide.');
+        }
+        //Accepter les deux statuts prevus uniquement 
+
+        $actifRecu = $_POST['actif_menu'] ?? '';
+
+        if(
+            !is_string($actifRecu)
+            || !in_array($actifRecu, ['0', '1'], true)
+        ){
+            http_response_code(400);
+            exit('Statut du menu invalide.');
+        }
+        $actifMenu = (int) $actifRecu;
+
+
+        //recuperer les regimes cochés
+        $regimesRecus = $_POST['regimes_menu'] ?? [];
+
+        if(!is_array($regimesRecus)){
+            http_response_code(400);
+            exit('Régimes invalide.');
+        }
+
+        //Identifiants reellement disponibles.
+        $regimesAutorises = array_map(
+            'intval',
+            array_column($regimesAdmin, 'regimes_id')
+        );
+
+        $regimesMenu = [];
+
+        foreach ($regimesRecus as $regimeRecu){
+            if(!is_string($regimeRecu)){
+                http_response_code(400);
+                exit('Régime invalide.');
+            }
+
+            $regimeIdValide = filter_var(
+                $regimeRecu,
+                FILTER_VALIDATE_INT,
+                ['options' => ['min_range' => 1]]
+            );
+
+            if(
+                $regimeIdValide === false
+                || !in_array($regimeIdValide, $regimesAutorises, true)
+            ){
+                http_response_code(400);
+                exit('Régime invalide.');
+            }
+            $regimesMenu[] =$regimeIdValide;
+        }
+    $regimesMenu = array_values(array_unique($regimesMenu));
+}
 //////////////////////////////////////////////////////////////////////////////////
 //                               AJOUTER UN MENU                                //
 //////////////////////////////////////////////////////////////////////////////////
@@ -835,8 +1108,112 @@ if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST['ajouter_menu'])) {
     $prixMenu = (float) ($_POST['prix_menu'] ?? '');
     $nbPersonneMenu = (int) ($_POST['nb_personne_menu'] ?? '');
     $imgCoverMenu = trim($_POST['img_cover_menu'] ?? '');
-    $themeIdMenu = (int) ($_POST['theme_id_menu'] ?? 0);
+    //verifier le format de l'ID recu 
+    $themeRecu = $_POST['theme_id_menu']?? '';
+        if(!is_string($themeRecu)){
+            http_response_code(400);
+            exit('Theme invalide.');
+        }
+            $themeIdMenu = filter_var(
+                $themeRecu,
+                FILTER_VALIDATE_INT,
+                ['options' => ['min_range' => 1]]
+            );
+            //Recuperer les ID des themes disponibles.
+            $themeAutorises = array_map(
+                'intval',
+                array_column($themeAdmin, 'ID')
+            );
+        //Refuser un id incorrect ou absent de la liste 
+        if(
+            $themeIdMenu === false
+            || !in_array($themeIdMenu, $themeAutorises, true)
+        ){
+            http_response_code(400);
+            exit('Thème invalide.');
+        }
     $actifMenu = (int) ($_POST['actif_menu'] ?? '');
+
+    // aucune case cochée: liste vide 
+    $regimesRecus = $_POST['regimes_menu'] ?? [];
+
+    if(!is_array($regimesRecus)){
+        http_response_code(400);
+        exit('regimes invalides.');
+    }
+
+    //identifiant des regimes réellement disponibles.
+    $regimesAutorises = array_map(
+        'intval',
+        array_column($regimesAdmin, 'regimes_id')
+    );
+
+    $regimesMenu = [];
+
+    foreach($regimesRecus as $regimeRecu){
+        if(!is_string($regimeRecu)){
+            http_response_code(400);
+            exit('Regime invalide');
+        }
+
+        $regimeIdValide = filter_var(
+            $regimeRecu,
+            FILTER_VALIDATE_INT,
+            ['options' => ['min_range' => 1 ]]
+        );
+        if(
+            $regimeIdValide === false
+            || !in_array($regimeIdValide, $regimesAutorises, true)
+                ){
+                http_response_code(400);
+                exit('Régime invalide.');
+            }
+
+            $regimesMenu[] = $regimeIdValide;
+    }
+
+    //Eviter de creer deux fois la meme association 
+    $regimesMenu = array_values(array_unique($regimesMenu));
+
+    //Récupere mes allergenes coché
+    $allergenesRecus = $_POST['allergenes_menu'] ?? [];
+
+    if(!is_array($allergenesRecus)){
+        http_response_code(400);
+        exit('Allergenes invalides.');
+    }
+
+// Identifiant des allergenes disponible dans la base 
+$allergenesAutorises = array_map(
+    'intval',
+    array_column($allergenesAdmin, 'ID')
+);
+
+//Liste qui recevra les ID validé
+$allergenesMenu = [];
+
+foreach($allergenesRecus as $allergeneRecu){
+    if (!is_string($allergeneRecu)){
+        http_response_code(400);
+        exit('Allergene invalide.');
+    }
+
+    $allergeneIdValide = filter_var(
+        $allergeneRecu,
+        FILTER_VALIDATE_INT,
+        ['options' => ['min_range'=>1]]
+    );
+    if(
+        $allergeneIdValide === false 
+        || !in_array($allergeneIdValide, $allergenesAutorises, true)
+    ){
+        http_response_code(400);
+        exit('Allergene invalide');
+    }
+    $allergenesMenu[] = $allergeneIdValide;
+}
+
+$allergenesMenu = array_values(array_unique($allergenesMenu));
 
 
     // on verifie que les données minimales sont correctes
@@ -849,22 +1226,68 @@ if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST['ajouter_menu'])) {
         $themeIdMenu > 0
     ) {
         // on prepare la requete SQL pour insere le menu
-        $stmt = $pdo->prepare("
-            INSERT INTO menus (titre, description, prix, nb_personne, img_cover, actif, created_at, theme_id)
-            VALUES (:titre, :description, :prix, :nb_personne, :img_cover, :actif, NOW(), :theme_id)
+try{
+    $pdo->beginTransaction();
 
-            ");
+    //Creer le menu.
+    $stmt = $pdo->prepare(
+        "INSERT INTO menus(
+        titre, description, prix, nb_personne, img_cover, actif, created_at, theme_id)
+    VALUES (
+        :titre, :description, :prix, :nb_personne,
+        :img_cover, :actif, NOW(), :theme_id
+    )"
+    );
 
-        $stmt->execute([
+    $stmt->execute([
+        'titre' => $titreMenu,
+        'description' => $descriptionMenu,
+        'prix' => $prixMenu,
+        'nb_personne' => $nbPersonneMenu,
+        'img_cover' => $imgCoverMenu,
+        'actif' => $actifMenu,
+        'theme_id' => $themeIdMenu
+    ]);
 
-            'titre' => $titreMenu,
-            'description' => $descriptionMenu,
-            'prix' => $prixMenu,
-            'nb_personne' => $nbPersonneMenu,
-            'img_cover' => $imgCoverMenu,
-            'actif' => $actifMenu,
-            'theme_id' => $themeIdMenu
+    //recupere les id du menu qui vient d'etre creer 
+    $nouveauMenuId = (int) $pdo->lastInsertId();
+
+    //preparer les assoc aux regimes
+    $stmtRegimes = $pdo->prepare(
+        "INSERT INTO menu_regime (menu_id, regimes_id)
+        VALUES (:menu_id, :regime_id)"
+    );
+
+    foreach ($regimesMenu as $regimeId){
+        $stmtRegimes->execute([
+            'menu_id' => $nouveauMenuId,
+            'regime_id' => $regimeId
         ]);
+    }
+
+        //preparer les association aux allergenes
+        $stmtAllergenes = $pdo->prepare(
+            "INSERT INTO menu_allergene (menu_id,allergene_id)
+            VALUES (:menu_id, :allergene_id)"
+        );
+
+        foreach($allergenesMenu as $allergeneId){
+            $stmtAllergenes->execute([
+                'menu_id' => $nouveauMenuId,
+                'allergene_id' => $allergeneId
+            ]);
+        }
+
+    $pdo->commit();
+} catch (Throwable $erreur) {
+    if ($pdo->inTransaction()){
+        $pdo->rollBack();
+    }
+
+    error_log($erreur->getMessage());
+    http_response_code(500);
+    exit('Impossible de creer le menu. Veuillez réessayez');
+}
 
 
         $mongoCollection->insertOne([
@@ -884,7 +1307,7 @@ if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST['ajouter_menu'])) {
             'targetType' => 'menu',
 
             // ID de la cible
-            'targetId' => $titreMenu,
+            'targetId' => $nouveauMenuId,
 
             //date
             'createdAt' => new \MongoDB\BSON\UTCDateTime(),
@@ -1401,6 +1824,7 @@ WHERE ID = :id
                         <th>Prix</th>
                         <th>Nb personne</th>
                         <th>Actif</th>
+                        <th>Modifier</th>
                         <th>Supprimer</th>
                     </tr>
                 </thead>
@@ -1424,6 +1848,13 @@ WHERE ID = :id
 
                             <!--statut actif ou non -->*
                             <td><?php echo ((int) $menuAdmin['actif'] === 1) ? 'oui' : 'non'; ?></td>
+                            <!--Modifier un menu -->
+
+                            <td>
+                                <a href="admin.php?modifier_menu=<?php echo (int) $menuAdmin['ID']; ?>">
+                                    Modifier
+                                </a>
+                            </td>
 
                             <!--Supprimer un menu -->
                             <td>
@@ -1446,6 +1877,155 @@ WHERE ID = :id
                 </tbody>
             </table>
         <?php endif; ?>
+
+        <?php if($menuAModifier !== null): ?>
+            <div>
+                <h3>Modifier le menu</h3>
+
+                <form action="admin.php" method="POST">
+                    <input type="hidden"
+                    name="csrf_token"
+                    value="<?php echo htmlspecialchars(
+                        $_SESSION['csrf_token'],
+                        ENT_QUOTES,
+                        'UTF-8'
+                    ); ?>">
+
+                    <input type="hidden"
+                    name="menu_id"
+                    value="<?php echo (int) 
+                    $menuAModifier['ID']; ?>">
+                    <div>
+                        <label for="titre_menu_modification">Titre</label>
+                        <input type="text"
+                        id="titre_menu_modification"
+                        name="titre_menu"
+                        value="<?php echo htmlspecialchars(
+                            $menuAModifier['titre'],
+                            ENT_QUOTES,
+                            'UTF-8'
+                        ); ?>" required>
+                    </div>
+                    <div>
+                        <label for="description_menu_modification"> Description </label>
+                        <textarea name="description_menu" id="description_menu_modification" required><?php 
+                        echo htmlspecialchars(
+                            $menuAModifier['description'],
+                            ENT_QUOTES,
+                            'UTF-8'
+                        ); ?></textarea>
+                    </div>
+                    <div>
+                        <label for="prix_menu_modification">Prix de la formule (€) </label>
+                        <input type="number"
+                        id="prix_menu_modification"
+                        name="prix_menu"
+                        min="0.01"
+                        step="0.01"
+                        value="<?php echo htmlspecialchars(
+                            (string) $menuAModifier['prix'],
+                            ENT_QUOTES,
+                            'UTF-8'
+                            ); ?>"
+                        required>
+                    </div>
+                        <div>
+                            <label for="nb_personne_menu_modification">
+                                Nombre de personne minimum
+                                </label>
+                                <input type="number"
+                                id="nb_personne_menu_modification"
+                                name="nb_personne_menu"
+                                min="1"
+                                step="1"
+                                value="<?php echo (int) $menuAModifier['nb_personne']; ?>" required>
+                        </div>
+                        <div>
+                            <label for="img_cover_menu_modification">
+                                Chemin de l'image
+                            </label>
+                            <input type="text"
+                            id="img_cover_menu_modification"
+                            name="img_cover_menu"
+                            value="<?php echo htmlspecialchars($menuAModifier['img_cover'],
+                            ENT_QUOTES,
+                            'UTF-8'); ?>" required>
+                        </div>
+                        <div>
+                            <label for="theme_id_menu_modification">Theme</label>
+                            <select name="theme_id_menu" id="theme_id_menu_modification" required>
+                                <option value="">Choisir un theme</option>
+
+                                <?php foreach($themeAdmin as $theme): ?>
+                                    <option 
+                                    value="<?php echo (int) $theme['ID']; ?>"
+                                    <?php echo (int) $menuAModifier['theme_id'] === (int) $theme['ID'] ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($theme['nom']); ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <fieldset>
+                            <legend>Regimes alimentaire</legend>
+
+                            <?php foreach ($regimesAdmin as $regime): ?>
+                                <div>
+                                    <label>
+                                        <input type="checkbox"
+                                        name="regimes_menu[]"
+                                        value="<?php echo (int) $regime['regimes_id']; ?>"
+                                        <?php echo in_array(
+                                        (int) $regime['regimes_id'],
+                                        $regimesMenuModification,
+                                        true
+                                        ) ? 'checked' : ''; ?>>
+                                        <?php echo htmlspecialchars($regime['nom']); ?>
+                                    </label>
+                                </div>
+                                <?php endforeach; ?>
+
+                                <p>Ne rien cocher si aucun regime particulier ne s'applique.</p>
+                        </fieldset>
+                        <fieldset>
+                            <legend>Allergenes present dans le menu</legend>
+                            <?php foreach($allergenesAdmin as $allergene): ?>
+                                <div>
+                                    <label>
+                                        <input type="checkbox"
+                                        name="allergenes_menu[]"
+                                        value="<?php echo (int) $allergene['ID'];?>"
+                                        <?php echo in_array(
+                                            (int) $allergene['ID'],
+                                            $allergenesMenuModification,
+                                            true
+                                        ) ? 'checked' : ''; ?>>
+
+                                        <?php echo htmlspecialchars($allergene['nom']); ?>
+                                    </label>
+                                </div>
+                                <?php endforeach; ?>
+                        </fieldset>
+                        <div>
+                            <label for="actif_menu_modification">Actif</label>
+
+                            <select name="actif_menu" id="actif_menu_modification" required>
+                                <option value="1"
+                                <?php echo (int) $menuAModifier['actif'] === 1
+                                ? 'selected' : ''; ?>>
+                                Oui
+                            </option>
+                            <option value="0"
+                            <?php echo (int) $menuAModifier['actif'] === 0
+                            ? 'selected' : ''; ?>>
+                            Non    
+                                </option>
+                            </select>
+                        </div>
+
+                    <a href="admin.php"> annuler les modifications</a>
+                </form>
+            </div>
+            <?php endif; ?>
         <div class="ajouterMenu">
             <button type="button" id="ouvrirModalMenu"> Ajouter un menu </button>
         </div>
@@ -1499,10 +2079,49 @@ WHERE ID = :id
 
                 <!-- theme associé -->
                 <div>
-                    <label for="theme_id_menu">Theme ID</label>
-                    <input type="number" name="theme_id_menu" id="theme_id_menu" required>
-                </div>
+                    <label for="theme_id_menu">Thème</label>
+                    <select name="theme_id_menu" id="theme_id_menu" required>
+                        <option value="">choisir un thème</option>
 
+                        <?php foreach ($themeAdmin as $theme): ?>
+                            <option value="<?php echo (int) $theme['ID']; ?>">
+                                <?php echo htmlspecialchars($theme['nom']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                    <fieldset>
+                        <legend>Régimes alimentaire </legend>
+
+                        <?php foreach($regimesAdmin as $regime): ?>
+                            <div>
+                                <label>
+                                    <input 
+                                    type="checkbox"
+                                    name="regimes_menu[]"
+                                    value="<?php echo (int) $regime['regimes_id']; ?>">
+                                <?php echo htmlspecialchars($regime['nom']); ?>
+                                </label>
+                            </div>
+                            <?php endforeach; ?>
+                            <p>Ne rien cocher si aucun regime particulier ne s'applique.</p>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Allergenes présent dans le menu</legend>
+
+                        <?php foreach ($allergenesAdmin as $allergene): ?>
+                            <div>
+                                <label>
+                                    <input 
+                                    type="checkbox"
+                                    name="allergenes_menu[]"
+                                    value="<?php echo (int) ($allergene['ID']); ?>">
+                                    <?php echo htmlspecialchars($allergene['nom']) ?>
+                                </label>
+                            </div>
+                            <?php endforeach; ?>
+                            <p>Cocher les allergenes present dans le menu </p>
+                    </fieldset>
                 <!-- actif ou non -->
                 <div>
                     <label for="actif_menu">Actif</label>
